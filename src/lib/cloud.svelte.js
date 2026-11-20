@@ -2,10 +2,11 @@ import { S, rev, watch, replace, reset } from './store.svelte.js';
 import { decide, keepPlacement } from './sync.js';
 import { STAGE_IDS } from './langs/kit.js';
 import { caps } from './fx.js';
+import { P, savePrefs } from './prefs.js';
 import { lang } from './lang.js';
 
 // status: off (not configured) | out (signed out) | syncing | synced | error
-export const cloud = $state({ ready: false, status: 'off', user: null, error: '', recovery: false, at: 0, ai: false, tts: false, stt: false, push: '' });
+export const cloud = $state({ ready: false, status: 'off', user: null, error: '', recovery: false, at: 0, ai: false, tts: false, stt: false, push: '', name: P.name, avatar: P.avatar });
 
 let sb;
 let timer;
@@ -22,7 +23,8 @@ export async function init() {
 		sb.auth.onAuthStateChange((event, session) => {
 			const u = session?.user;
 			const changed = u?.id !== cloud.user?.id;
-			cloud.user = u ? { id: u.id, email: u.email } : null;
+			cloud.user = u ? { id: u.id, email: u.email, pending: u.new_email || '' } : null;
+			if (u) setTimeout(() => takeProfile(u), 0);
 			if (event === 'PASSWORD_RECOVERY') cloud.recovery = true;
 			if (!u) cloud.status = 'out';
 			// supabase calls must not run inside this callback, so defer
@@ -119,6 +121,59 @@ export async function wipe() {
 	S.uid = null;
 	await sb.auth.signOut();
 }
+
+// ---------- profile: name and picture ----------
+// Both live on the device (so they show instantly, offline, and signed out) and, when signed in,
+// in the account: the name in the sign-in record, the picture in your private storage folder.
+const AVATAR = 'avatar.jpg';
+
+function setProfile(next) {
+	savePrefs(next);
+	cloud.name = P.name;
+	cloud.avatar = P.avatar;
+}
+
+// after sign-in: take the account's name and picture if this device has none, or an older picture
+async function takeProfile(u) {
+	const m = u.user_metadata || {};
+	const name = m.display_name || (P.name ? '' : m.full_name || m.name || '');
+	if (name && name !== P.name && !P.name) setProfile({ name });
+	else if (m.display_name && m.display_name !== P.name && (m.profile_at || 0) > (P.profileAt || 0)) setProfile({ name: m.display_name, profileAt: m.profile_at });
+	if (m.avatar_at && m.avatar_at > (P.avatarAt || 0)) {
+		const { data } = await sb.storage.from(NOTES).download(`${u.id}/${AVATAR}`);
+		if (data) {
+			const url = await new Promise((ok) => {
+				const r = new FileReader();
+				r.onload = () => ok(r.result);
+				r.readAsDataURL(data);
+			});
+			setProfile({ avatar: url, avatarAt: m.avatar_at });
+		}
+	}
+}
+
+export async function saveName(name) {
+	const at = Date.now();
+	setProfile({ name: name.trim().slice(0, 40), profileAt: at });
+	if (sb && cloud.user) ok(await sb.auth.updateUser({ data: { display_name: P.name, profile_at: at } }));
+}
+
+// dataUrl: a small square JPEG made in the browser. Empty string removes the picture.
+export async function saveAvatar(dataUrl) {
+	const at = Date.now();
+	setProfile({ avatar: dataUrl, avatarAt: at });
+	if (!sb || !cloud.user) return;
+	const path = `${cloud.user.id}/${AVATAR}`;
+	if (dataUrl) {
+		const blob = await (await fetch(dataUrl)).blob();
+		const up = await sb.storage.from(NOTES).upload(path, blob, { contentType: 'image/jpeg', upsert: true });
+		if (up.error) throw up.error;
+	} else await sb.storage.from(NOTES).remove([path]);
+	ok(await sb.auth.updateUser({ data: { avatar_at: dataUrl ? at : 0 } }));
+}
+
+// Supabase sends a confirmation link to the new address; the email only changes once it is clicked.
+export const changeEmail = async (email) => ok(await sb.auth.updateUser({ email }, { emailRedirectTo: back() }));
 
 export async function signOut() {
 	clearTimeout(timer);

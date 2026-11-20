@@ -4,7 +4,7 @@
 	import { S } from '../../lib/store.svelte.js';
 	import { current, earned, forecast, masteredCount } from '../../lib/roadmap.js';
 	import { meta } from '../../lib/lang.js';
-	import { cloud, oauth, signIn, signUp, forgot, setPassword, signOut, pull, wipe } from '../../lib/cloud.svelte.js';
+	import { cloud, oauth, signIn, signUp, forgot, setPassword, signOut, pull, wipe, saveName, saveAvatar, changeEmail } from '../../lib/cloud.svelte.js';
 
 	let mode = $state('in');
 	let email = $state('');
@@ -13,6 +13,24 @@
 	let err = $state('');
 	let msg = $state('');
 	let armed = $state(false); // deleting takes two taps
+	let name = $state(cloud.name);
+	let newEmail = $state('');
+	let editEmail = $state(false);
+
+	// phone photos are huge: crop to a centred square and shrink to 192 px before it goes anywhere
+	async function pickAvatar(e) {
+		const f = e.target.files[0];
+		e.target.value = '';
+		if (!f) return;
+		run(async () => {
+			const img = await createImageBitmap(f);
+			const side = Math.min(img.width, img.height);
+			const c = Object.assign(document.createElement('canvas'), { width: 192, height: 192 });
+			c.getContext('2d').drawImage(img, (img.width - side) / 2, (img.height - side) / 2, side, side, 0, 0, 192, 192);
+			await saveAvatar(c.toDataURL('image/jpeg', 0.82));
+			return 'Picture saved.';
+		});
+	}
 
 	async function run(fn) {
 		busy = true;
@@ -46,6 +64,38 @@
 
 <div class="stack rise">
 	{#if cloud.ready && !cloud.recovery}
+		<div class="card stack profile">
+			<p class="eyebrow">Profile</p>
+			<div class="row">
+				<label class="avatar" title="Change picture">
+					{#if cloud.avatar}<img src={cloud.avatar} alt="Your profile" />{:else}<Icon name="user" size={30} />{/if}
+					<span class="cam"><Icon name="camera" size={14} /></span>
+					<input type="file" accept="image/*" hidden onchange={pickAvatar} disabled={busy} />
+				</label>
+				<form class="grow stack" style="gap:8px" onsubmit={(e) => { e.preventDefault(); run(async () => (await saveName(name), 'Name saved.')); }}>
+					<input type="text" bind:value={name} placeholder="Your name" maxlength="40" autocomplete="name" aria-label="Your name" />
+					<div class="chips">
+						<button class="btn sm primary" disabled={busy || name.trim() === cloud.name}>Save name</button>
+						{#if cloud.avatar}<button type="button" class="btn sm" disabled={busy} onclick={() => run(async () => (await saveAvatar(''), 'Picture removed.'))}>Remove picture</button>{/if}
+					</div>
+				</form>
+			</div>
+			{#if cloud.user}
+				<div class="row small">
+					<span class="grow dim">Email: <b>{cloud.user.email}</b>{#if cloud.user.pending}<br />Waiting for you to confirm {cloud.user.pending}{/if}</span>
+					<button class="btn sm" onclick={() => (editEmail = !editEmail)}>Change</button>
+				</div>
+				{#if editEmail}
+					<form class="row" onsubmit={(e) => { e.preventDefault(); run(async () => (await changeEmail(newEmail), (editEmail = false), `Check ${newEmail} and tap the link to confirm the change.`)); }}>
+						<input class="grow" type="email" bind:value={newEmail} placeholder="New email" required autocomplete="email" autocapitalize="off" />
+						<button class="btn sm primary" disabled={busy || !newEmail}>Send link</button>
+					</form>
+				{/if}
+			{:else if cloud.status !== 'off'}
+				<p class="dim small">Your name and picture are kept on this device. Sign in below to carry them, and your progress, to every device.</p>
+			{/if}
+		</div>
+
 		<div class="card stack prog">
 			<p class="eyebrow">{meta.name}</p>
 			<div class="row">
@@ -143,4 +193,10 @@
 	.prog .small b { display: inline; }
 	.lvl { width: 54px; height: 54px; flex: none; border-radius: 50%; display: grid; place-items: center; font: 500 13px var(--mono); color: #17121c; background: linear-gradient(150deg, #e4f060, #e3a3c6); }
 	.u { text-decoration: underline; text-underline-offset: 3px; }
+	.profile b { font-weight: 500; color: var(--ink); display: inline; }
+	.profile input[type='text'] { padding: 12px 16px; border-radius: 16px; }
+	.avatar { position: relative; width: 84px; height: 84px; flex: none; border-radius: 50%; display: grid; place-items: center; background: var(--glass2); color: var(--dim); cursor: pointer; transition: transform 0.18s var(--spring); }
+	.avatar:active { transform: scale(0.94); }
+	.avatar img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+	.cam { position: absolute; right: -2px; bottom: -2px; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: var(--solid); color: var(--on-solid); }
 </style>

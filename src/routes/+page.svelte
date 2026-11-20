@@ -35,13 +35,13 @@
 <div class="stack rise home">
 	<header class="head" style="margin-bottom:4px">
 		<div>
-			<p class="dim small">{hello}</p>
+			<p class="dim small">{hello}{cloud.name ? `, ${cloud.name}` : ''}</p>
 			<h2>{lv.name}</h2>
 		</div>
 		<div class="row" style="gap:8px">
 			<button class="streak lang" onclick={() => (picking = !picking)} aria-label="Switch language" aria-expanded={picking}>{meta.short}</button>
 			<div class="streak" class:lit={streak() > 0}><Icon name="flame" size={18} /> {streak()}</div>
-			<a class="icon-btn" class:solid={!!cloud.user} href="/account" aria-label={cloud.user ? 'Account, signed in' : 'Sign in'}><Icon name="user" size={20} /></a>
+			<a class="icon-btn" class:solid={!!cloud.user} href="/account" aria-label={cloud.user ? 'Account, signed in' : 'Sign in'}>{#if cloud.avatar}<img class="me" src={cloud.avatar} alt="" />{:else}<Icon name="user" size={20} />{/if}</a>
 		</div>
 	</header>
 
@@ -117,7 +117,7 @@
 	.streak { display: flex; align-items: center; gap: 6px; height: 44px; padding: 0 16px; border-radius: 999px; border: 1px solid var(--line); background: var(--glass); color: var(--dim); font-weight: 500; }
 	@media (min-width: 900px) {
 		.home { display: grid; grid-template-columns: 1.15fr 1fr; gap: 18px; align-items: start; }
-		.home > header, .home > .langs, .home > .week, .home > .heat { grid-column: 1 / -1; }
+		.home > header, .home > .langs, .home > .week { grid-column: 1 / -1; }
 		.home > .week { justify-content: space-between; margin-bottom: 6px; }
 		.home > .week > .day.old { display: grid; }
 		.home > .hero { grid-row: span 2; min-height: 100%; }
@@ -128,6 +128,7 @@
 	.foot a:hover { color: var(--ink); }
 	@media (min-width: 900px) { .home > .foot { grid-column: 1 / -1; } }
 	.day.old { display: none; }
+	.me { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
 	.streak.lang { font: 500 13px var(--mono); cursor: pointer; color: var(--ink); padding: 0 14px; }
 	.langs .item { width: 100%; color: var(--ink); font: inherit; text-align: left; cursor: pointer; }
 	.langs .dot { font: 500 12px var(--mono); }

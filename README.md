@@ -30,7 +30,7 @@
 | **Speaking** | Say a sentence, see which words were understood. Voice mode in the chat. |
 | **Chat** | Bia, a mineira from BH, replies in spoken Portuguese and corrects each message. |
 | **Roadmap** | 14 checkpoints from A1.1 to C2.2. Milestones, then a test, then a badge. B and C tests add listening, speaking and graded writing. |
-| **Accounts** | Google, GitHub or email. Progress syncs across devices. Works signed out too. |
+| **Accounts** | Google, GitHub or email. Progress syncs across devices. Profile with name and picture. Works signed out too. |
 | **Offline** | Lessons, quiz, drill and word bank work with no connection. |
 | **Settings** | Light and dark themes, seven voices, quiz length and content, daily goal, daily push reminders, and your own OpenRouter key for a stronger model. |
 | **Progress** | Your level, a forecast date for the next one, and a map of minutes studied per day. |

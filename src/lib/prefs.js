@@ -15,6 +15,9 @@ export const DEFAULTS = {
 	quizDrills: true, // grammar drills in the daily quiz
 	goalMin: 15, // minutes of study that fill a day ring
 	notifyAt: '19:00',
+	name: '', // your display name
+	avatar: '', // your picture, a small image kept on the device (and in your account when signed in)
+	avatarAt: 0, // which version of the picture this is, to know when another device changed it
 	model: '' // the model to use with your own key
 };
 

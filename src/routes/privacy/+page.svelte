@@ -20,7 +20,7 @@
 
 	<section class="card stack">
 		<h3>With an account</h3>
-		<p class="dim">We store your email address (or your Google or GitHub sign-in), your progress in each language, and any photos of notes you choose to save. This is kept in a Supabase database. Only you can read your rows and photos.</p>
+		<p class="dim">We store your email address (or your Google or GitHub sign-in), the name and picture you set on your profile, your progress in each language, and any photos of notes you choose to save. This is kept in a Supabase database. Only you can read your rows and photos.</p>
 	</section>
 
 	<section class="card stack">
