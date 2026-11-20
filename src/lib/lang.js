@@ -4,7 +4,8 @@ import { UI } from './langs/kit.js';
 // Each language is a pack, loaded on demand. Progress is kept separately per language.
 const packs = {
 	pt: () => import('./langs/pt.js'),
-	zh: () => import('./langs/zh.js')
+	zh: () => import('./langs/zh.js'),
+	ja: () => import('./langs/ja.js')
 };
 export const AVAILABLE = Object.keys(packs).map((code) => ({ code, ...LANGS[code] }));
 
