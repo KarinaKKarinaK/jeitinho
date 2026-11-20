@@ -25,6 +25,7 @@
 		spark: 'M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8zM19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8z',
 		lock: 'M7 11V8a5 5 0 0 1 10 0v3M6 11h12v9H6z',
 		page: 'M6 3h9l4 4v14H6zM14 3v5h5M9 12h7M9 16h7',
+		flag: 'M6 21V4M6 4h11l-2 4 2 4H6',
 		send: 'M4 12 20 4l-6 16-3-7z'
 	};
 	let { name, size = 22, fill = false } = $props();

@@ -201,6 +201,24 @@ test('chapters open one at a time, by passing the quiz of the one before', () =>
 	assert.deepEqual(firstStage, [...firstStage].sort((a, b) => a - b));
 });
 
+test('active time: seconds add up to minutes, idle time does not count', async () => {
+	const { step } = await import('./active.js');
+	let carry = null, total = 0;
+	const run = (n, active, day = 'd1') => { for (let i = 0; i < n; i++) { const r = step(carry, { day, active }); carry = r.carry; total += r.minutes; } };
+	run(11, true); // 55 seconds
+	assert.equal(total, 0);
+	run(1, true); // 60
+	assert.equal(total, 1);
+	run(100, false); // idle or in the background
+	assert.equal(total, 1, 'idle time adds nothing');
+	run(30, true); // 150 more seconds
+	assert.equal(total, 3);
+	assert.equal(carry.secs, 30, 'the remainder is carried');
+	run(6, true, 'd2'); // next day: the remainder is not carried over
+	assert.deepEqual(carry, { day: 'd2', secs: 30 });
+	assert.equal(total, 3);
+});
+
 test('sync decision after sign-in', () => {
 	const me = 'u1';
 	assert.equal(decide({ uid: me, localUid: null, localRev: 5, remote: false, remoteRev: 0 }), 'push', 'first sign-in uploads local progress');

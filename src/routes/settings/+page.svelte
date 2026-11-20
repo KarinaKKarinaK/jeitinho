@@ -39,9 +39,12 @@
 	let armed = $state(false);
 	const canPush = typeof Notification !== 'undefined' && 'serviceWorker' in navigator && 'PushManager' in window;
 	const wait = retakeAt(S);
-	const sample = pack.seed.find((w) => w.ex)?.ex || pack.seed[0].pt;
+	// one short sample sentence per language; every voice's copy is fetched when this page opens,
+	// so tapping a voice plays from the browser's cache instead of waiting for the voice service
+	const sample = pack.seed.filter((w) => w.ex && w.ex.length <= 40).sort((a, b) => a.ex.length - b.ex.length)[0]?.ex || pack.seed[0].pt;
 
 	onMount(async () => {
+		if (cloud.tts || !cloud.ready) for (const [id] of VOICES) if (id !== 'device') fetch(`/api/tts?l=${lang}&v=${id}&t=${encodeURIComponent(sample.trim())}`).catch(() => {});
 		await unlock();
 		showTail();
 		if (canPush) pushOn = !!(await (await navigator.serviceWorker.getRegistration())?.pushManager.getSubscription());

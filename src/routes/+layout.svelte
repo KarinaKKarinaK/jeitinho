@@ -5,6 +5,7 @@
 	import { S, persist } from '../lib/store.svelte.js';
 	import { applyTheme, unlock } from '../lib/prefs.js';
 	import { today } from '../lib/fx.js';
+	import { track } from '../lib/active.js';
 	import { init } from '../lib/cloud.svelte.js';
 	import Icon from '../lib/Icon.svelte';
 
@@ -14,19 +15,17 @@
 	applyTheme();
 	unlock();
 
-	// Active minutes: a minute counts when the app is on screen and you touched it in the last minute.
-	onMount(() => {
-		let last = Date.now();
-		const touch = () => (last = Date.now());
-		for (const ev of ['pointerdown', 'keydown', 'scroll']) addEventListener(ev, touch, { passive: true });
-		const timer = setInterval(() => {
-			if (document.hidden || Date.now() - last > 60000) return;
-			const d = today();
-			S.mins[d] = (S.mins[d] || 0) + 1;
-			for (const k of Object.keys(S.mins).sort().slice(0, -400)) delete S.mins[k]; // keep about a year
-		}, 60000);
-		return () => clearInterval(timer);
-	});
+	// Active minutes: see src/lib/active.js for what counts. Minutes go to the language you are studying.
+	onMount(() =>
+		track({
+			key: 'jeitinho:active',
+			today,
+			credit(day, minutes) {
+				S.mins[day] = (S.mins[day] || 0) + minutes;
+				for (const k of Object.keys(S.mins).sort().slice(0, -400)) delete S.mins[k]; // keep about a year
+			}
+		})
+	);
 
 	const tabs = [['/', 'home', 'Home'], ['/learn', 'book', 'Learn'], ['/read', 'page', 'Reading'], ['/add', 'plus', 'Add material'], ['/bank', 'layers', 'Word bank'], ['/chat', 'chat', 'Chat'], ['/settings', 'gear', 'Settings']];
 	const path = $derived(page.url.pathname.replace(/\/$/, '') || '/');

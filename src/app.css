@@ -42,38 +42,38 @@
 html { background: var(--bg); color-scheme: dark; }
 :root[data-theme='light'] {
 	color-scheme: light;
-	--bg: #f3f7f7;
-	--ink: #1b1520;
-	--dim: rgba(27, 21, 32, 0.66);
-	--faint: rgba(27, 21, 32, 0.42);
-	--glass: rgba(27, 21, 32, 0.045);
-	--glass2: rgba(27, 21, 32, 0.09);
-	--line: rgba(27, 21, 32, 0.08);
-	--rose: #0d8f84;
-	--mauve: #2f6fb0;
-	--amber: #b5611a;
-	--lime: #f2a33a;
-	--ok: #2c8a2c;
-	--bad: #c93a3a;
-	--solid: #1b1520;
-	--on-solid: #fff;
-	--card-a: rgba(255, 255, 255, 0.95);
-	--card-b: rgba(255, 255, 255, 0.62);
+	--bg: #f6f1e7; /* off-white with a little beige */
+	--ink: #20282a;
+	--dim: rgba(32, 40, 42, 0.68);
+	--faint: rgba(32, 40, 42, 0.42);
+	--glass: rgba(60, 50, 30, 0.05);
+	--glass2: rgba(60, 50, 30, 0.1);
+	--line: rgba(60, 50, 30, 0.1);
+	--rose: #0e8478; /* teal: the main accent */
+	--mauve: #7a55a8; /* plum */
+	--amber: #c2661a; /* burnt orange */
+	--lime: #e58a2e; /* orange, for the first lap of the day rings */
+	--ok: #2a8440;
+	--bad: #c2413b;
+	--solid: #12514b; /* deep teal for primary buttons and the active tab */
+	--on-solid: #fffaf1;
+	--card-a: rgba(255, 253, 248, 0.96);
+	--card-b: rgba(255, 250, 240, 0.7);
 	--hi: rgba(255, 255, 255, 0.9);
-	--field: rgba(255, 255, 255, 0.8);
-	--nav: rgba(255, 255, 255, 0.8);
-	--shadow: rgba(80, 40, 90, 0.26);
-	--ring-bg: #e6eeee;
-	--ok-bg: #e7f5e1;
-	--bad-bg: #fdeaea;
-	--dot: rgba(27, 21, 32, 0.1);
-	--cloud: 0.8;
-	--grad: linear-gradient(160deg, #2bb5a6, #1f6fa8);
-	--hero: radial-gradient(90% 80% at 75% 10%, #9fe6d8 0%, transparent 60%), linear-gradient(165deg, #2bb5a6 0%, #1f8fa0 48%, #1b4f86 100%);
-	--glow: rgba(31, 143, 160, 0.5);
-	--c1: rgba(43, 181, 166, 0.3);
-	--c2: rgba(47, 111, 176, 0.22);
-	--c3: rgba(242, 163, 58, 0.16);
+	--field: rgba(255, 253, 248, 0.85);
+	--nav: rgba(255, 251, 243, 0.84);
+	--shadow: rgba(96, 72, 40, 0.24);
+	--ring-bg: #ece4d5;
+	--ok-bg: #e6f3e1;
+	--bad-bg: #fbe9e6;
+	--dot: rgba(60, 50, 30, 0.11);
+	--cloud: 0.9;
+	--grad: linear-gradient(160deg, #2aa596, #12665f);
+	--hero: radial-gradient(90% 80% at 78% 8%, #bfe9dc 0%, transparent 58%), linear-gradient(165deg, #2fae9c 0%, #17877d 46%, #12514b 100%);
+	--glow: rgba(18, 102, 95, 0.42);
+	--c1: rgba(232, 146, 62, 0.2);
+	--c2: rgba(43, 165, 150, 0.2);
+	--c3: rgba(122, 85, 168, 0.12);
 }
 body {
 	margin: 0;
@@ -198,7 +198,7 @@ textarea { resize: vertical; min-height: 96px; }
 /* desktop: side rail on the left, wider canvas. Home and the lesson list use two columns; reading pages stay narrow. */
 @media (min-width: 900px) {
 	.app:not(.immersive) { --w: 700px; max-width: calc(var(--w) + 300px); padding: 44px 36px 64px 264px; }
-	.app:not(.immersive):has(.home, .cols) { --w: 1020px; }
+	.app:not(.immersive):has(.home, .cols, .board) { --w: 1020px; }
 	.app.immersive { max-width: 680px; padding-top: 44px; padding-bottom: 36px; }
 	.cols { display: grid; grid-template-columns: 1fr 1fr; gap: 30px 26px; align-items: start; }
 	h1 { font-size: 40px; }
