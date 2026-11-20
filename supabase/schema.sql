@@ -41,3 +41,17 @@ alter table public.push_subs enable row level security;
 --   create extension if not exists pg_cron; create extension if not exists pg_net;
 --   select cron.schedule('jeitinho-reminders', '0 * * * *',
 --     $$ select net.http_post(url := 'https://YOUR-URL/api/push', headers := '{"x-cron":"YOUR_CRON_SECRET"}'::jsonb) $$);
+
+-- Questions that learners flagged as wrong. No user id, no personal data. No policies: only the server writes,
+-- and you read them in the Supabase table view.
+create table if not exists public.reports (
+	id bigint generated always as identity primary key,
+	lang text not null,
+	source text not null default '',
+	prompt text not null,
+	answer text not null default '',
+	given text not null default '',
+	note text not null default '',
+	created_at timestamptz not null default now()
+);
+alter table public.reports enable row level security;

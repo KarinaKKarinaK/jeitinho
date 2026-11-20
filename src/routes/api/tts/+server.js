@@ -1,6 +1,7 @@
 import { error } from '@sveltejs/kit';
 import * as env from '$app/env/private';
 import { LANGS } from '../../../lib/langs/meta.js';
+import { limited } from '../../../lib/server/limit.js';
 
 export const prerender = false;
 
@@ -13,7 +14,9 @@ const VOICES = {
 // Natural voice from ElevenLabs. The free plan has a monthly character quota and no card on file,
 // so when it runs out this returns an error and the app falls back to the phone's own voice.
 // Each phrase is cached at the CDN for a year, so a phrase is only paid for (in free credits) once.
-export async function GET({ url, request }) {
+export async function GET({ url, request, getClientAddress }) {
+	// cached phrases never reach this function, so this only counts new phrases: 40 per visitor in 5 minutes
+	if (limited('tts', getClientAddress(), 40)) error(429, 'Too many voice requests. Try again in a few minutes.');
 	// browsers say where a request comes from: refuse other sites embedding this to drain the free quota
 	if (['cross-site', 'same-site'].includes(request.headers.get('sec-fetch-site'))) error(403, 'Forbidden');
 	if (!env.ELEVENLABS_API_KEY) error(503, 'Voice is not set up.');

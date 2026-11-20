@@ -24,6 +24,12 @@
 		%sveltekit.head%
 	</head>
 	<body data-sveltekit-preload-data="tap">
+		<div id="splash" style="position:fixed;inset:0;display:grid;place-content:center;justify-items:center;gap:14px;background:#0a0b12;color:#f6f0f4;font:400 16px/1.4 Outfit,system-ui,sans-serif;text-align:center;padding:24px">
+			<img src="/icon.svg" alt="" width="72" height="72" style="border-radius:20px" />
+			<h1 style="margin:0;font-weight:400;font-size:30px;letter-spacing:-0.02em">jeitinho</h1>
+			<p style="margin:0;opacity:0.65;max-width:300px">Find your way into a new language. Brazilian Portuguese, Mandarin, Polish, Japanese and Spanish, from zero to fluent.</p>
+			<noscript><p style="margin:0;opacity:0.65">This app needs JavaScript to run.</p></noscript>
+		</div>
 		<div style="display: contents">%sveltekit.body%</div>
 	</body>
 </html>

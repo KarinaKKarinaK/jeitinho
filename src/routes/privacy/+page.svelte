@@ -8,7 +8,7 @@
 
 <article class="stack rise">
 	<div>
-		<p class="eyebrow">Privacy</p>
+		<p class="eyebrow">Privacy and terms</p>
 		<h1>What this app<br />knows about you</h1>
 		<p class="dim small" style="margin-top:10px">Short version: no ads, no tracking, no selling data. Last updated 20 November 2026.</p>
 	</div>
@@ -49,6 +49,27 @@
 	<section class="card stack">
 		<h3>Deleting your data</h3>
 		<p class="dim">On this device: clear this site's data in your browser. In your account: open <a href="/account">Account</a> and choose "Delete my cloud data". To remove the account itself, open an issue on the project page and it will be deleted.</p>
+	</section>
+
+	<section class="card stack">
+		<h3>Terms, in plain words</h3>
+		<ul class="dim">
+			<li>The app is free and offered as it is, with no guarantee. It can be slow, wrong or offline.</li>
+			<li>The lessons, word lists and reading texts were written with AI help and are not all checked by native speakers. If something looks wrong, use "Report it" under the question.</li>
+			<li>Badges and levels are the app's own estimate, not an official certificate.</li>
+			<li>Only add material you are allowed to use. Do not upload other people's private information.</li>
+			<li>You need to be 13 or older, or have a parent's permission, to make an account.</li>
+		</ul>
+	</section>
+
+	<section class="card stack">
+		<h3>Credits</h3>
+		<p class="dim">Natural voices by <a href="https://elevenlabs.io" target="_blank" rel="noopener noreferrer">ElevenLabs</a>. Speech recognition by Deepgram. AI models through OpenRouter. Song lyrics come from <a href="https://lrclib.net" target="_blank" rel="noopener noreferrer">LRCLIB</a> and belong to their writers and publishers; they are shown for your own study only.</p>
+	</section>
+
+	<section class="card stack">
+		<h3>Contact</h3>
+		<p class="dim">Questions, corrections, or a request to delete your account: <a href="https://github.com/KarinaKKarinaK/jeitinho/issues" target="_blank" rel="noopener noreferrer">open an issue on GitHub</a>.</p>
 	</section>
 
 	<p class="dim small">jeitinho is a free, open source project, hosted on Vercel. The code is public, so you can check all of the above: <a href="https://github.com/KarinaKKarinaK/jeitinho" target="_blank" rel="noopener noreferrer">source on GitHub</a>.</p>

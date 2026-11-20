@@ -110,6 +110,15 @@ const explain = (status, message, own) =>
 	: '';
 
 export async function ai(op, body, pass = '') {
+	// the first time: say where the text goes
+	try {
+		if (!P.key && !localStorage.getItem('jeitinho:ai-told')) {
+			localStorage.setItem('jeitinho:ai-told', '1');
+			notice('Heads up: AI features send your text to free AI models, which may keep what they receive. Do not send anything private.', 'busy');
+		}
+	} catch {
+		/* no storage: skip the note */
+	}
 	let r;
 	try {
 		r = await fetch('/api/ai', {

@@ -3,6 +3,7 @@ import * as env from '$app/env/private';
 import { safeFetch } from '../../../lib/server/safefetch.js';
 import { cleanSteps } from '../../../lib/quiz.js';
 import { LANGS, POS } from '../../../lib/langs/meta.js';
+import { limited } from '../../../lib/server/limit.js';
 import { AsyncLocalStorage } from 'node:async_hooks';
 
 // A user can bring their own OpenRouter key and model (Settings). It rides along with the request,
@@ -61,12 +62,23 @@ async function llm(messages, max = 2500, solo = false) {
 		}
 		return await Promise.any(list.map(ask));
 	} catch {
+		// The model names above go stale: free models are retired often. If none of them answered, let OpenRouter
+		// pick any free model that is still alive, so the feature keeps working until the list is updated.
+		if (!mine && !list.includes('openrouter/free')) {
+			try {
+				const r = await send('openrouter/free', { effort: 'low', exclude: true });
+				if (r.ok) return JSON.parse(((await r.json()).choices?.[0]?.message?.content || '').match(/\{[\s\S]*\}/)[0]);
+				status.push(r.status);
+			} catch {
+				/* fall through to the message below */
+			}
+		}
 		if (status.includes(401)) error(502, mine ? 'OpenRouter rejected your key. Check it in Settings.' : 'OpenRouter rejected the key. Check OPENROUTER_API_KEY.');
 		if (mine && status.some((x) => x === 402 || x === 404 || x === 400)) error(502, status.includes(402) ? 'Your OpenRouter account has no credit for this model.' : 'OpenRouter does not know that model. Check the model name in Settings.');
 		const limited = status.length && status.every((x) => x === 429);
 		error(limited ? 429 : 502, limited ? 'The free models are busy right now. Try again in a minute.' : 'The models did not give a usable answer in time. Try again.');
 	} finally {
-		stop.abort(); // the race is over: drop the slower requests
+		stop.abort(); // drop whatever is still running
 	}
 }
 
@@ -313,26 +325,13 @@ async function gradeOp(b) {
 	return { score, ok: score >= 7, fix: s(out.fix, 1200), note: s(out.note, 400) };
 }
 
-// A soft brake on the shared free quota: at most 40 AI requests per visitor in 5 minutes.
-// ponytail: counted in memory per server instance, so it resets when the instance is recycled and is not
-// shared between instances. Enough to stop one runaway tab or a simple script; a real per-user limit
-// needs a table or a rate-limit service.
-const hits = new Map();
-function limited(ip, now = Date.now()) {
-	const recent = (hits.get(ip) || []).filter((t) => now - t < 300000);
-	recent.push(now);
-	hits.set(ip, recent);
-	if (hits.size > 5000) hits.clear();
-	return recent.length > 40;
-}
-
 export async function POST({ request, getClientAddress }) {
 	// Optional lock so strangers cannot burn your free quota: set APP_PASSCODE in Vercel and type it in the app settings.
 	const key = request.headers.get('x-user-key') || '';
 	const model = request.headers.get('x-user-model') || '';
 	const mine = key ? { key, model } : null;
 	if (mine && (!/^sk-or-[\w-]{20,200}$/.test(key) || !/^[\w.\-:/]{3,100}$/.test(model))) error(400, 'Your own key or model name does not look right. Check Settings.');
-	if (!mine && limited(getClientAddress())) error(429, 'That is a lot of requests in a short time. Take a short break and try again.');
+	if (!mine && limited('ai', getClientAddress(), 40)) error(429, 'That is a lot of requests in a short time. Take a short break and try again.');
 	// the passcode guards the shared free quota; with your own key you are not using it
 	if (!mine && env.APP_PASSCODE && request.headers.get('x-pass') !== env.APP_PASSCODE) error(401, 'Wrong passcode. Set it in Settings.');
 	const b = await request.json().catch(() => error(400, 'Bad request'));

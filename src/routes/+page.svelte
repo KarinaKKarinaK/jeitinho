@@ -138,7 +138,7 @@
 	</a>
 
 
-	<p class="foot"><a href="/privacy">Privacy</a><span>·</span><a href="https://github.com/KarinaKKarinaK/jeitinho" target="_blank" rel="noopener noreferrer">Open source</a></p>
+	<p class="foot"><a href="/privacy">Privacy and terms</a><span>·</span><a href="https://github.com/KarinaKKarinaK/jeitinho" target="_blank" rel="noopener noreferrer">Open source</a></p>
 </div>
 
 <style>

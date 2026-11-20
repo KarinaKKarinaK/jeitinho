@@ -14,6 +14,8 @@ Mobile-first web app for learning Brazilian Portuguese (with Belo Horizonte dial
   - User-supplied URLs go through `safeFetch` (blocks private addresses).
   - No em dashes or emojis in UI copy. Only runtime dependency is `@supabase/supabase-js`, loaded lazily. Do not add more.
   - Device settings (theme, voice, quiz options, own API key) live in `src/lib/prefs.js`, in the browser only. A user's own key must never be stored or logged on the server.
+  - Every endpoint that spends a shared free quota goes through `limited()` in `src/lib/server/limit.js`.
+  - `.github/workflows`: tests and build on every push, and an uptime check every 30 minutes.
   - New state fields go in `blank()` in the store so old saves and synced rows still load.
   - Never expose the Supabase service role key; the browser only gets the anon key.
   - Use relative imports, not `$lib`.

@@ -2,7 +2,7 @@
 	--bg: #0a0b12;
 	--ink: #f6f0f4;
 	--dim: rgba(246, 240, 244, 0.6);
-	--faint: rgba(246, 240, 244, 0.34);
+	--faint: rgba(246, 240, 244, 0.42);
 	--glass: rgba(255, 255, 255, 0.055);
 	--glass2: rgba(255, 255, 255, 0.1);
 	--line: rgba(255, 255, 255, 0.045);
@@ -45,15 +45,15 @@ html { background: var(--bg); color-scheme: dark; }
 	--bg: #f6f1e7; /* off-white with a little beige */
 	--ink: #20282a;
 	--dim: rgba(32, 40, 42, 0.68);
-	--faint: rgba(32, 40, 42, 0.42);
+	--faint: rgba(32, 40, 42, 0.58);
 	--glass: rgba(60, 50, 30, 0.05);
 	--glass2: rgba(60, 50, 30, 0.1);
 	--line: rgba(60, 50, 30, 0.1);
-	--rose: #5f70cf; /* the same periwinkle as the dark theme, deepened enough to read on cream */
+	--rose: #4a59ba; /* the same periwinkle as the dark theme, deepened enough to read on cream */
 	--mauve: #8a6fc2; /* soft violet */
-	--amber: #c2661a; /* burnt orange */
+	--amber: #a3510f; /* burnt orange */
 	--lime: #e58a2e; /* orange, for the first lap of the day rings */
-	--ok: #2a8440;
+	--ok: #20713a;
 	--bad: #c2413b;
 	--solid: #5d6bc8; /* a soft indigo for primary buttons and the active tab */
 	--on-solid: #fffaf1;

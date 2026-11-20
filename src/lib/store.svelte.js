@@ -1,4 +1,4 @@
-import { today, DAY } from './fx.js';
+import { today, DAY, notice } from './fx.js';
 import { SEED } from './content.js';
 import { wordKey } from './quiz.js';
 import { lang, pack } from './lang.js';
@@ -63,20 +63,47 @@ export const rev = () => {
 };
 export const watch = (fn) => (onChange = fn);
 
+let warned = false;
 export function persist() {
 	const s = JSON.stringify(S);
 	if (s === last) return;
 	last = s;
-	try {
-		localStorage.setItem(KEY, s);
+	const write = (text) => {
+		localStorage.setItem(KEY, text);
 		localStorage.setItem(PASS, S.pass || '');
 		localStorage.setItem(REV, applying ?? Date.now());
+	};
+	try {
+		write(s);
 	} catch {
-		/* storage full or blocked */
+		// Storage is full or blocked. Looked-up word meanings are only a cache: drop them and try once more.
+		try {
+			S.gloss = {};
+			last = JSON.stringify(S);
+			write(last);
+		} catch {
+			if (!warned) notice('Your progress could not be saved on this device: the browser storage is full or blocked. Sign in to keep it in your account, or free up space.', 'offline');
+			warned = true;
+		}
 	}
 	if (applying === null) onChange?.();
 	applying = null;
 }
+
+// Two tabs of the app share one copy: when another tab saves, this one takes that state instead of
+// later overwriting it with its own older one.
+if (typeof window !== 'undefined')
+	window.addEventListener('storage', (e) => {
+		if (e.key !== KEY || !e.newValue || e.newValue === last) return;
+		try {
+			const other = JSON.parse(e.newValue);
+			applying = rev(); // adopt, do not echo
+			last = e.newValue;
+			Object.assign(S, blank(), other);
+		} catch {
+			/* not our data */
+		}
+	});
 
 // Take the server copy without echoing it straight back.
 export function replace(data, r) {

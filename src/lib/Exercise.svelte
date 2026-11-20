@@ -6,7 +6,7 @@
 	import { speak, ding, ai, record, hear } from './fx.js';
 	import { check, sayScore } from './quiz.js';
 	import { S } from './store.svelte.js';
-	import { pack, meta, t } from './lang.js';
+	import { pack, meta, t, lang } from './lang.js';
 	import { P } from './prefs.js';
 
 	let { steps, retry = false, back = '/', onanswer = () => {}, onfinish = () => 0 } = $props();
@@ -16,6 +16,12 @@
 	let total = $state(init.filter((s) => s.kind !== 'info').length);
 	let busy = $state(false);
 	let stop = $state(null); // set while the microphone is recording
+	let reported = $state(false);
+	// flag this question as wrong: sends the question and the expected answer, nothing about you
+	function report() {
+		reported = true;
+		fetch('/api/report', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ lang, source: location.pathname + location.search, prompt: q.prompt, answer: String(q.answer || ''), given: val || picked || '' }) }).catch(() => {});
+	}
 
 	let queue = $state(init);
 	let i = $state(0);
@@ -89,6 +95,7 @@
 		res = null;
 		val = '';
 		picked = null;
+		reported = false;
 		if (i + 1 >= queue.length) {
 			const r = onfinish({ right, total }) ?? 0;
 			if (r === false) return; // the parent takes over (placement test moves to the next band)
@@ -178,6 +185,7 @@
 				</div>
 				{#if !res.ok || (q.kind === 'write' && !res.skipped)}<p class="ans">{q.answer}</p>{/if}
 				{#if res.note}<p class="small">{res.note}</p>{/if}
+				{#if !res.skipped}<button class="flag" disabled={reported} onclick={report}>{reported ? 'Reported, thank you' : 'Something wrong with this question? Report it'}</button>{/if}
 				{#if q.explain}{#if q.html}<p class="ex">{@html q.explain}</p>{:else}<p class="ex">{q.explain}</p>{/if}{/if}
 			</div>
 		{/if}
@@ -226,6 +234,8 @@
 	.marks { font-size: 22px; line-height: 1.5; color: var(--ok); }
 	.marks .miss { color: var(--bad); text-decoration: underline wavy; text-underline-offset: 5px; }
 	textarea { font-size: 18px; }
+	.flag { justify-self: start; background: none; border: 0; padding: 0; color: var(--dim); font: 400 12px var(--font); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+	.flag:disabled { text-decoration: none; cursor: default; }
 	.fin { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; text-align: center; }
 	.ring { width: 170px; height: 170px; border-radius: 50%; display: grid; place-content: center; background: radial-gradient(closest-side, var(--bg) 82%, transparent 84%), conic-gradient(var(--lime), var(--rose), var(--mauve), var(--lime)); animation: pop 0.7s cubic-bezier(0.3, 1.6, 0.5, 1); box-shadow: 0 0 80px -10px var(--glow); }
 	.ring span { font-size: 64px; font-weight: 300; line-height: 1; }

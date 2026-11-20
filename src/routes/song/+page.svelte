@@ -69,6 +69,7 @@
 					</div>
 				{/each}
 			</div>
+			<p class="dim small">Lyrics from LRCLIB. They belong to their writers and publishers and are shown here for your own study.</p>
 			<button class="btn primary wide" onclick={() => (tab = 'words')}>Next: pick your words</button>
 		{:else if tab === 'words'}
 			{#if suggested.length}

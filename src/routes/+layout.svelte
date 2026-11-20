@@ -6,13 +6,25 @@
 	import { applyTheme, unlock } from '../lib/prefs.js';
 	import { today } from '../lib/fx.js';
 	import { track } from '../lib/active.js';
+	import { lang } from '../lib/lang.js';
 	import { init } from '../lib/cloud.svelte.js';
 	import Icon from '../lib/Icon.svelte';
 
 	let { children } = $props();
 	$effect(persist);
-	init();
 	applyTheme();
+	onMount(() => {
+		document.getElementById('splash')?.remove(); // the instant placeholder from app.html
+		init(); // sign-in and sync start after the first screen is drawn, not before
+		// tell the server about crashes (message and place only, nothing about the person), at most 5 a visit
+		let sent = 0;
+		const send = (message, stack) => sent++ < 5 && navigator.sendBeacon?.('/api/report', new Blob([JSON.stringify({ kind: 'error', lang, path: location.pathname, message: String(message).slice(0, 300), stack: String(stack || '').slice(0, 800) })], { type: 'application/json' }));
+		const onErr = (e) => send(e.message, e.error?.stack);
+		const onRej = (e) => send(e.reason?.message || e.reason, e.reason?.stack);
+		addEventListener('error', onErr);
+		addEventListener('unhandledrejection', onRej);
+		return () => (removeEventListener('error', onErr), removeEventListener('unhandledrejection', onRej));
+	});
 	unlock();
 
 	// Active minutes: see src/lib/active.js for what counts. Minutes go to the language you are studying.

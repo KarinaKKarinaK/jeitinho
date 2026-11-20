@@ -1,0 +1,16 @@
+# Checks the live site every 30 minutes. If a check fails, GitHub emails the repository owner.
+name: uptime
+on:
+  schedule:
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: The app loads
+        run: curl --fail --silent --show-error --max-time 20 -o /dev/null https://jeitinho-zeta.vercel.app/
+      - name: The server answers and knows its services
+        run: |
+          body=$(curl --fail --silent --show-error --max-time 20 https://jeitinho-zeta.vercel.app/api/config)
+          echo "$body" | grep -q '"ai":true' || { echo "AI is not configured: $body"; exit 1; }
