@@ -211,7 +211,7 @@
 	.opt.on { border-color: var(--ink); background: var(--glass2); }
 	.opt.good { border-color: var(--ok); background: rgba(166, 232, 143, 0.14); }
 	.opt.bad { border-color: var(--bad); background: rgba(255, 143, 143, 0.12); }
-	.play { width: 108px; height: 108px; border-radius: 50%; border: 0; cursor: pointer; color: #fff; background: var(--grad); box-shadow: 0 20px 40px -18px var(--glow); transition: transform 0.12s; }
+	.play { width: 108px; height: 108px; border-radius: 50%; border: 0; cursor: pointer; color: var(--hero-ink); background: var(--grad); box-shadow: 0 20px 40px -18px var(--glow); transition: transform 0.12s; }
 	.play:active { transform: scale(0.93); }
 	footer { position: sticky; bottom: calc(env(safe-area-inset-bottom) + 12px); display: grid; gap: 12px; margin-top: 24px; }
 	.fb { padding: 16px 18px; border-radius: 24px; border: 1px solid rgba(255, 143, 143, 0.5); background: var(--bad-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); display: grid; gap: 6px; }

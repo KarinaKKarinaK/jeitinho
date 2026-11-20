@@ -109,7 +109,7 @@
 	.m { display: grid; gap: 4px; max-width: 86%; }
 	.m.user { align-self: flex-end; justify-items: end; }
 	.bubble { padding: 12px 16px; border-radius: 22px 22px 22px 6px; background: var(--glass2); border: 1px solid var(--line); display: grid; gap: 6px; }
-	.user .bubble { border-radius: 22px 22px 6px 22px; background: var(--grad); border: 0; color: #fff; }
+	.user .bubble { border-radius: 22px 22px 6px 22px; background: var(--grad); border: 0; color: var(--hero-ink); }
 	.tools button { background: none; border: 0; color: var(--dim); font: 500 11px var(--mono); cursor: pointer; padding: 4px 6px 0 0; display: flex; }
 	.fix { font-size: 14px; color: var(--ok); display: flex; gap: 6px; align-items: baseline; text-align: right; }
 	.tip { font-size: 13px; color: var(--dim); text-align: right; }

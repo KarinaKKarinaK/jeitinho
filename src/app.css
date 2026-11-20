@@ -21,6 +21,7 @@
 	--bad-bg: rgba(48, 20, 26, 0.92);
 	--dot: rgba(255, 255, 255, 0.09);
 	--cloud: 1;
+	--hero-ink: #fff; /* text on the hero card and other accent-filled shapes */
 	/* accent family: periwinkle and indigo in both themes, brighter on the dark one, softened on the light one */
 	--grad: linear-gradient(160deg, #9aabff, #4c57b5);
 	--hero: radial-gradient(90% 80% at 75% 10%, #d3d9ff 0%, transparent 60%), linear-gradient(165deg, #9aa9f7 0%, #6a76dd 48%, #2b3070 100%);
@@ -49,14 +50,15 @@ html { background: var(--bg); color-scheme: dark; }
 	--glass: rgba(60, 50, 30, 0.05);
 	--glass2: rgba(60, 50, 30, 0.1);
 	--line: rgba(60, 50, 30, 0.1);
-	--rose: #4a59ba; /* the same periwinkle as the dark theme, deepened enough to read on cream */
-	--mauve: #8a6fc2; /* soft violet */
+	--rose: #a14f27; /* terracotta: accent text and links */
+	--mauve: #b57a52; /* clay */
 	--amber: #a3510f; /* burnt orange */
-	--lime: #e58a2e; /* orange, for the first lap of the day rings */
+	--lime: #7fa36b; /* sage, for the first lap of the day rings */
 	--ok: #20713a;
 	--bad: #c2413b;
-	--solid: #5d6bc8; /* a soft indigo for primary buttons and the active tab */
-	--on-solid: #fffaf1;
+	--solid: #f3d2b6; /* pale apricot for primary buttons and the active tab: light, with dark text on it */
+	--on-solid: #3a2a22;
+	--hero-ink: #3a2a22;
 	--card-a: rgba(255, 253, 248, 0.96);
 	--card-b: rgba(255, 250, 240, 0.7);
 	--hi: rgba(255, 255, 255, 0.9);
@@ -68,12 +70,12 @@ html { background: var(--bg); color-scheme: dark; }
 	--bad-bg: #fbe9e6;
 	--dot: rgba(60, 50, 30, 0.11);
 	--cloud: 0.9;
-	--grad: linear-gradient(160deg, #a3aff2, #6975d2);
-	--hero: radial-gradient(90% 80% at 78% 8%, #e9ecff 0%, transparent 58%), linear-gradient(165deg, #b3bdf6 0%, #8c98e8 46%, #6c78d4 100%);
-	--glow: rgba(100, 112, 207, 0.32);
-	--c1: rgba(232, 146, 62, 0.18);
-	--c2: rgba(128, 142, 235, 0.2);
-	--c3: rgba(138, 111, 194, 0.12);
+	--grad: linear-gradient(160deg, #f8dcc6, #edbb9b);
+	--hero: radial-gradient(90% 80% at 78% 8%, #fff3e6 0%, transparent 58%), linear-gradient(165deg, #f9e0cb 0%, #f3cba9 46%, #eab491 100%);
+	--glow: rgba(214, 150, 110, 0.3);
+	--c1: rgba(240, 180, 140, 0.24);
+	--c2: rgba(143, 174, 122, 0.16);
+	--c3: rgba(214, 150, 110, 0.12);
 }
 body {
 	margin: 0;
@@ -124,18 +126,18 @@ a { color: inherit; text-decoration: none; }
 	backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px);
 }
 .hero {
-	position: relative; overflow: hidden; border: 0; color: #fff; padding: 24px; min-height: 210px;
+	position: relative; overflow: hidden; border: 0; color: var(--hero-ink); padding: 24px; min-height: 210px;
 	display: flex; flex-direction: column; justify-content: flex-end; gap: 8px;
 	background: var(--hero);
 	box-shadow: 0 30px 60px -30px var(--glow);
 }
 .hero::after {
 	content: ''; position: absolute; inset: 0; pointer-events: none;
-	background-image: radial-gradient(rgba(255, 255, 255, 0.5) 1px, transparent 1.5px); background-size: 9px 9px;
+	background-image: radial-gradient(color-mix(in srgb, var(--hero-ink) 45%, transparent) 1px, transparent 1.5px); background-size: 9px 9px;
 	mask-image: radial-gradient(70% 70% at 85% 15%, #000, transparent 70%);
 	-webkit-mask-image: radial-gradient(70% 70% at 85% 15%, #000, transparent 70%);
 }
-.hero .eyebrow { color: #fff; position: absolute; top: 22px; left: 24px; }
+.hero .eyebrow { color: var(--hero-ink); position: absolute; top: 22px; left: 24px; }
 .hero > * { position: relative; z-index: 1; }
 
 .btn {
