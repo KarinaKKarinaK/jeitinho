@@ -454,7 +454,8 @@ const SEED = [
 // fill the blank: prompt with ___, the answer, three wrong options, an English gloss
 const F = (prompt, answer, options, sub, explain) => ({ prompt, answer, options, sub, explain, speak: prompt.replace(/_+/, answer) });
 // pick the right tones for a word
-const N = (zh, en, answer, options) => ({ prompt: zh, sub: en, answer, options, speak: zh });
+// audio: the learner can play the word before choosing, so the ear does the work
+const N = (zh, en, answer, options) => ({ prompt: zh, sub: en, answer, options, speak: zh, audio: true });
 
 const DRILLS = {
 	tones: { name: 'Tones', items: [

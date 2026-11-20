@@ -138,6 +138,7 @@
 				{:else}
 					<h1 class="prompt">{q.prompt}</h1>
 					{#if q.sub}<p class="dim">{q.sub}</p>{/if}
+					{#if q.audio}<button class="btn sm" onclick={() => speak(q.speak, S.rate)}><Icon name="sound" size={18} /> {t.hear}</button>{/if}
 				{/if}
 
 				{#if q.kind === 'choice'}
