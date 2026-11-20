@@ -11,10 +11,11 @@
 		"dev": "vite dev",
 		"build": "vite build",
 		"preview": "vite preview",
-		"prepare": "svelte-kit sync || echo ''"
+		"prepare": "svelte-kit sync || echo ''",
+		"test": "node --test src/lib/logic.test.js"
 	},
 	"devDependencies": {
-		"@sveltejs/adapter-auto": "^8.0.1",
+		"@sveltejs/adapter-vercel": "^7.0.5",
 		"@sveltejs/kit": "^3.2.0",
 		"@sveltejs/vite-plugin-svelte": "^7.3.1",
 		"svelte": "^5.57.3",
