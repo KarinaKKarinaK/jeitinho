@@ -16,6 +16,7 @@ export function speak(text, rate = 0.9) {
 	if (caps.tts && navigator.onLine && text.length <= 300) {
 		globalThis.speechSynthesis?.cancel();
 		player ??= new Audio(); // one shared element: once a tap has unlocked it, iOS lets later plays through
+		player.onerror = () => (caps.tts = false); // quota used up or service down: stay on the phone voice for this session, no repeated waiting
 		player.src = '/api/tts?t=' + encodeURIComponent(text.trim());
 		player.defaultPlaybackRate = player.playbackRate = Math.max(0.6, Math.min(1.2, rate + 0.1));
 		player.play().catch(() => me === turn && local(text, rate));
