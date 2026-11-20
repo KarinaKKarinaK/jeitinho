@@ -1,7 +1,7 @@
 <script>
 	import Icon from '../../lib/Icon.svelte';
 	import { S } from '../../lib/store.svelte.js';
-	import { cloud, oauth, signIn, signUp, forgot, setPassword, signOut, pull } from '../../lib/cloud.svelte.js';
+	import { cloud, oauth, signIn, signUp, forgot, setPassword, signOut, pull, wipe } from '../../lib/cloud.svelte.js';
 
 	let mode = $state('in');
 	let email = $state('');
@@ -9,6 +9,7 @@
 	let busy = $state(false);
 	let err = $state('');
 	let msg = $state('');
+	let armed = $state(false); // deleting takes two taps
 
 	async function run(fn) {
 		busy = true;
@@ -67,6 +68,9 @@
 				<button class="btn sm" onclick={() => run(signOut)} disabled={busy}>Sign out</button>
 			</div>
 		</div>
+		<button class="link" class:danger={armed} disabled={busy} onclick={() => (armed ? run(async () => (await wipe(), (armed = false), 'Your cloud data is deleted. What is on this device stays.')) : (armed = true))}>
+			{armed ? 'Tap again to delete your progress and photos from the server. This cannot be undone.' : 'Delete my cloud data'}
+		</button>
 	{:else}
 		<p class="eyebrow">Conta</p>
 		<h1>Keep your progress</h1>
@@ -89,6 +93,8 @@
 		{#if mode === 'in'}<button class="link" onclick={reset} disabled={busy || !email}>Forgot password? Type your email above, then tap here.</button>{/if}
 	{/if}
 
+	{#if cloud.ready}<p class="dim small fine">No ads, no tracking. <a href="/privacy">How your data is handled</a></p>{/if}
+
 	{#if err}<p class="err" role="alert">{err}</p>{/if}
 	{#if msg}<p style="color:var(--ok)" role="status">{msg}</p>{/if}
 </div>
@@ -102,4 +108,7 @@
 	b { display: block; font-weight: 500; overflow-wrap: anywhere; }
 	.link { background: none; border: 0; padding: 0; color: var(--dim); font: 400 14px var(--font); text-align: left; cursor: pointer; }
 	.link:disabled { opacity: 0.5; }
+	.fine { margin-top: 6px; }
+	.fine a { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
+	.danger { color: var(--bad); }
 </style>

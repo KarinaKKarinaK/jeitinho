@@ -129,6 +129,8 @@
 			<p class="small dim">{cloud.user ? `Signed in as ${cloud.user.email}. Progress syncs to your account.` : 'Your progress lives only on this device.'} <a href="/account" style="text-decoration:underline">{cloud.user ? 'Account' : 'Sign in to save it'}</a></p>
 		</div>
 	</details>
+
+	<p class="foot"><a href="/privacy">Privacy</a><span>·</span><a href="https://github.com/KarinaKKarinaK/jeitinho" target="_blank" rel="noopener noreferrer">Open source</a></p>
 </div>
 
 <style>
@@ -140,6 +142,10 @@
 		.home > .hero { grid-row: span 2; min-height: 100%; }
 		.home > .hero h1 { font-size: 52px; }
 	}
+	.foot { display: flex; justify-content: center; gap: 10px; font: 500 11px var(--mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--faint); padding-top: 6px; }
+	.foot a { transition: color 0.2s; }
+	.foot a:hover { color: var(--ink); }
+	@media (min-width: 900px) { .home > .foot { grid-column: 1 / -1; } }
 	.streak.lang { font: 500 13px var(--mono); cursor: pointer; color: var(--ink); padding: 0 14px; }
 	.langs .item { width: 100%; color: var(--ink); font: inherit; text-align: left; cursor: pointer; }
 	.langs .dot { font: 500 12px var(--mono); }

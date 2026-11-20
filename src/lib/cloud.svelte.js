@@ -104,6 +104,18 @@ export const setPassword = async (password) => {
 	ok(await sb.auth.updateUser({ password }));
 	cloud.recovery = false;
 };
+// Deletes everything this account has on the server (progress in every language, saved photos), then signs out.
+// What is on this device stays. The sign-in itself is removed on request, since the browser is not allowed to delete users.
+export async function wipe() {
+	clearTimeout(timer);
+	const uid = cloud.user.id;
+	const { data: files } = await sb.storage.from(NOTES).list(uid, { limit: 1000 });
+	if (files?.length) await sb.storage.from(NOTES).remove(files.map((f) => `${uid}/${f.name}`));
+	ok(await sb.from('progress').delete().eq('user_id', uid));
+	S.uid = null;
+	await sb.auth.signOut();
+}
+
 export async function signOut() {
 	clearTimeout(timer);
 	await push();
