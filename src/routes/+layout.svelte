@@ -22,7 +22,7 @@
 {#if !immersive}
 	<nav aria-label="Main">
 		{#each tabs as [href, icon, label]}
-			<a {href} class:on={path === href} aria-label={label} aria-current={path === href ? 'page' : undefined}><Icon name={icon} /></a>
+			<a {href} class:on={path === href} aria-label={label} aria-current={path === href ? 'page' : undefined}><Icon name={icon} /><span>{label}</span></a>
 		{/each}
 	</nav>
 {/if}
@@ -37,4 +37,12 @@
 	a { width: 54px; height: 50px; border-radius: 999px; display: grid; place-items: center; color: var(--dim); transition: background 0.25s, color 0.25s, transform 0.12s; }
 	a:active { transform: scale(0.9); }
 	a.on { background: #fff; color: #17121c; }
+	a span { display: none; }
+	/* desktop: the pill becomes a side rail with labels */
+	@media (min-width: 900px) {
+		nav { left: 24px; top: 50%; bottom: auto; transform: translateY(-50%); flex-direction: column; border-radius: 30px; padding: 10px; gap: 6px; }
+		a { width: 196px; height: 52px; display: flex; align-items: center; gap: 14px; padding: 0 20px; font-weight: 500; font-size: 15px; }
+		a span { display: inline; }
+		a:hover:not(.on) { background: var(--glass2); color: var(--ink); }
+	}
 </style>

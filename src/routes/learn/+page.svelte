@@ -32,7 +32,7 @@
 	<span class="dim small">{Object.keys(S.done).length} done</span>
 </header>
 
-<div class="stack rise">
+<div class="stack rise cols">
 	{#each UNITS as u}
 		<section class="stack" style="gap:10px">
 			<div>

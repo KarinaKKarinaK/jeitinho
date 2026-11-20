@@ -116,5 +116,6 @@
 	.send { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(env(safe-area-inset-bottom) + 84px); width: min(484px, calc(100% - 36px)); display: flex; gap: 8px; z-index: 5; }
 	.rec { background: var(--bad); color: #17121c; animation: pulse 0.9s ease-in-out infinite; }
 	@keyframes pulse { 50% { box-shadow: 0 0 0 10px rgba(255, 143, 143, 0); } from, to { box-shadow: 0 0 0 0 rgba(255, 143, 143, 0.6); } }
+	@media (min-width: 900px) { .send { left: calc(50% + 114px); bottom: 28px; width: min(700px, calc(100% - 336px)); } }
 	.send input { border-radius: 999px; background: rgba(30, 24, 36, 0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
 </style>

@@ -1,6 +1,6 @@
 <p align="center"><img src="docs/logo.svg" width="96" alt="jeitinho"></p>
 <h1 align="center">jeitinho</h1>
-<p align="center">Learn a language from zero to fluent on your phone.<br>Brazilian Portuguese, Mandarin, Polish, Japanese and Spanish. Open source. Runs on free tiers only.</p>
+<p align="center">Learn a language from zero to fluent, on your phone or your desktop.<br>Brazilian Portuguese, Mandarin, Polish, Japanese and Spanish. Open source. Runs on free tiers only.</p>
 <p align="center">
 <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-e3a3c6" alt="MIT license"></a>
 <img src="https://img.shields.io/badge/SvelteKit-3-a97fc9" alt="SvelteKit 3">
@@ -12,6 +12,8 @@
 <img src="docs/lesson.png" width="230" alt="Lesson question">
 <img src="docs/roadmap.png" width="230" alt="Roadmap">
 </p>
+
+<p align="center"><img src="docs/desktop.png" width="720" alt="Desktop layout"></p>
 
 ## Features
 

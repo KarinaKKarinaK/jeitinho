@@ -46,7 +46,7 @@
 	}
 </script>
 
-<div class="stack rise">
+<div class="stack rise home">
 	<header class="head" style="margin-bottom:4px">
 		<div>
 			<p class="dim small">{hello}</p>
@@ -133,6 +133,13 @@
 
 <style>
 	.streak { display: flex; align-items: center; gap: 6px; height: 44px; padding: 0 16px; border-radius: 999px; border: 1px solid var(--line); background: var(--glass); color: var(--dim); font-weight: 500; }
+	@media (min-width: 900px) {
+		.home { display: grid; grid-template-columns: 1.15fr 1fr; gap: 18px; align-items: start; }
+		.home > header, .home > .langs, .home > .week { grid-column: 1 / -1; }
+		.home > .week { justify-content: flex-start; gap: 30px; margin-bottom: 6px; }
+		.home > .hero { grid-row: span 2; min-height: 100%; }
+		.home > .hero h1 { font-size: 52px; }
+	}
 	.streak.lang { font: 500 13px var(--mono); cursor: pointer; color: var(--ink); padding: 0 14px; }
 	.langs .item { width: 100%; color: var(--ink); font: inherit; text-align: left; cursor: pointer; }
 	.langs .dot { font: 500 12px var(--mono); }
