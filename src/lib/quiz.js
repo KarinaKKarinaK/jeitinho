@@ -165,7 +165,7 @@ export function parseWordList(raw) {
 			else cur += ch;
 		}
 		out.push(cur);
-		return out.map((c) => c.replace(/<br\s*\/?>/gi, ' ').replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').replace(/\[sound:[^\]]*\]/g, '').replace(/\s+/g, ' ').trim());
+		return out.map((c) => c.replace(/<br\s*\/?>/gi, ' ').replace(/<[^<>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/\[sound:[^\]]*\]/g, '').replace(/\s+/g, ' ').trim());
 	};
 	const rows = lines.map(cells);
 	const NAMES = { pt: /^(front|word|term|expression|vocab\w*|target|foreign|pt|palavra|słowo|单词|単語|palabra)$/i, en: /^(back|meaning|definition|translation|english|en|gloss)$/i, ex: /^(example|sentence|ex|context)$/i, exEn: /^(example translation|sentence translation|exen|example english)$/i, say: /^(reading|pinyin|pronunciation|kana|furigana|say)$/i, note: /^(notes?|comment|hint|tags?)$/i, pos: /^(pos|part of speech|type|class)$/i };

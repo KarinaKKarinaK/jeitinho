@@ -1,11 +1,28 @@
-<p align="center"><img src="docs/logo.svg" width="96" alt="jeitinho"></p>
+<p align="center"><a href="https://jeitinho-zeta.vercel.app"><img src="static/og.png" width="760" alt="jeitinho: find your way into a new language"></a></p>
+
 <h1 align="center">jeitinho</h1>
-<p align="center"><b>Find your way into a new language.</b><br>From zero to fluent, on your phone or your desktop.<br>Brazilian Portuguese, Mandarin, Polish, Japanese and Spanish. Open source. Runs on free tiers only.</p>
+
+<p align="center"><b>Find your way into a new language.</b><br>A free, open source course from zero to fluent, on your phone or your desktop.<br>Brazilian Portuguese, Mandarin, Polish, Japanese and Spanish.</p>
+
+<p align="center"><a href="https://jeitinho-zeta.vercel.app"><b>Open the app: jeitinho-zeta.vercel.app</b></a></p>
+
 <p align="center">
-<a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-e3a3c6" alt="MIT license"></a>
+<a href="https://github.com/KarinaKKarinaK/jeitinho/actions/workflows/ci.yml"><img src="https://github.com/KarinaKKarinaK/jeitinho/actions/workflows/ci.yml/badge.svg" alt="Checks"></a>
+<a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-a3b4ff" alt="MIT license"></a>
 <img src="https://img.shields.io/badge/SvelteKit-3-a97fc9" alt="SvelteKit 3">
 <img src="https://img.shields.io/badge/cost-%240-e4f060" alt="Costs nothing to run">
 </p>
+
+<p align="center">
+<a href="#features">Features</a> ·
+<a href="#quick-start">Quick start</a> ·
+<a href="#deploy">Deploy</a> ·
+<a href="#cost">Cost</a> ·
+<a href="#security-and-privacy">Security</a> ·
+<a href="#contributing">Contributing</a>
+</p>
+
+No install and no account needed: open the link and start. Sign in only if you want your progress on more than one device.
 
 <p align="center">
 <img src="docs/home.png" width="230" alt="Home screen">
@@ -79,6 +96,17 @@ It cannot bill you.
 - ElevenLabs and Deepgram run on free plans with no card on file. When the quota ends the app falls back to the phone's voice, and speaking practice pauses.
 - Each spoken phrase is cached for a year, so it uses quota once.
 
+## Security and privacy
+
+- No ads, no analytics, no tracking. The [privacy page](https://jeitinho-zeta.vercel.app/privacy) lists everything that is stored and where it goes.
+- Every table has row level security: a signed-in user can read and write only their own rows and photos.
+- API keys live on the server. A key you add yourself is encrypted on your device, never shown again, and never synced.
+- Every endpoint that spends quota is rate limited per visitor, with a daily ceiling for everyone together.
+- Imported links are fetched through a guard that refuses private addresses and oversized pages.
+- A strict content security policy, and no secrets in the repository or its history.
+
+Found a problem? Please [open an issue](https://github.com/KarinaKKarinaK/jeitinho/issues).
+
 ## Languages
 
 | Language | Follows | Type answers in |
@@ -94,7 +122,7 @@ A language is one file in `src/lib/langs/`. `src/lib/packs.test.js` is the contr
 ## How it works
 
 - **SvelteKit**, prerendered, with a service worker. About 60 kB of JavaScript.
-- **Local first.** State is one object per language in local storage, mirrored to one Postgres row per user and language when signed in. Newest copy wins.
+- **Local first.** State is one object per language in local storage, mirrored to one Postgres row per user and language when signed in. When two devices both changed, the copies are merged: progress only goes up, word banks are joined, deletions stay deleted.
 - **Learning design** follows Dunlosky et al. (2013): recall over rereading, spaced review, mixed topics, instant feedback, and a second try on every miss.
 
 ```
@@ -103,6 +131,7 @@ src/lib/lang.js           loads the active language
 src/lib/quiz.js           answer checking, spaced repetition, daily quiz
 src/lib/roadmap.js        stages, milestones, checkpoint tests
 src/lib/cloud.svelte.js   sign-in, sync, photos
+src/lib/sync.js           when to push, pull or merge two copies
 src/lib/Exercise.svelte   question runner
 src/routes/api            ai, tts, stt, config, reminder
 src/service-worker.js     offline cache
@@ -115,7 +144,7 @@ src/service-worker.js     offline cache
 - YouTube often hides captions from servers. Paste the transcript when that happens.
 - Badges are this app's own checkpoints modeled on CEFR and each language's official exam levels, not a certificate.
 - The courses were written with AI help and have not all been reviewed by native speakers. Report anything that sounds off.
-- Sync is newest copy wins. Two devices edited offline at once lose the older changes.
+- When two devices study at the same moment, sync keeps the higher XP rather than adding the two.
 
 ## Contributing
 

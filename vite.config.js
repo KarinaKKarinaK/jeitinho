@@ -2,6 +2,16 @@ import adapter from '@sveltejs/adapter-vercel';
 import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig } from 'vite';
 
+// Only this project's own Supabase host is allowed by the content security policy when it is known at
+// build time (it is on Vercel); otherwise any Supabase project, so local builds still work.
+const supa = (() => {
+	try {
+		return new URL(process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL).host;
+	} catch {
+		return '*.supabase.co';
+	}
+})();
+
 export default defineConfig({
 	plugins: [
 		sveltekit({
@@ -20,9 +30,9 @@ export default defineConfig({
 					'script-src': ['self'],
 					'style-src': ['self', 'unsafe-inline', 'https://fonts.googleapis.com'],
 					'font-src': ['self', 'https://fonts.gstatic.com'],
-					'img-src': ['self', 'data:', 'blob:', 'https://*.supabase.co'],
+					'img-src': ['self', 'data:', 'blob:', `https://${supa}`],
 					'media-src': ['self', 'blob:'],
-					'connect-src': ['self', 'data:', 'https://*.supabase.co', 'wss://*.supabase.co'],
+					'connect-src': ['self', 'data:', `https://${supa}`, `wss://${supa}`],
 					'worker-src': ['self'],
 					'object-src': ['none'],
 					'base-uri': ['self'],

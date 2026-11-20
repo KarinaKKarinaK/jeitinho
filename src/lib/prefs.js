@@ -42,7 +42,10 @@ export const voiceOf = (lang) => (P.voice === 'auto' ? FIRST[lang] || 'sarah' : 
 
 function load() {
 	try {
-		return { ...DEFAULTS, ...JSON.parse(localStorage.getItem(KEY) || '{}') };
+		const saved = JSON.parse(localStorage.getItem(KEY) || '{}');
+		const out = { ...DEFAULTS, ...saved };
+		if (!Array.isArray(out.hidden)) out.hidden = [];
+		return out;
 	} catch {
 		return { ...DEFAULTS };
 	}
@@ -90,7 +93,12 @@ export function savePrefs(next, remote = false) {
 	if (next) {
 		const { key: _never, ...rest } = next;
 		const before = JSON.stringify(sharedPrefs());
-		Object.assign(P, rest);
+		// only settings this app knows, and only values of the expected kind (they may come from the account)
+		for (const [k, v] of Object.entries(rest)) {
+			const known = k in DEFAULTS || ['prefsAt', 'profileAt'].includes(k);
+			const fits = !(k in DEFAULTS) ? typeof v === 'number' : Array.isArray(DEFAULTS[k]) ? Array.isArray(v) : typeof v === typeof DEFAULTS[k];
+			if (known && fits) P[k] = v;
+		}
 		if (!remote && JSON.stringify(sharedPrefs()) !== before) {
 			P.prefsAt = Date.now();
 			onSave?.();

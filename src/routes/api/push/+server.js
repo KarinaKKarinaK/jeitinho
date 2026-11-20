@@ -56,8 +56,8 @@ export async function POST({ request, getClientAddress }) {
 				if (!endpointOf(endpoint)) return;
 				const r = await fetch(endpoint, { method: 'POST', headers: { authorization: _vapid(endpoint), ttl: '43200', urgency: 'normal', 'content-length': '0' }, signal: AbortSignal.timeout(8000) }).catch(() => null);
 				if (r?.ok) sent++;
-				// the browser dropped this subscription: forget it
-				else if (r && (r.status === 404 || r.status === 410)) (gone++, await db(`?endpoint=eq.${encodeURIComponent(endpoint)}`, { method: 'DELETE' }));
+				// the push service rejects it (dead, or never real): forget it
+				else if (r && r.status >= 400 && r.status < 500 && r.status !== 429) (gone++, await db(`?endpoint=eq.${encodeURIComponent(endpoint)}`, { method: 'DELETE' }));
 			})
 		);
 		return json({ hour, sent, gone });
@@ -73,7 +73,8 @@ export async function POST({ request, getClientAddress }) {
 }
 
 // unsubscribe: { endpoint }
-export async function DELETE({ request }) {
+export async function DELETE({ request, getClientAddress }) {
+	if (await limited('push', getClientAddress(), 10)) error(429, 'Too many requests.');
 	if (!ready()) error(503, 'Notifications are not set up.');
 	const endpoint = endpointOf((await request.json().catch(() => ({}))).endpoint);
 	if (!endpoint) error(400, 'Bad subscription.');

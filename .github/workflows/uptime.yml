@@ -4,6 +4,7 @@ on:
   schedule:
     - cron: '*/30 * * * *'
   workflow_dispatch:
+permissions: {}
 jobs:
   ping:
     runs-on: ubuntu-latest

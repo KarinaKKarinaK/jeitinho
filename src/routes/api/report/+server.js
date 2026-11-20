@@ -1,6 +1,6 @@
 import { json, error } from '@sveltejs/kit';
 import * as env from '$app/env/private';
-import { limited } from '../../../lib/server/limit.js';
+import { limited, overBudget } from '../../../lib/server/limit.js';
 import { LANGS } from '../../../lib/langs/meta.js';
 
 // Two things land here, both without any personal data:
@@ -18,6 +18,7 @@ export async function POST({ request, getClientAddress }) {
 	}
 	const row = { lang, source: s(b.source, 80), prompt: s(b.prompt, 400), answer: s(b.answer, 300), given: s(b.given, 300), note: s(b.note, 400) };
 	if (!row.prompt) error(400, 'Nothing to report.');
+	if (await overBudget('reports', 1, 500)) return json({ ok: true }); // enough for one day: accept politely, store nothing
 	console.warn('[content report]', JSON.stringify(row));
 	if (env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY)
 		await fetch(`${env.SUPABASE_URL}/rest/v1/reports`, {

@@ -20,10 +20,29 @@ export const newWord = (w, src = 'seed') => ({
 const blank = () => ({ xp: 0, streak: 0, last: null, days: {}, done: {}, words: [], asked: {}, quiz: {}, materials: [], custom: {}, chat: [], pass: '', rate: 0.9, drill: pack.drill.start, uid: null, badges: {}, nquiz: 0, onboarded: false, placed: null, placeSeen: [], placedAt: 0, mins: {}, cols: [], seedN: 0, chapters: null, texts: [], gloss: {}, read: {}, gone: {} });
 const seeded = () => ({ ...blank(), words: SEED.map((w) => newWord(w)), seedN: SEED.length, chapters: {} });
 
+// Anything read from storage, the account or a backup file goes through here: only known fields, only
+// the right kind of value, and only well-formed words. A damaged or hostile copy can then never stop the app
+// from starting.
+const kind = (v) => (Array.isArray(v) ? 'array' : v === null ? 'null' : typeof v);
+export function clean(data) {
+	const base = blank();
+	const out = {};
+	for (const [k, def] of Object.entries(base)) {
+		const v = data?.[k];
+		const fits = kind(v) === kind(def) || (def === null && ['string', 'object', 'null'].includes(kind(v)) && !Array.isArray(v));
+		out[k] = fits ? v : def;
+	}
+	out.words = out.words
+		.filter((w) => w && typeof w === 'object' && typeof w.pt === 'string' && w.pt && typeof w.en === 'string')
+		.map((w) => ({ ...newWord({ pt: w.pt, en: w.en }), ...w, cols: Array.isArray(w.cols) ? w.cols : [], reps: +w.reps || 0, due: +w.due || 0, ivl: +w.ivl || 0, ease: +w.ease || 2.5 }));
+	for (const k of ['materials', 'texts', 'cols', 'chat']) out[k] = out[k].filter((x) => x && typeof x === 'object');
+	return out;
+}
+
 function load() {
 	try {
 		const s = JSON.parse(localStorage.getItem(KEY));
-		if (s) return { ...blank(), ...s, pass: localStorage.getItem(PASS) ?? s.pass ?? '' }; // one passcode for every language
+		if (s) return { ...clean(s), pass: localStorage.getItem(PASS) ?? (typeof s.pass === 'string' ? s.pass : '') }; // one passcode for every language
 		return { ...seeded(), pass: localStorage.getItem(PASS) || '' };
 	} catch {
 		/* first run or private mode */
@@ -74,7 +93,7 @@ function write(r) {
 
 // Housekeeping when the app updates. It is saved under the revision the state already had, so an old
 // device does not look newer than the account just because it tidied itself up.
-{
+try {
 	const before = last;
 	// the starter list grows between versions: add the starter words this bank lacks (at the end, so your own
 	// words stay on top), skipping any you removed, and fill in missing part of speech tags
@@ -90,6 +109,9 @@ function write(r) {
 	// chapters arrived later: people who were already studying keep access to what they had reached
 	if (S.chapters == null) S.chapters = grandfather(S);
 	if (JSON.stringify(S) !== before && typeof localStorage !== 'undefined') write(rev());
+} catch {
+	// whatever is wrong with the saved copy, the app must still open
+	Object.assign(S, seeded(), { pass: S.pass });
 }
 
 // Called whenever the state changes: save it, stamp it as changed now, and let sync know.
@@ -105,7 +127,7 @@ if (typeof window !== 'undefined')
 	window.addEventListener('storage', (e) => {
 		if (e.key !== KEY || !e.newValue || e.newValue === last) return;
 		try {
-			Object.assign(S, blank(), JSON.parse(e.newValue));
+			Object.assign(S, clean(JSON.parse(e.newValue)), { pass: S.pass });
 			last = JSON.stringify(S); // already on disk, written by the other tab: nothing to save or announce
 		} catch {
 			/* not our data */
@@ -114,7 +136,7 @@ if (typeof window !== 'undefined')
 
 // Take a state from the account (or a merge) and save it under the given revision, without announcing a change.
 export function replace(data, r) {
-	Object.assign(S, blank(), data, { pass: S.pass });
+	Object.assign(S, clean(data), { pass: S.pass });
 	write(r);
 }
 // Remember that something was deleted, so sync and app updates do not bring it back.

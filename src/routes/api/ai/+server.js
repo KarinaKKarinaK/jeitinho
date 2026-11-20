@@ -132,8 +132,27 @@ const stepsOf = (g) => `Step shapes: {"kind":"info","title":"","body":"plain tex
 
 const meta = (html, p) => decode(html.match(new RegExp(`<meta[^>]+property="${p}"[^>]+content="([^"]*)"`, 'i'))?.[1] || '');
 const decode = (t) => t.replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#x27;|&#39;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&nbsp;/g, ' ');
-const strip = (html) =>
-	decode(html.replace(/<(script|style|noscript|svg|nav|footer|header)[\s\S]*?<\/\1>/gi, ' ').replace(/<[^>]+>/g, ' ')).replace(/\s+/g, ' ').trim();
+// Tag stripping on a bounded input with patterns that cannot backtrack: a page made of "<<<<…" used to take
+// quadratic time and could hold the function for its whole time limit.
+const strip = (html) => {
+	let t = html.slice(0, 300000);
+	for (const tag of ['script', 'style', 'noscript', 'svg', 'nav', 'footer', 'header']) {
+		// cut each block by index instead of with a lazy regex
+		for (let from = 0; ; ) {
+			const a = t.toLowerCase().indexOf('<' + tag, from);
+			if (a < 0) break;
+			const b = t.toLowerCase().indexOf('</' + tag, a);
+			if (b < 0) {
+				t = t.slice(0, a);
+				break;
+			}
+			const c = t.indexOf('>', b);
+			t = t.slice(0, a) + ' ' + t.slice(c < 0 ? t.length : c + 1);
+			from = a;
+		}
+	}
+	return decode(t.replace(/<[^<>]*>/g, ' ')).replace(/\s+/g, ' ').trim();
+};
 
 async function song(id, g, level) {
 	const html = await (await fetch(`https://open.spotify.com/track/${id}`, { headers: { 'user-agent': 'Mozilla/5.0' }, signal: AbortSignal.timeout(9000) })).text();

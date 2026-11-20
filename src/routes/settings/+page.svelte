@@ -1,7 +1,7 @@
 <script>
 	import { onMount } from 'svelte';
 	import Icon from '../../lib/Icon.svelte';
-	import { S, reset } from '../../lib/store.svelte.js';
+	import { S, reset, clean } from '../../lib/store.svelte.js';
 	import { P, voicesFor, voiceOf, savePrefs, setKey, unlock } from '../../lib/prefs.js';
 	import { cloud } from '../../lib/cloud.svelte.js';
 	import { speak, today } from '../../lib/fx.js';
@@ -114,7 +114,8 @@
 
 	function exportData() {
 		const a = document.createElement('a');
-		a.href = URL.createObjectURL(new Blob([JSON.stringify(S)], { type: 'application/json' }));
+		const { pass, uid, ...mine } = $state.snapshot(S); // the passcode and the account link do not belong in a file you may share
+		a.href = URL.createObjectURL(new Blob([JSON.stringify(mine)], { type: 'application/json' }));
 		a.download = `jeitinho-${meta.short.toLowerCase()}-${today()}.json`;
 		a.click();
 	}
@@ -123,7 +124,7 @@
 		try {
 			const d = JSON.parse(await e.target.files[0].text());
 			if (!Array.isArray(d.words)) throw 0;
-			Object.assign(S, d);
+			Object.assign(S, clean(d), { pass: S.pass, uid: S.uid }); // only known fields of the right kind; never the passcode or the account link
 			note = 'Backup loaded.';
 		} catch {
 			err = 'That file is not a jeitinho backup.';

@@ -16,7 +16,8 @@ Mobile-first web app for learning Brazilian Portuguese (with Belo Horizonte dial
   - Device settings (theme, voice, quiz options, own API key) live in `src/lib/prefs.js`, in the browser only. A user's own key must never be stored or logged on the server.
   - Every endpoint that spends a shared free quota goes through `limited()` in `src/lib/server/limit.js`.
   - `.github/workflows`: tests and build on every push, and an uptime check every 30 minutes.
-  - New state fields go in `blank()` in the store so old saves and synced rows still load.
+  - New state fields go in `blank()` in the store so old saves and synced rows still load. State from outside (storage, account, backup) passes through `clean()`; sync merges via `src/lib/sync.js` and never overwrites a copy it has not seen.
+  - Share image: `static/og.png` (1200x630).
   - Never expose the Supabase service role key; the browser only gets the anon key.
   - Use relative imports, not `$lib`.
   - Paid services are off limits: every key is a free plan with no card, and each feature must fall back or switch off when its key is missing.

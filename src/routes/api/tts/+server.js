@@ -7,6 +7,7 @@ export const prerender = false;
 
 // Voices every ElevenLabs free plan can use. The id sent by the app is looked up here, never passed through.
 const MAX = 160;
+let closed = ''; // the day on which the shared budget ran out
 const VOICES = {
 	sarah: 'EXAVITQu4vr4xnSDxMaL', jessica: 'cgSgspJ2msm6clMCkdW9', alice: 'Xb7hH8MSUJpSbSDYk0k2',
 	brian: 'nPczCjzI2devNBz1zQrb', george: 'JBFqnCBsd6RMkjVDRZzb', liam: 'TX3LPaxmHKxFdv7VOQHJ'
@@ -25,7 +26,10 @@ export async function GET({ url, request, getClientAddress }) {
 	if (!text || text.length > MAX) error(400, `Text must be 1 to ${MAX} characters.`);
 	// a ceiling on new characters per day, so one visitor cannot use up the month for everyone
 	// (shared by all servers through the database; the credit cap on the ElevenLabs key is the final stop)
-	if (await overBudget('tts-chars', text.length, 2500)) error(429, 'The natural voice has reached its limit for today.');
+	const ip = getClientAddress();
+	// one visitor gets a share of the day, so nobody can use up the voice for everyone
+	if (await limited('tts-day', ip, 40, 86400)) error(429, 'You have reached today\'s limit for the natural voice.');
+	if (closed === new Date().toISOString().slice(0, 10)) error(429, 'The natural voice has reached its limit for today.');
 	const lang = LANGS[url.searchParams.get('l')] ? url.searchParams.get('l') : 'pt';
 	const model = env.ELEVENLABS_MODEL || 'eleven_flash_v2_5';
 	const voice = VOICES[url.searchParams.get('v')] || (env.ELEVENLABS_VOICE_ID || VOICES.sarah).replace(/\W/g, '');
@@ -37,5 +41,7 @@ export async function GET({ url, request, getClientAddress }) {
 		signal: AbortSignal.timeout(15000)
 	}).catch(() => null);
 	if (!r?.ok) error(502, 'Voice failed.');
+	// count only speech that was really produced, against the budget shared by everyone
+	if (await overBudget('tts-chars', text.length, 2500)) closed = new Date().toISOString().slice(0, 10);
 	return new Response(r.body, { headers: { 'content-type': 'audio/mpeg', 'cache-control': 'public, max-age=604800, s-maxage=31536000' } });
 }

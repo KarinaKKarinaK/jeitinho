@@ -27,8 +27,10 @@ async function shared(key, max, windowS, add) {
 			body: JSON.stringify({ k: key, add, window_s: windowS }),
 			signal: AbortSignal.timeout(2500)
 		});
+		if (!r.ok) console.warn('[limits] database counter unavailable:', r.status);
 		return r.ok ? (await r.json()) > max : false;
-	} catch {
+	} catch (e) {
+		console.warn('[limits] database counter unreachable:', e?.name);
 		return false;
 	}
 }

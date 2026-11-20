@@ -174,7 +174,7 @@
 							{#if S.texts.some((x) => x.id === 'u-' + m.id)}<a class="btn sm" href="/read?id=u-{m.id}">Open in Reading</a>
 							{:else}<button class="btn sm" onclick={() => S.texts.unshift({ id: 'u-' + m.id, title: m.title, text: m.text.slice(0, 8000), date: m.date })}>Add to reading practice</button>{/if}
 						{/if}
-						{#if m.url}<a class="btn sm" href={m.url} target="_blank" rel="noopener noreferrer">Open link</a>{/if}
+						{#if /^https?:\/\//i.test(m.url || '')}<a class="btn sm" href={m.url} target="_blank" rel="noopener noreferrer">Open link</a>{/if}
 						<button class="btn sm" onclick={() => { if (m.img) dropPhoto(m.img); forget(m.id); S.materials.splice(i, 1); }}>Delete</button>
 					</div>
 				</div>
