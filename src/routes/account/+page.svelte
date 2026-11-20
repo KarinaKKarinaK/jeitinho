@@ -6,7 +6,16 @@
 	import { meta } from '../../lib/lang.js';
 	import { cloud, oauth, signIn, signUp, forgot, setPassword, signOut, pull, wipe, saveName, saveAvatar, changeEmail } from '../../lib/cloud.svelte.js';
 
-	let mode = $state('in');
+	import { page } from '$app/state';
+	import { goto } from '$app/navigation';
+
+	const fromStart = page.url.searchParams.get('from') === 'welcome';
+	let mode = $state(page.url.searchParams.get('mode') === 'up' ? 'up' : 'in');
+	// arriving from the start screen: once signed in and the account's progress has loaded, go to the app.
+	// If this account has no progress in this language yet, home sends them to the level test.
+	$effect(() => {
+		if (fromStart && cloud.user && cloud.status === 'synced') goto('/', { replaceState: true });
+	});
 	let email = $state('');
 	let password = $state('');
 	let busy = $state(false);

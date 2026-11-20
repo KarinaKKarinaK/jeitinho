@@ -8,7 +8,13 @@
 	import { today } from '../../lib/fx.js';
 	import { lang, meta, t, AVAILABLE, switchLang } from '../../lib/lang.js';
 
-	let band = $state(-1); // -1 intro, 0..n-1 testing, n result
+	// -2 front door (log in or start), -1 test intro, 0..n-1 testing, n result.
+	// Someone already onboarded who comes back for a retake goes straight to the test intro.
+	let band = $state(S.onboarded || cloud.user ? -1 : -2);
+	// if the account's progress arrives while the front door is showing, there is nothing to ask: go to the app
+	$effect(() => {
+		if (band === -2 && S.onboarded) goto('/', { replaceState: true });
+	});
 	let passed = $state(0);
 	let scores = [];
 	const wait = retakeAt(S); // a full retake is allowed every few days
@@ -39,7 +45,16 @@
 	}
 </script>
 
-{#if band === -1}
+{#if band === -2}
+	<div class="intro stack rise">
+		<img src="/icon.svg" alt="" width="84" height="84" />
+		<p class="eyebrow">jeitinho</p>
+		<h1>Find your way into<br />a new language</h1>
+		<p class="dim">Lessons by chapter, a daily quiz from your own words, songs, reading and conversation. Free, in five languages.</p>
+		<button class="btn primary wide" onclick={() => (band = -1)}>Get started</button>
+		{#if cloud.status !== 'off'}<a class="btn wide" href="/account?from=welcome">I already have an account</a>{/if}
+	</div>
+{:else if band === -1}
 	<div class="intro stack rise">
 		<img src="/icon.svg" alt="" width="84" height="84" />
 		<p class="eyebrow">{t.welcome}</p>
@@ -68,8 +83,13 @@
 		<p class="dim">{passed ? `You passed level ${PLACEMENT[passed - 1].band}, so the earlier badges are yours and their lessons are marked done. You can still open them.` : 'You start at the beginning. That is the fastest way to get the sounds right.'}</p>
 		{#if stage.exam}<p class="small">On the official scale this stage is <b>{stage.exam}</b>.</p>{/if}
 		<p class="dim small">Next goal: {stage.can}.</p>
-		<a class="btn primary wide" href="/">{t.start}</a>
-		{#if cloud.status === 'out'}<a class="btn wide" href="/account">Save this to an account</a><p class="dim small">Your level is kept on this device, and it moves into your account when you sign up or sign in.</p>{/if}
+		{#if cloud.status === 'out'}
+			<a class="btn primary wide" href="/account?mode=up&from=welcome">Create my account</a>
+			<a class="btn wide" href="/">Continue without an account</a>
+			<p class="dim small">You start at {levelName(stage)}. An account saves this level and your progress across devices; you can also make one later.</p>
+		{:else}
+			<a class="btn primary wide" href="/">{t.start}</a>
+		{/if}
 	</div>
 {/if}
 

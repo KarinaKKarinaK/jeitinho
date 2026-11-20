@@ -6,7 +6,7 @@ import { P, savePrefs } from './prefs.js';
 import { lang } from './lang.js';
 
 // status: off (not configured) | out (signed out) | syncing | synced | error
-export const cloud = $state({ ready: false, status: 'off', user: null, error: '', recovery: false, at: 0, ai: false, tts: false, stt: false, push: '', name: P.name, avatar: P.avatar, google: false, github: false });
+export const cloud = $state({ ready: false, status: 'off', user: null, error: '', recovery: false, at: 0, ai: false, tts: false, stt: false, push: '', name: P.name, avatar: P.avatar, google: false, github: false, checked: false });
 
 let sb;
 let timer;
@@ -23,6 +23,7 @@ export async function init() {
 		fetch(`${cfg.url}/auth/v1/settings`, { headers: { apikey: cfg.key } }).then((r) => r.json()).then((d) => Object.assign(cloud, { google: !!d.external?.google, github: !!d.external?.github })).catch(() => {});
 		cloud.status = 'out';
 		sb.auth.onAuthStateChange((event, session) => {
+			cloud.checked = true; // we now know whether someone is signed in
 			const u = session?.user;
 			const changed = u?.id !== cloud.user?.id;
 			cloud.user = u ? { id: u.id, email: u.email, pending: u.new_email || '' } : null;
@@ -47,6 +48,9 @@ export async function init() {
 		/* offline or not configured: the app keeps working locally */
 	} finally {
 		cloud.ready = true;
+		// with no account system the answer is already known; otherwise the first sign-in event sets it (3 s safety net)
+		if (!sb) cloud.checked = true;
+		else setTimeout(() => (cloud.checked = true), 3000);
 	}
 }
 

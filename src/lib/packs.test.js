@@ -77,6 +77,18 @@ for (const code of codes) {
 		}
 		assert.equal(used.size, lessons.length, `every lesson belongs to a stage (missing: ${[...ids].filter((l) => !used.has(l))})`);
 
+		// graded reading texts: eight, easiest first, translation paragraph by paragraph
+		const texts = await import(`./langs/texts/${code}.js`).then((m) => m.TEXTS, () => null);
+		if (texts) {
+			assert.equal(texts.length, 8);
+			assert.deepEqual(texts.map((x) => x.level), ['A1', 'A1', 'A2', 'A2', 'B1', 'B1', 'B2', 'C1']);
+			assert.equal(new Set(texts.map((x) => x.id)).size, 8);
+			for (const x of texts) {
+				assert.ok(x.id.startsWith(code + '-r') && x.title && x.titleEn, x.id);
+				assert.equal(x.text.split('\n\n').length, x.en.split('\n\n').length, `${x.id}: translation has the same paragraphs`);
+			}
+		}
+
 		// the rest
 		for (const band of ['B', 'C']) assert.ok(p.writing[band].length >= 4 && p.writing[band].every((w) => w[0] && w[1]));
 		assert.ok(p.levels.length >= 5 && p.levels[0][0] === 0);

@@ -5,7 +5,7 @@
 	import { P, voicesFor, voiceOf, savePrefs, setKey, unlock } from '../../lib/prefs.js';
 	import { cloud } from '../../lib/cloud.svelte.js';
 	import { speak, today } from '../../lib/fx.js';
-	import { meta, pack, lang } from '../../lib/lang.js';
+	import { meta, pack, lang, AVAILABLE } from '../../lib/lang.js';
 
 	const VOICES = voicesFor(lang);
 	import { retakeAt } from '../../lib/roadmap.js';
@@ -117,6 +117,17 @@
 				<button class:on={p.theme === k} onclick={() => (p.theme = k)}>{label}</button>
 			{/each}
 		</div>
+	</section>
+
+	<section class="card stack" id="languages">
+		<h3>Languages</h3>
+		<p class="dim small">Untick the ones you are not learning to hide them from the language switcher. Their progress is kept.</p>
+		{#each AVAILABLE as l}
+			<label class="sw">
+				<input type="checkbox" checked={!p.hidden.includes(l.code)} disabled={l.code === lang} onchange={() => (p.hidden = p.hidden.includes(l.code) ? p.hidden.filter((c) => c !== l.code) : [...p.hidden, l.code])} />
+				<span>{l.label} <span class="dim">· {l.name}{l.code === lang ? ' · the one you are in' : ''}</span></span>
+			</label>
+		{/each}
 	</section>
 
 	<section class="card stack">

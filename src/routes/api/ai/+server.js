@@ -313,12 +313,26 @@ async function gradeOp(b) {
 	return { score, ok: score >= 7, fix: s(out.fix, 1200), note: s(out.note, 400) };
 }
 
-export async function POST({ request }) {
+// A soft brake on the shared free quota: at most 40 AI requests per visitor in 5 minutes.
+// ponytail: counted in memory per server instance, so it resets when the instance is recycled and is not
+// shared between instances. Enough to stop one runaway tab or a simple script; a real per-user limit
+// needs a table or a rate-limit service.
+const hits = new Map();
+function limited(ip, now = Date.now()) {
+	const recent = (hits.get(ip) || []).filter((t) => now - t < 300000);
+	recent.push(now);
+	hits.set(ip, recent);
+	if (hits.size > 5000) hits.clear();
+	return recent.length > 40;
+}
+
+export async function POST({ request, getClientAddress }) {
 	// Optional lock so strangers cannot burn your free quota: set APP_PASSCODE in Vercel and type it in the app settings.
 	const key = request.headers.get('x-user-key') || '';
 	const model = request.headers.get('x-user-model') || '';
 	const mine = key ? { key, model } : null;
 	if (mine && (!/^sk-or-[\w-]{20,200}$/.test(key) || !/^[\w.\-:/]{3,100}$/.test(model))) error(400, 'Your own key or model name does not look right. Check Settings.');
+	if (!mine && limited(getClientAddress())) error(429, 'That is a lot of requests in a short time. Take a short break and try again.');
 	// the passcode guards the shared free quota; with your own key you are not using it
 	if (!mine && env.APP_PASSCODE && request.headers.get('x-pass') !== env.APP_PASSCODE) error(401, 'Wrong passcode. Set it in Settings.');
 	const b = await request.json().catch(() => error(400, 'Bad request'));

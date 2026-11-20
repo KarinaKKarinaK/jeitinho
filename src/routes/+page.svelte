@@ -7,12 +7,19 @@
 	import { chapterOpen } from '../lib/roadmap.js';
 	import { today, DAY } from '../lib/fx.js';
 	import { P } from '../lib/prefs.js';
+	import { STAGE_IDS } from '../lib/langs/kit.js';
 	import { cloud } from '../lib/cloud.svelte.js';
 	import { lang, meta, t, AVAILABLE, switchLang } from '../lib/lang.js';
 	import { current, earned, milestones, levelName } from '../lib/roadmap.js';
 
 	// brand new here: offer the placement test once
-	if (!S.onboarded && S.xp === 0 && !Object.keys(S.done).length) goto('/welcome', { replaceState: true });
+	// Only once we know there is no saved progress for this language anywhere: when signed in, the account's
+	// copy has to arrive first, otherwise switching language would flash the level test before the progress loads.
+	$effect(() => {
+		const fresh = !S.onboarded && S.xp === 0 && !Object.keys(S.done).length;
+		const known = cloud.checked && (!cloud.user || cloud.status === 'synced' || cloud.status === 'error');
+		if (fresh && known) goto('/welcome', { replaceState: true });
+	});
 
 	const GOAL = P.goalMin; // minutes of study that fill a day ring
 	const QUIZ_LEN = P.quizLen;
@@ -25,6 +32,17 @@
 	const hour = new Date().getHours();
 	const hello = t.hello[hour < 12 ? 0 : hour < 18 ? 1 : 2];
 	let picking = $state(false);
+	// each language's level on this device, read from its own saved progress
+	const levels = AVAILABLE.filter((l) => l.code === lang || !P.hidden.includes(l.code)).map((l) => {
+		let d = null;
+		try {
+			d = l.code === lang ? S : JSON.parse(localStorage.getItem(l.code === 'pt' ? 'jeitinho:v1' : `jeitinho:v1:${l.code}`));
+		} catch {
+			/* nothing saved */
+		}
+		const got = STAGE_IDS.filter((id) => d?.badges?.[id]);
+		return { ...l, tag: !d || (!d.onboarded && !d.xp) ? 'not started' : got.at(-1) || 'started', xp: d?.xp || 0, started: !!d && (d.onboarded || d.xp > 0) };
+	});
 	const quiz = $derived(S.quiz[today()]);
 	const next = $derived(LESSON_LIST.find((l) => !(l.id in S.done)));
 	// if the next lesson sits in a locked chapter, the next step is the quiz of the chapter before it
@@ -51,14 +69,15 @@
 	{#if picking}
 		<div class="card stack langs" style="gap:8px">
 			<p class="eyebrow">Your languages</p>
-			{#each AVAILABLE as l}
+			{#each levels as l}
 				<button class="item" class:done={l.code === lang} onclick={() => (l.code === lang ? (picking = false) : switchLang(l.code))}>
 					<span class="dot">{l.short}</span>
-					<span class="grow"><b>{l.label}</b><small>{l.name}</small></span>
+					<span class="grow"><b>{l.label}</b><small>{l.name}{l.started ? ` · ${l.xp} XP` : ''}</small></span>
+					<span class="tag" class:new={!l.started}>{l.tag}</span>
 					{#if l.code === lang}<Icon name="check" size={18} />{/if}
 				</button>
 			{/each}
-			<p class="small dim">Each language keeps its own progress, word bank and badges under the same account.</p>
+			<p class="small dim">Each language keeps its own progress, word bank and badges under the same account. <a href="/settings#languages" style="text-decoration:underline">Choose which languages show here</a></p>
 		</div>
 	{/if}
 
@@ -138,6 +157,8 @@
 	@media (min-width: 900px) { .home > .foot { grid-column: 1 / -1; } }
 	.day.old { display: none; }
 	.me { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+	.tag { font: 500 11px var(--mono); letter-spacing: 0.04em; padding: 5px 10px; border-radius: 999px; background: linear-gradient(150deg, #e4f060, #e3a3c6); color: #17121c; white-space: nowrap; }
+	.tag.new { background: var(--glass2); color: var(--dim); }
 	.streak.lang { font: 500 13px var(--mono); cursor: pointer; color: var(--ink); padding: 0 14px; }
 	.langs .item { width: 100%; color: var(--ink); font: inherit; text-align: left; cursor: pointer; }
 	.langs .dot { font: 500 12px var(--mono); }
