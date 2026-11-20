@@ -1,6 +1,7 @@
 // Mandarin Chinese pack: course, starter words, placement test, drills, roadmap.
 // Stage targets follow the HSK levels (Chinese Proficiency Grading Standards) mapped onto CEFR.
 // Simplified characters. Every typed answer also accepts pinyin, so no Chinese keyboard is needed.
+import { toneOf, syllables } from '../tone.js';
 import { I, C, T, L, tableDrill } from './kit.js';
 import { withMore } from './kit.js';
 import { MORE, SEED_POS } from './words/zh.js';
@@ -561,6 +562,29 @@ const DRILLS = {
 };
 
 const ALL = Object.keys(DRILLS);
+
+// Tone pairs by ear: hear a two-syllable word, pick its two tones. Built from the starter words, so it
+// grows with the list. Added after ALL on purpose: checkpoint tests must not depend on audio.
+const WORDS = withMore(SEED, MORE, SEED_POS);
+const TONE = ['neutral', '1st', '2nd', '3rd', '4th'];
+const pairName = (a, b) => `${TONE[a]} + ${TONE[b]}`;
+const EVERY = [1, 2, 3, 4].flatMap((a) => [0, 1, 2, 3, 4].map((b) => [a, b]));
+DRILLS.pairs = {
+	name: 'Tone pairs (listening)',
+	wt: 0.06, // many items: keep them from crowding the other drills out of the daily quiz
+	audio: true, // left out of the daily quiz when listening questions are switched off
+	items: WORDS.filter((w) => [...w.pt].length === 2 && !/[一不]/.test(w.pt) && syllables(w.say).length === 2 && toneOf(syllables(w.say)[0])).map((w, n) => {
+		const [x, y] = syllables(w.say).map(toneOf);
+		const a = x === 3 && y === 3 ? 2 : x; // two third tones in a row: the first is said as a second tone
+		const others = EVERY.filter(([p, q]) => p !== a || q !== y);
+		const wrong = [0, 1, 2].map((i) => others[(n * 7 + i * 6 + i * i) % others.length]);
+		return {
+			prompt: 'Which two tones do you hear?', sub: 'Listen as often as you like.', speak: w.pt, audio: true, autoplay: true,
+			answer: pairName(a, y), options: [...new Set(wrong.map(([p, q]) => pairName(p, q)))],
+			explain: `${w.pt}  ${w.say}  = ${w.en}` + (a !== x ? '. Written with two third tones, but the first one is said as a second tone.' : '')
+		};
+	})
+};
 
 export default {
 	code: 'zh',

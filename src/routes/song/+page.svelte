@@ -3,6 +3,7 @@
 	import { fly } from 'svelte/transition';
 	import Icon from '../../lib/Icon.svelte';
 	import Star from '../../lib/Star.svelte';
+	import Built from '../../lib/Built.svelte';
 	import { S, addWords } from '../../lib/store.svelte.js';
 	import { ai, speak } from '../../lib/fx.js';
 	import { wordKey, songSteps } from '../../lib/quiz.js';
@@ -114,6 +115,7 @@
 					<button class="icon-btn sm" onclick={() => (tapped = null)} aria-label="Close"><Icon name="x" size={16} /></button>
 				</div>
 				<p>{tapped.en}</p>
+				<Built word={tapped.pt} />
 				{#if tapped.note}<p class="dim small">{tapped.note}</p>{/if}
 				{#if have(tapped.pt)}
 					<p class="small" style="color:var(--ok)">In your word bank.</p>

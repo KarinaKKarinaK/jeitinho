@@ -16,3 +16,9 @@ export const numbered = (s) =>
 		const i = /[ae]/.test(syl) ? syl.search(/[ae]/) : syl.includes('ou') ? syl.indexOf('o') : Math.max(...[...'iouü'].map((v) => syl.lastIndexOf(v)));
 		return i < 0 ? syl : syl.slice(0, i) + MARKS[syl[i]][n - 1] + syl.slice(i + 1);
 	});
+
+// Splits pinyin into syllables, whether it is written "péng you" or "péngyou".
+// n and ng close a syllable unless a vowel follows (nánguài is nán + guài); an apostrophe always splits.
+const V = 'aeiouü' + ALL.join('');
+const SYL = new RegExp(`[bpmfdtnlgkhjqxrzcsyw]?h?[${V}]+(?:ng(?![${V}])|n(?![${V}])|r(?![${V}]))?`, 'gi');
+export const syllables = (s) => String(s).match(SYL) || [];

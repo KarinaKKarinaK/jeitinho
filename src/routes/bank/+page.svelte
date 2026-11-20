@@ -5,6 +5,9 @@
 	import Star from '../../lib/Star.svelte';
 	import Conj from '../../lib/Conj.svelte';
 	import Tones from '../../lib/Tones.svelte';
+	import Built from '../../lib/Built.svelte';
+	import { hsk } from '../../lib/zhdata.js';
+	import { lang } from '../../lib/lang.js';
 	import { S, addXP, addWords, newCollection, dropCollection, toggleIn, removeWord, forget } from '../../lib/store.svelte.js';
 	import { grade, norm, longEnough, parseWordList, wordKey } from '../../lib/quiz.js';
 	import { speak, today, ai } from '../../lib/fx.js';
@@ -28,12 +31,21 @@
 	let err = $state('');
 	let npos = $state('');
 
-	const inScope = (w) => scope === 'all' || (scope === 'star' ? w.star : w.cols?.includes(scope));
+	// Mandarin: the HSK 1 to 3 word lists. Each level works like a collection you can filter and review,
+	// and the words you do not have yet can be added in one go.
+	let hskList = $state([]);
+	if (lang === 'zh') hsk().then((l) => (hskList = l));
+	const hskLevel = $derived(new Map(hskList.map((w) => [wordKey(w.pt), w.level])));
+	const hskOf = (w) => hskLevel.get(wordKey(w.pt));
+	const hskN = $derived(scope.startsWith('hsk') ? +scope.slice(3) : 0);
+	const hskAll = $derived(hskList.filter((w) => w.level === hskN));
+	const hskMissing = $derived(hskAll.filter((w) => !S.words.some((x) => wordKey(x.pt) === wordKey(w.pt))));
+	const inScope = (w) => scope === 'all' || (scope === 'star' ? w.star : scope.startsWith('hsk') ? hskOf(w) === +scope.slice(3) : w.cols?.includes(scope));
 	const shown = $derived(S.words.filter((w) => inScope(w) && (!pos || w.pos === pos) && (!q || norm(w.pt + ' ' + w.en + ' ' + (w.note || '')).includes(norm(q)))));
 	const tags = $derived(POS.filter((p) => S.words.some((w) => w.pos === p)));
 	// due = overdue reviews first, then words never reviewed
 	const due = $derived(S.words.filter((w) => inScope(w) && w.due <= now).sort((a, b) => b.reps - a.reps || a.due - b.due));
-	const scopeName = $derived(scope === 'all' ? '' : scope === 'star' ? 'Starred' : S.cols.find((c) => c.id === scope)?.name || '');
+	const scopeName = $derived(scope === 'all' ? '' : scope === 'star' ? 'Starred' : scope.startsWith('hsk') ? 'HSK ' + scope.slice(3) : S.cols.find((c) => c.id === scope)?.name || '');
 
 	function makeCollection() {
 		if (!nc.trim()) return;
@@ -193,6 +205,9 @@
 			{#each S.cols as c (c.id)}
 				<button class="chip" class:on={scope === c.id} onclick={() => (scope = c.id)}><Icon name="folder" size={14} /> {c.name}</button>
 			{/each}
+			{#each [...new Set(hskList.map((w) => w.level))] as n}
+				<button class="chip" class:on={scope === 'hsk' + n} onclick={() => (scope = 'hsk' + n)}>HSK {n}</button>
+			{/each}
 			<button class="chip" onclick={() => (naming = !naming)}><Icon name="plus" size={14} /> Collection</button>
 		</div>
 		{#if naming}
@@ -210,8 +225,19 @@
 			<div class="row small dim">
 				<span class="grow">{shown.length} {shown.length === 1 ? 'word' : 'words'} in {scopeName}</span>
 				{#if due.length}<button class="btn sm" onclick={() => (tab = 'review')}>Review {due.length}</button>{/if}
-				{#if scope !== 'star'}<button class="btn sm" onclick={() => { dropCollection(scope); scope = 'all'; }}>Delete collection</button>{/if}
+				{#if scope !== 'star' && !hskN}<button class="btn sm" onclick={() => { dropCollection(scope); scope = 'all'; }}>Delete collection</button>{/if}
 			</div>
+			{#if hskN}
+				<div class="card stack" style="gap:10px">
+					<div class="row"><b class="grow">HSK {hskN}</b><span class="small dim">{hskAll.length - hskMissing.length} of {hskAll.length} words in your bank</span></div>
+					<div class="bar"><i style:width="{hskAll.length ? ((hskAll.length - hskMissing.length) / hskAll.length) * 100 : 0}%"></i></div>
+					{#if hskMissing.length}
+						<button class="btn sm primary" style="align-self:flex-start" onclick={() => addWords($state.snapshot(hskMissing), 'HSK ' + hskN)}><Icon name="plus" size={16} /> Add the {hskMissing.length} missing words</button>
+					{:else}
+						<p class="small" style="color:var(--ok)">You have every word of this level. Review them until they stick.</p>
+					{/if}
+				</div>
+			{/if}
 		{/if}
 
 		{#each shown.slice(0, 120) as w (w.id)}
@@ -219,6 +245,7 @@
 				<div class="row">
 					<button class="row grow open" onclick={() => (open = open === w.id ? null : w.id)}>
 						<span class="grow"><b lang={meta.locale}>{w.pt}</b>{#if meta.chars && w.say}<em><Tones text={w.say} /></em>{/if}<small>{w.en}</small></span>
+						{#if hskOf(w)}<span class="pos hsk">HSK {hskOf(w)}</span>{/if}
 						{#if w.pos}<span class="pos">{w.pos}</span>{/if}
 						<span class="lvl" title="Review interval in days">{w.ivl ? w.ivl + 'd' : 'new'}</span>
 					</button>
@@ -227,6 +254,7 @@
 				{#if open === w.id}
 					<div class="stack" style="gap:10px;margin-top:12px" in:fly={{ y: -6, duration: 160 }}>
 						{#if w.say && !meta.chars}<p class="say">{w.say}</p>{/if}
+						<Built word={w.pt} />
 						{#if w.ex}<div><p lang={meta.locale}>{w.ex}</p>{#if w.exSay}<p class="say">{w.exSay}</p>{/if}<p class="dim small">{w.exEn}</p></div>{/if}
 						<div class="chips">
 							<button class="btn sm" onclick={() => speak(w.ex || w.pt)}><Icon name="sound" size={16} /> {t.hear}</button>
@@ -300,6 +328,9 @@
 	.head { flex-wrap: wrap; gap: 12px; }
 	.flash { width: 100%; min-height: 300px; text-align: left; color: var(--ink); font: inherit; cursor: pointer; display: flex; flex-direction: column; gap: 14px; }
 	.back { display: grid; gap: 8px; margin-top: auto; padding-top: 18px; border-top: 1px solid var(--line); }
+	.hsk { color: var(--rose); border-color: color-mix(in srgb, var(--rose) 40%, transparent); }
+	.bar { height: 6px; border-radius: 9px; background: var(--glass2); overflow: hidden; }
+	.bar i { display: block; height: 100%; border-radius: 9px; background: var(--rose); transition: width 0.4s; }
 	.say { font: 400 13px var(--mono); color: var(--rose); letter-spacing: 0.02em; }
 	.grades { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
 	.grades .btn { padding: 0; font-size: 14px; }

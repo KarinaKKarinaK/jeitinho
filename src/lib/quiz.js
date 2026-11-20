@@ -124,7 +124,7 @@ export function dailyQuiz(S, seed, now = Date.now(), opts = {}) {
 		}
 	}
 	const a = pick(words, drills ? Math.round((len * 8) / 11) : len, rnd);
-	const b = pick(pack.drill.pool().map((c) => ({ ...c, wt: c.wt * decay(c.key) })), drills ? len - a.length : 0, rnd);
+	const b = pick(pack.drill.pool().filter((c) => !c.audio || opts.quizAudio !== false).map((c) => ({ ...c, wt: c.wt * decay(c.key) })), drills ? len - a.length : 0, rnd);
 	const all = [...a, ...b];
 	for (let i = all.length - 1; i > 0; i--) {
 		const j = Math.floor(rnd() * (i + 1));

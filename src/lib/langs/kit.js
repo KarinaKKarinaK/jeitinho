@@ -35,7 +35,7 @@ export function tableDrill(groups, extra = {}) {
 		...extra,
 		groups,
 		pool: (ids = Object.keys(groups)) =>
-			ids.flatMap((g) => (groups[g]?.items || []).map((_, i) => ({ key: `d:${g}:${i}`, group: `${g}:${i}`, wt: 1 }))),
+			ids.flatMap((g) => (groups[g]?.items || []).map((_, i) => ({ key: `d:${g}:${i}`, group: `${g}:${i}`, wt: groups[g].wt ?? 1, audio: !!groups[g].audio }))),
 		make(key) {
 			const [d, g, i] = key.split(':');
 			const it = d === 'd' && groups[g]?.items[+i];

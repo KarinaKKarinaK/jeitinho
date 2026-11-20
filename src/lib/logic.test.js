@@ -302,4 +302,7 @@ test('pinyin: tones typed as numbers, and which tone a syllable has', async () =
 	assert.equal(numbered('nv3 lu:4 gou3 gui4 xue2 ma5'), 'nǚ lǜ gǒu guì xué ma');
 	assert.equal(numbered('你好'), '你好');
 	assert.deepEqual(['mā', 'má', 'mǎ', 'mà', 'ma'].map(toneOf), [1, 2, 3, 4, 0]);
+	const { syllables } = await import('./tone.js');
+	const split = (s) => syllables(s).join(' ');
+	assert.deepEqual(['péngyou', 'nánguài', 'yīnggāi', 'shuǐguǒ', "nǚ'ér", 'xǐhuan', 'míngbai', 'nǐ hǎo', 'Zhōngguó', 'diànnǎo'].map(split), ['péng you', 'nán guài', 'yīng gāi', 'shuǐ guǒ', 'nǚ ér', 'xǐ huan', 'míng bai', 'nǐ hǎo', 'Zhōng guó', 'diàn nǎo']);
 });

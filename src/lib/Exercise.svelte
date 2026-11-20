@@ -111,7 +111,7 @@
 	}
 
 	$effect(() => {
-		if (xp === null && !res && q.kind === 'listen') speak(q.speak);
+		if (xp === null && !res && (q.kind === 'listen' || q.autoplay)) speak(q.speak);
 		input?.focus();
 	});
 </script>

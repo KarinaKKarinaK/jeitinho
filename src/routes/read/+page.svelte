@@ -5,10 +5,12 @@
 	import Icon from '../../lib/Icon.svelte';
 	import Star from '../../lib/Star.svelte';
 	import Tones from '../../lib/Tones.svelte';
+	import Built from '../../lib/Built.svelte';
 	import { S, addWords, addXP, forget } from '../../lib/store.svelte.js';
 	import { ai, speak, today } from '../../lib/fx.js';
 	import { wordKey, splitSentences as sentences } from '../../lib/quiz.js';
 	import { meta, lang, loadTexts } from '../../lib/lang.js';
+	import { syllables } from '../../lib/tone.js';
 
 	// Reading practice: the course's graded texts plus your own. Point at a word (or tap it on a phone)
 	// to see what it means here and its part of speech; tap to keep it.
@@ -62,7 +64,7 @@
 	const charSay = $derived.by(() => {
 		const map = {};
 		for (const e of [...Object.values(pre?.dict || {}), ...S.words]) {
-			const cs = [...(e.pt || '')], ss = (e.say || '').split(' · ')[0].trim().split(/\s+/);
+			const cs = [...(e.pt || '')], ss = syllables((e.say || '').split(' · ')[0]);
 			if (cs.length === ss.length) cs.forEach((c, i) => (map[c] ??= ss[i]));
 		}
 		return map;
@@ -204,6 +206,7 @@
 				<p class="dim small row"><span class="spin"></span> Looking it up...</p>
 			{:else if pinned.info}
 				<p>{pinned.info.en}{#if pinned.info.pos} <span class="pos">{pinned.info.pos}</span>{/if}</p>
+				<Built word={pinned.info.pt || pinned.word} />
 				{#if pinned.en}<p class="dim small">{pinned.en}</p>{/if}
 				{#if !pinned.exact}<button class="link" onclick={(e) => show({ currentTarget: document.querySelector('.w.lit') || e.currentTarget }, pinned.k, pinned.sentence, pinned.word, true, true)}>This is the general meaning. Explain it in this sentence</button>{/if}
 				{#if have(pinned.info.pt || pinned.word)}
