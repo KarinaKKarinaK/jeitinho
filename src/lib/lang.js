@@ -6,7 +6,8 @@ const packs = {
 	pt: () => import('./langs/pt.js'),
 	zh: () => import('./langs/zh.js'),
 	pl: () => import('./langs/pl.js'),
-	ja: () => import('./langs/ja.js')
+	ja: () => import('./langs/ja.js'),
+	es: () => import('./langs/es.js')
 };
 export const AVAILABLE = Object.keys(packs).map((code) => ({ code, ...LANGS[code] }));
 

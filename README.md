@@ -1,6 +1,6 @@
 <p align="center"><img src="docs/logo.svg" width="96" alt="jeitinho"></p>
 <h1 align="center">jeitinho</h1>
-<p align="center">Brazilian Portuguese from zero to fluent, with a Belo Horizonte accent.<br>An open source app for your phone's home screen. Runs on free tiers only.</p>
+<p align="center">Learn a language from zero to fluent on your phone.<br>Brazilian Portuguese, Mandarin, Polish, Japanese and Spanish. Open source. Runs on free tiers only.</p>
 <p align="center">
 <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-e3a3c6" alt="MIT license"></a>
 <img src="https://img.shields.io/badge/SvelteKit-3-a97fc9" alt="SvelteKit 3">
@@ -17,9 +17,11 @@
 
 | | |
 | --- | --- |
-| **Daily quiz** | 11 hard questions from your word bank and seven tenses. A time decay keeps recent questions out. |
-| **Course** | 22 lessons, A1 to C1: pronunciation spelled out in English, eu vs você in every tense, three subjunctives, personal infinitive, connectors, idioms, register. |
-| **Mineirês** | How people talk in Belo Horizonte: uai, trem, cê, arreda, "Oncotô?". |
+| **Daily quiz** | 11 hard questions from your word bank and drills. A time decay keeps recent questions out. |
+| **Five languages** | Each has its own course of 20 or more lessons, drills, placement test and roadmap. Switch on the home screen; progress is kept separately per language under one account. |
+| **Placement test** | New learners take a short test that climbs a level at a time and stops when it gets too hard. |
+| **Drills** | The hard part of each language: verb tenses (Portuguese, Spanish), tones and measure words (Mandarin), cases and aspect (Polish), particles and verb forms (Japanese). |
+| **Real speech** | Regional and spoken language, not only the textbook: mineirês from Belo Horizonte, the Beijing r, Kansai-ben, vosotros and vos. |
 | **Word bank** | Spaced repetition, with export to Anki. |
 | **Import** | A Spotify song, an article, a YouTube link, pasted text or a photo of your notes becomes flashcards. Songs get line by line translation and a lesson. |
 | **Speaking** | Say a sentence, see which words were understood. Voice mode in the chat. |
@@ -68,15 +70,27 @@ It cannot bill you.
 - ElevenLabs and Deepgram run on free plans with no card on file. When the quota ends the app falls back to the phone's voice, and speaking practice pauses.
 - Each spoken phrase is cached for a year, so it uses quota once.
 
+## Languages
+
+| Language | Follows | Type answers in |
+| --- | --- | --- |
+| Brazilian Portuguese | CEFR, Celpe-Bras | Portuguese |
+| Mandarin Chinese | HSK levels 1 to 9 | characters or pinyin |
+| Polish | State certificate exams, A1 to C2 | Polish |
+| Japanese | JLPT N5 to N1 | Japanese, kana or romaji |
+| Spanish | Instituto Cervantes curriculum, DELE | Spanish |
+
+A language is one file in `src/lib/langs/`. `src/lib/packs.test.js` is the contract it has to pass, so adding a language means writing one pack and registering it.
+
 ## How it works
 
 - **SvelteKit**, prerendered, with a service worker. About 60 kB of JavaScript.
-- **Local first.** State is one object in local storage, mirrored to one Postgres row per user when signed in. Newest copy wins.
+- **Local first.** State is one object per language in local storage, mirrored to one Postgres row per user and language when signed in. Newest copy wins.
 - **Learning design** follows Dunlosky et al. (2013): recall over rereading, spaced review, mixed topics, instant feedback, and a second try on every miss.
 
 ```
-src/lib/content.js        course and starter words
-src/lib/conj.js           verb conjugator
+src/lib/langs/            one pack per language: course, words, drills, placement, roadmap
+src/lib/lang.js           loads the active language
 src/lib/quiz.js           answer checking, spaced repetition, daily quiz
 src/lib/roadmap.js        stages, milestones, checkpoint tests
 src/lib/cloud.svelte.js   sign-in, sync, photos
@@ -90,12 +104,13 @@ src/service-worker.js     offline cache
 - Speaking is scored by whether each word was understood, not sound by sound.
 - The daily reminder is a repeating calendar event, not a push notification.
 - YouTube often hides captions from servers. Paste the transcript when that happens.
-- Badges are this app's own checkpoints modeled on CEFR, not a certificate.
+- Badges are this app's own checkpoints modeled on CEFR and each language's official exam levels, not a certificate.
+- The courses were written with AI help and have not all been reviewed by native speakers. Report anything that sounds off.
 - Sync is newest copy wins. Two devices edited offline at once lose the older changes.
 
 ## Contributing
 
-Lessons are plain JavaScript in `src/lib/content.js`. Corrections from native speakers, mineiros above all, are welcome as issues or pull requests.
+Lessons are plain JavaScript in `src/lib/langs/`. Corrections from native speakers are the most useful contribution: open an issue or a pull request. New languages are welcome too.
 
 ## License
 
