@@ -3,13 +3,21 @@
 	import Exercise from '../../lib/Exercise.svelte';
 	import { S, addXP } from '../../lib/store.svelte.js';
 	import { PLACEMENT } from '../../lib/content.js';
-	import { place, PASS_BAND } from '../../lib/roadmap.js';
+	import { place, placementSteps, PASS_BAND } from '../../lib/roadmap.js';
+	import { cloud } from '../../lib/cloud.svelte.js';
 	import { today } from '../../lib/fx.js';
 	import { lang, meta, t, AVAILABLE, switchLang } from '../../lib/lang.js';
 
 	let band = $state(-1); // -1 intro, 0..n-1 testing, n result
 	let passed = $state(0);
 	let stage = $state(null);
+	let steps = $state([]);
+
+	// each band draws fresh questions, so a retake is a different test
+	function open(i) {
+		steps = placementSteps(S, i);
+		band = i;
+	}
 
 	function done(bands) {
 		stage = place(S, bands, today());
@@ -21,7 +29,7 @@
 	function finish({ right }) {
 		if (right < PASS_BAND) done(passed);
 		else if (++passed === PLACEMENT.length) done(passed);
-		else band++;
+		else open(band + 1);
 		return false;
 	}
 </script>
@@ -35,12 +43,12 @@
 			{#each AVAILABLE as l}<button class="chip" class:on={l.code === lang} onclick={() => l.code !== lang && switchLang(l.code, '/welcome')}>{l.label}</button>{/each}
 		</div>
 		<p class="dim">A short test finds your level in {meta.name}. It gets harder as you go and stops when it gets too hard, so it takes 1 to 5 minutes.</p>
-		<button class="btn primary wide" onclick={() => (band = 0)}>Find my level</button>
+		<button class="btn primary wide" onclick={() => open(0)}>Find my level</button>
 		<button class="btn wide" onclick={() => { done(0); goto('/'); }}>I am new, start from zero</button>
 	</div>
 {:else if band < PLACEMENT.length}
 	{#key band}
-		<Exercise steps={PLACEMENT[band].steps} back="/" onfinish={finish} />
+		<Exercise {steps} back="/" onfinish={finish} />
 	{/key}
 {:else}
 	<div class="intro stack rise">
@@ -50,6 +58,7 @@
 		<p class="dim">{passed ? `You cleared ${passed} of ${PLACEMENT.length} levels, so the earlier badges are yours and their lessons are marked done. You can still open them.` : 'You start at the beginning. That is the fastest way to get the sounds right.'}</p>
 		<p class="dim small">Next goal: {stage.can}.</p>
 		<a class="btn primary wide" href="/">{t.start}</a>
+		{#if cloud.status === 'out'}<a class="btn wide" href="/account">Save this to an account</a><p class="dim small">Your level is kept on this device, and it moves into your account when you sign up or sign in.</p>{/if}
 	</div>
 {/if}
 

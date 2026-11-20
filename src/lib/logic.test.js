@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import { conj } from './conj.js';
 import { check, dailyQuiz, markAsked, fromKey, grade, cleanSteps, sayScore, QUIZ_LEN } from './quiz.js';
 import { isPrivate } from './server/safefetch.js';
-import { decide } from './sync.js';
-import { STAGES, current, milestones, ready, buildTest, passed, place, EXTRA } from './roadmap.js';
+import { decide, keepPlacement } from './sync.js';
+import { STAGES, current, milestones, ready, buildTest, passed, place, placementSteps, EXTRA } from './roadmap.js';
 import { LESSONS } from './content.js';
 
 test('conjugation', () => {
@@ -96,6 +96,30 @@ test('placement starts you higher and counts milestones from there', () => {
 	const quiz = milestones(S, current(S)).find((m) => m.label.includes('daily'));
 	assert.equal(quiz.need, 15 - 10, 'B1.1 asks for 15 quizzes, A2.2 already covered 10');
 	assert.equal(place({ ...mkS(), done: {}, badges: {} }, 9, 'd').id, 'C1.2');
+});
+
+test('placement retakes draw different questions', () => {
+	const S = { placeSeen: [] };
+	const a = placementSteps(S, 1).map((q) => q.prompt);
+	const b = placementSteps(S, 1).map((q) => q.prompt);
+	assert.equal(a.length, 4);
+	assert.equal(new Set([...a, ...b]).size, 8, 'second attempt shares no question with the first');
+	assert.equal(S.placeSeen.length, 8);
+	for (let i = 0; i < 40; i++) assert.equal(placementSteps(S, 4).length, 4, 'still 4 questions once the pool is used up');
+});
+
+test('a placement earned signed out survives signing in to an existing account', () => {
+	const ids = STAGES.map((s) => s.id);
+	const remote = { xp: 500, uid: 'u', placed: null, badges: { 'A1.1': 'old' }, done: { 'sons-1': 1 } };
+	const local = { uid: null, onboarded: true, placed: 'A2.2', badges: { 'A1.1': 'new', 'A1.2': 'new', 'A2.1': 'new', 'A2.2': 'new' }, done: { 'perf-1': 0 }, placeSeen: ['q'] };
+	const m = keepPlacement(remote, local, ids);
+	assert.equal(m.xp, 500, 'account data wins');
+	assert.equal(m.placed, 'A2.2');
+	assert.equal(m.badges['A1.1'], 'old', 'an existing badge keeps its date');
+	assert.equal(Object.keys(m.badges).length, 4);
+	assert.ok('perf-1' in m.done && 'sons-1' in m.done);
+	assert.equal(keepPlacement(remote, { ...local, uid: 'someone' }, ids), remote, 'data that already belongs to an account is never merged');
+	assert.equal(keepPlacement({ ...remote, placed: 'B1.2' }, local, ids).placed, 'B1.2', 'the further starting point wins');
 });
 
 test('sync decision after sign-in', () => {

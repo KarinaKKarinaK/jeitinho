@@ -1,4 +1,4 @@
-import { LESSONS } from './content.js';
+import { LESSONS, PLACEMENT } from './content.js';
 import { fromKey } from './quiz.js';
 import { pack } from './lang.js';
 
@@ -49,6 +49,21 @@ export function milestones(S, stage) {
 // Placement: where you start after passing n bands of the placement test (0 = none).
 // Deliberately cautious at the top: four questions are not enough to hand out C1.
 const START = ['A1.1', 'A2.1', 'B1.1', 'B2.1', 'B2.3', 'C1.2'];
+// Questions for one band of the placement test: 4 drawn at random from that band's own questions plus
+// the questions of the lessons taught at that level. Ones you have already been shown are left out,
+// so retaking the test does not repeat until the pool runs dry. Returns the questions and marks them seen.
+export function placementSteps(S, i) {
+	const band = PLACEMENT[i].band;
+	const fromLessons = STAGES.filter((s) => s.id.startsWith(band)).flatMap((s) => s.lessons).flatMap((id) => LESSONS[id].steps.filter((q) => q.kind === 'choice' || q.kind === 'type'));
+	const pool = [...new Map([...PLACEMENT[i].steps, ...fromLessons].map((q) => [q.prompt, q])).values()];
+	const seen = new Set(S.placeSeen || []);
+	let fresh = pool.filter((q) => !seen.has(q.prompt));
+	if (fresh.length < 4) fresh = pool; // every question used: start over
+	const picked = shuffle(fresh).slice(0, 4);
+	S.placeSeen = [...new Set([...(S.placeSeen || []), ...picked.map((q) => q.prompt)])].slice(-600);
+	return picked;
+}
+
 export const PASS_BAND = 3; // right answers out of 4 to clear a band
 export function place(S, bands, date) {
 	const i = STAGES.findIndex((s) => s.id === START[Math.min(bands, START.length - 1)]);
@@ -63,7 +78,9 @@ export function place(S, bands, date) {
 
 export const ready = (S, stage) => milestones(S, stage).every((m) => m.ok);
 
-const shuffle = (a) => a.map((v) => [Math.random(), v]).sort((x, y) => x[0] - y[0]).map((x) => x[1]);
+function shuffle(a) {
+	return a.map((v) => [Math.random(), v]).sort((x, y) => x[0] - y[0]).map((x) => x[1]);
+}
 
 // B and C tests add harder tasks on top: [sentences to hear and type, writing tasks, sentences to say out loud]
 export const EXTRA = { A: [0, 0, 0], B: [3, 2, 2], C: [4, 3, 3] };

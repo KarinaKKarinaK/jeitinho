@@ -1,5 +1,6 @@
 import { S, rev, watch, replace, reset } from './store.svelte.js';
-import { decide } from './sync.js';
+import { decide, keepPlacement } from './sync.js';
+import { STAGE_IDS } from './langs/kit.js';
 import { caps } from './fx.js';
 import { lang } from './lang.js';
 
@@ -58,9 +59,12 @@ export async function pull() {
 	if (error) return fail(error);
 	const what = decide({ uid, localUid: S.uid, localRev: rev(), remote: !!data, remoteRev: data?.rev || 0 });
 	if (what === 'pull') {
-		replace({ ...data.data, uid }, data.rev);
+		const merged = keepPlacement({ ...data.data, uid }, $state.snapshot(S), STAGE_IDS);
+		replace(merged, data.rev);
 		cloud.status = 'synced';
 		cloud.at = Date.now();
+		// a placement result earned signed out was added to the account data: save that back
+		if (Object.keys(merged.badges || {}).length !== Object.keys(data.data.badges || {}).length) await push();
 		return;
 	}
 	if (what === 'fresh') reset();
