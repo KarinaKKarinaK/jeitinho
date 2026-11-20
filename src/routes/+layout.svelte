@@ -27,7 +27,7 @@
 		return () => clearInterval(timer);
 	});
 
-	const tabs = [['/', 'home', 'Home'], ['/learn', 'book', 'Learn'], ['/add', 'plus', 'Add material'], ['/bank', 'layers', 'Word bank'], ['/chat', 'chat', 'Chat']];
+	const tabs = [['/', 'home', 'Home'], ['/learn', 'book', 'Learn'], ['/add', 'plus', 'Add material'], ['/bank', 'layers', 'Word bank'], ['/chat', 'chat', 'Chat'], ['/settings', 'gear', 'Settings']];
 	const path = $derived(page.url.pathname.replace(/\/$/, '') || '/');
 	const immersive = $derived(['/lesson', '/quiz', '/drill', '/checkpoint', '/speak', '/welcome'].includes(path));
 </script>
@@ -52,7 +52,7 @@
 		background: var(--nav); backdrop-filter: blur(24px) saturate(1.4); -webkit-backdrop-filter: blur(24px) saturate(1.4);
 		box-shadow: 0 18px 40px -12px var(--shadow);
 	}
-	a { width: 54px; height: 50px; border-radius: 999px; display: grid; place-items: center; color: var(--dim); transition: background 0.25s, color 0.25s, transform 0.12s; }
+	a { width: 50px; height: 50px; border-radius: 999px; display: grid; place-items: center; color: var(--dim); transition: background 0.25s, color 0.25s, transform 0.12s; }
 	a:active { transform: scale(0.9); }
 	a.on { background: var(--solid); color: var(--on-solid); }
 	a span { display: none; }

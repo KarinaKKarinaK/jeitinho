@@ -81,14 +81,10 @@
 	}
 </script>
 
-<header class="head">
-	<a class="icon-btn" href="/" aria-label="Back"><Icon name="back" /></a>
-</header>
+<header class="head"><h1>Settings</h1></header>
 
 <div class="stack rise">
 	<div>
-		<p class="eyebrow">Settings</p>
-		<h1>Make it yours</h1>
 		<p class="dim small" style="margin-top:8px">Saved on this device as you change them.</p>
 	</div>
 

@@ -5,7 +5,7 @@
 	import { S, addXP, addWords } from '../../lib/store.svelte.js';
 	import { grade, norm } from '../../lib/quiz.js';
 	import { speak, today } from '../../lib/fx.js';
-	import { t } from '../../lib/lang.js';
+	import { t, meta } from '../../lib/lang.js';
 	import { cloud, photoUrl, dropPhoto } from '../../lib/cloud.svelte.js';
 
 	let tab = $state(page.url.searchParams.get('tab') || 'words');
@@ -68,7 +68,7 @@
 				</button>
 				{#if flip}
 					<div class="grades">
-						{#each [['De novo', 0, 'var(--bad)'], ['Difícil', 1, 'var(--amber)'], ['Bom', 2, 'var(--ok)'], ['Fácil', 3, 'var(--lime)']] as [label, g, c]}
+						{#each [['Again', 0, 'var(--bad)'], ['Hard', 1, 'var(--amber)'], ['Good', 2, 'var(--ok)'], ['Easy', 3, 'var(--lime)']] as [label, g, c]}
 							<button class="btn" style:color={c} onclick={() => rate(g)}>{label}</button>
 						{/each}
 					</div>
@@ -117,7 +117,7 @@
 						{#if w.say}<p class="say">{w.say}</p>{/if}
 						{#if w.ex}<p>{w.ex}</p><p class="dim small">{w.exEn}</p>{/if}
 						<div class="chips">
-							<button class="btn sm" onclick={() => speak(w.ex || w.pt)}><Icon name="sound" size={16} /> Ouvir</button>
+							<button class="btn sm" onclick={() => speak(w.ex || w.pt)}><Icon name="sound" size={16} /> {t.hear}</button>
 							<button class="btn sm" onclick={() => S.words.splice(S.words.indexOf(w), 1)}><Icon name="trash" size={16} /> Remove</button>
 						</div>
 					</div>
@@ -126,7 +126,7 @@
 		{/each}
 		<div class="card stack">
 			<p class="eyebrow">Add a word</p>
-			<input type="text" bind:value={np} placeholder="Português" autocapitalize="off" />
+			<input type="text" bind:value={np} placeholder={meta.label} autocapitalize="off" />
 			<input type="text" bind:value={ne} placeholder="English meaning" />
 			<div class="chips">
 				<button class="btn sm primary" disabled={!np.trim() || !ne.trim()} onclick={add}>Add</button>

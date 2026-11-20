@@ -15,9 +15,10 @@
 	const GOAL = P.goal; // XP that fills a day ring
 	const QUIZ_LEN = P.quizLen;
 	const now = Date.now();
-	const week = Array.from({ length: 7 }, (_, k) => {
-		const d = new Date(now - (6 - k) * DAY);
-		return { key: today(d), label: k === 6 ? t.today : t.days[d.getDay()], now: k === 6 };
+	// two weeks of rings; phones show the last seven, wide screens show all fourteen
+	const week = Array.from({ length: 14 }, (_, k) => {
+		const d = new Date(now - (13 - k) * DAY);
+		return { key: today(d), label: k === 13 ? t.today : t.days[d.getDay()], now: k === 13, old: k < 7 };
 	});
 	const hour = new Date().getHours();
 	const hello = t.hello[hour < 12 ? 0 : hour < 18 ? 1 : 2];
@@ -59,7 +60,7 @@
 
 	<div class="week">
 		{#each week as d}
-			<div class="day" class:now={d.now}>
+			<div class="day" class:now={d.now} class:old={d.old}>
 				<span>{d.label}</span>
 				<div class="ring" style:--p={Math.min(1, (S.days[d.key] || 0) / GOAL)}>{S.days[d.key] || ''}</div>
 			</div>
@@ -99,11 +100,6 @@
 		<div class="bar"><i style:width="{stage ? (ms.reduce((a, m) => a + m.have / m.need, 0) / ms.length) * 100 : 100}%"></i></div>
 	</a>
 
-	<a class="item" href="/settings">
-		<span class="dot"><Icon name="gear" /></span>
-		<span class="grow"><b>Settings</b><small>Theme, voice, quiz, reminders, your own AI key</small></span>
-		<Icon name="chev" size={18} />
-	</a>
 
 	<p class="foot"><a href="/privacy">Privacy</a><span>·</span><a href="https://github.com/KarinaKKarinaK/jeitinho" target="_blank" rel="noopener noreferrer">Open source</a></p>
 </div>
@@ -113,7 +109,8 @@
 	@media (min-width: 900px) {
 		.home { display: grid; grid-template-columns: 1.15fr 1fr; gap: 18px; align-items: start; }
 		.home > header, .home > .langs, .home > .week { grid-column: 1 / -1; }
-		.home > .week { justify-content: flex-start; gap: 30px; margin-bottom: 6px; }
+		.home > .week { justify-content: space-between; margin-bottom: 6px; }
+		.home > .week > .day.old { display: grid; }
 		.home > .hero { grid-row: span 2; min-height: 100%; }
 		.home > .hero h1 { font-size: 52px; }
 	}
@@ -121,6 +118,7 @@
 	.foot a { transition: color 0.2s; }
 	.foot a:hover { color: var(--ink); }
 	@media (min-width: 900px) { .home > .foot { grid-column: 1 / -1; } }
+	.day.old { display: none; }
 	.streak.lang { font: 500 13px var(--mono); cursor: pointer; color: var(--ink); padding: 0 14px; }
 	.langs .item { width: 100%; color: var(--ink); font: inherit; text-align: left; cursor: pointer; }
 	.langs .dot { font: 500 12px var(--mono); }

@@ -84,7 +84,7 @@
 	{#if !cloud.ready}
 		<div class="spin"></div>
 	{:else if cloud.status === 'off'}
-		<p class="eyebrow">Conta</p>
+		<p class="eyebrow">Account</p>
 		<h1>Accounts are not set up</h1>
 		<p class="dim">This deployment has no database connected yet, so progress stays on this device. See the README for the two steps.</p>
 	{:else if cloud.recovery}
@@ -95,8 +95,8 @@
 			<button class="btn primary wide" disabled={busy}>Save password</button>
 		</form>
 	{:else if cloud.user}
-		<p class="eyebrow">Conta</p>
-		<h1>Tudo salvo</h1>
+		<p class="eyebrow">Account</p>
+		<h1>All saved</h1>
 		<div class="card stack">
 			<div class="row">
 				<span class="dot"><Icon name="user" /></span>
@@ -115,7 +115,7 @@
 			{armed ? 'Tap again to delete your progress and photos from the server. This cannot be undone.' : 'Delete my cloud data'}
 		</button>
 	{:else}
-		<p class="eyebrow">Conta</p>
+		<p class="eyebrow">Account</p>
 		<h1>Keep your progress</h1>
 		<p class="dim">Sign in and your streak, word bank and saved material follow you to every device. What you have on this device now comes with you.</p>
 

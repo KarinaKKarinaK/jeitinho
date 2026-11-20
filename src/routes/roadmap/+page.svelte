@@ -57,7 +57,7 @@
 			</li>
 		{/each}
 	</ol>
-	{#if !now}<div class="card"><h2>Quase nativo</h2><p class="dim">Every badge earned. Uai, que trem bão!</p></div>{/if}
+	{#if !now}<div class="card"><h2>Every badge earned</h2><p class="dim">You finished the whole road. Keep the daily quiz going to stay sharp.</p></div>{/if}
 </div>
 
 <style>
