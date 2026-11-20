@@ -3,7 +3,8 @@
 	import Icon from '../lib/Icon.svelte';
 	import Heatmap from '../lib/Heatmap.svelte';
 	import { S, streak, level } from '../lib/store.svelte.js';
-	import { LESSON_LIST } from '../lib/content.js';
+	import { LESSON_LIST, CHAPTER_OF, UNITS } from '../lib/content.js';
+	import { chapterOpen } from '../lib/roadmap.js';
 	import { today, DAY } from '../lib/fx.js';
 	import { P } from '../lib/prefs.js';
 	import { cloud } from '../lib/cloud.svelte.js';
@@ -26,6 +27,8 @@
 	let picking = $state(false);
 	const quiz = $derived(S.quiz[today()]);
 	const next = $derived(LESSON_LIST.find((l) => !(l.id in S.done)));
+	// if the next lesson sits in a locked chapter, the next step is the quiz of the chapter before it
+	const gate = $derived(next && !chapterOpen(S, CHAPTER_OF[next.id]) ? CHAPTER_OF[next.id] - 1 : -1);
 	const due = $derived(S.words.filter((w) => w.reps > 0 && w.due <= now).length);
 	const lv = $derived(level());
 	const stage = $derived(current(S));
@@ -80,7 +83,13 @@
 		</div>
 	</a>
 
-	{#if next}
+	{#if gate >= 0}
+		<a class="item" href="/chapter?i={gate}">
+			<span class="dot"><Icon name="lock" /></span>
+			<span class="grow"><small>Chapter {gate + 1} quiz</small><b>Pass it to open {UNITS[gate + 1].title}</b></span>
+			<Icon name="chev" size={18} />
+		</a>
+	{:else if next}
 		<a class="item" href="/lesson?id={next.id}">
 			<span class="dot"><Icon name="book" /></span>
 			<span class="grow"><small>{t.nextLesson}</small><b>{next.title}</b></span>
@@ -117,7 +126,7 @@
 	.streak { display: flex; align-items: center; gap: 6px; height: 44px; padding: 0 16px; border-radius: 999px; border: 1px solid var(--line); background: var(--glass); color: var(--dim); font-weight: 500; }
 	@media (min-width: 900px) {
 		.home { display: grid; grid-template-columns: 1.15fr 1fr; gap: 18px; align-items: start; }
-		.home > header, .home > .langs, .home > .week { grid-column: 1 / -1; }
+		.home > header, .home > .langs, .home > .week, .home > .heat { grid-column: 1 / -1; }
 		.home > .week { justify-content: space-between; margin-bottom: 6px; }
 		.home > .week > .day.old { display: grid; }
 		.home > .hero { grid-row: span 2; min-height: 100%; }

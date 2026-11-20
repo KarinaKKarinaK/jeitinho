@@ -6,6 +6,7 @@
 	import { S, addWords } from '../../lib/store.svelte.js';
 	import { ai, speak, today } from '../../lib/fx.js';
 	import { t, meta } from '../../lib/lang.js';
+	import { current, earned } from '../../lib/roadmap.js';
 	import { cloud, savePhoto } from '../../lib/cloud.svelte.js';
 
 	let text = $state('');
@@ -32,7 +33,9 @@
 		res = added = null;
 		off = {};
 		try {
-			const r = await ai('import', body, S.pass);
+			// the level steers which words are worth suggesting
+			const level = (earned(S) || current(S))?.id.slice(0, 2) || 'A1';
+			const r = await ai('import', { ...body, level }, S.pass);
 			const id = Date.now().toString(36);
 			const img = body.kind === 'photo' ? await savePhoto(id, body.image).catch(() => '') : '';
 			S.materials.unshift({ id, img, date: today(), type: r.type, title: r.title, url: r.url || '', summary: r.summary, notes: r.notes, text: r.text || '', lyrics: r.lyrics, words: r.lyrics ? r.words : undefined });

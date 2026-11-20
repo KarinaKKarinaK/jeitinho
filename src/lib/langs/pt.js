@@ -581,6 +581,11 @@ export default {
 		placeholder: 'Escreve em português...',
 		scenes: ['Bate-papo livre', 'Pedindo no boteco', 'Na padaria', 'Conhecendo a família', 'Entrevista de emprego']
 	},
+	// exact forms from the built-in conjugator for the verbs it covers; other verbs are looked up by the AI
+	conjugate(verb) {
+		if (!VERBS[verb]) return null;
+		return { verb, note: `${VERBS[verb]}. From the built-in conjugator.`, rows: ALL.map((t) => ({ label: TENSES[t].name, forms: [0, 1, 2, 3].map((p) => `${PRON[p]} ${conj(verb, t, p)}`) })) };
+	},
 	drill: {
 		start: ['perf'],
 		groups: TENSES,

@@ -2,10 +2,12 @@
 	import { onMount } from 'svelte';
 	import Icon from '../../lib/Icon.svelte';
 	import { S, reset } from '../../lib/store.svelte.js';
-	import { P, VOICES, savePrefs, setKey, unlock } from '../../lib/prefs.js';
+	import { P, voicesFor, voiceOf, savePrefs, setKey, unlock } from '../../lib/prefs.js';
 	import { cloud } from '../../lib/cloud.svelte.js';
 	import { speak, today } from '../../lib/fx.js';
-	import { meta, pack } from '../../lib/lang.js';
+	import { meta, pack, lang } from '../../lib/lang.js';
+
+	const VOICES = voicesFor(lang);
 	import { retakeAt } from '../../lib/roadmap.js';
 
 	// a live copy of the settings; every change is saved straight away
@@ -121,10 +123,10 @@
 		<h3>Voice</h3>
 		<div class="chips">
 			{#each VOICES as [id, name, about]}
-				<button class="chip" class:on={p.voice === id} title={about} onclick={() => { p.voice = id; savePrefs({ voice: id }); speak(sample); }}>{name}</button>
+				<button class="chip" class:on={(p.voice === 'auto' ? voiceOf(lang) : p.voice) === id} title={about} onclick={() => { p.voice = id; savePrefs({ voice: id }); speak(sample); }}>{name}</button>
 			{/each}
 		</div>
-		<p class="dim small">{VOICES.find((v) => v[0] === p.voice)?.[2]}. Tap a voice to hear it. {cloud.tts ? 'The six named voices are cloud voices with a light foreign accent. Device voice is your phone\'s own voice for this language, usually the most native.' : 'Cloud voices are not set up on this server, so the device voice is used.'}</p>
+		<p class="dim small">{VOICES.find((v) => v[0] === (p.voice === 'auto' ? voiceOf(lang) : p.voice))?.[2]}. Tap a voice to hear it. {cloud.tts ? 'The six named voices are the same cloud voices in every language, shown under local names; they speak with a light foreign accent. Device voice is your phone\'s own voice for this language, usually the most native.' : 'Cloud voices are not set up on this server, so the device voice is used.'}</p>
 		<label class="small dim">Speed: {p.rate}<input type="range" min="0.5" max="1.2" step="0.1" bind:value={p.rate} /></label>
 		<label class="sw"><input type="checkbox" bind:checked={p.autoplay} /><span>Read the answer aloud after each question</span></label>
 		<label class="sw"><input type="checkbox" bind:checked={p.sfx} /><span>Sounds and vibration for right and wrong</span></label>

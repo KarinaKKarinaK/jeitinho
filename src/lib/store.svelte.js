@@ -2,6 +2,7 @@ import { today, DAY } from './fx.js';
 import { SEED } from './content.js';
 import { wordKey } from './quiz.js';
 import { lang, pack } from './lang.js';
+import { grandfather } from './roadmap.js';
 
 // State lives in localStorage so the app works offline and signed out.
 // When signed in, cloud.svelte.js mirrors the same object to the database.
@@ -16,8 +17,8 @@ export const newWord = (w, src = 'seed') => ({
 	src, added: Date.now(), due: 0, ivl: 0, ease: 2.5, reps: 0
 });
 
-const blank = () => ({ xp: 0, streak: 0, last: null, days: {}, done: {}, words: [], asked: {}, quiz: {}, materials: [], custom: {}, chat: [], pass: '', rate: 0.9, drill: pack.drill.start, uid: null, badges: {}, nquiz: 0, onboarded: false, placed: null, placeSeen: [], placedAt: 0, mins: {}, cols: [], seedN: 0 });
-const seeded = () => ({ ...blank(), words: SEED.map((w) => newWord(w)), seedN: SEED.length });
+const blank = () => ({ xp: 0, streak: 0, last: null, days: {}, done: {}, words: [], asked: {}, quiz: {}, materials: [], custom: {}, chat: [], pass: '', rate: 0.9, drill: pack.drill.start, uid: null, badges: {}, nquiz: 0, onboarded: false, placed: null, placeSeen: [], placedAt: 0, mins: {}, cols: [], seedN: 0, chapters: null });
+const seeded = () => ({ ...blank(), words: SEED.map((w) => newWord(w)), seedN: SEED.length, chapters: {} });
 
 function load() {
 	try {
@@ -47,6 +48,8 @@ if (S.seedN !== SEED.length) {
 	}
 	S.seedN = SEED.length;
 }
+// chapters arrived later: people who were already studying keep access to what they had reached
+if (S.chapters == null) S.chapters = grandfather(S);
 let applying = null;
 let onChange = null;
 

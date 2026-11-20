@@ -3,6 +3,7 @@
 	import { fly } from 'svelte/transition';
 	import Icon from '../../lib/Icon.svelte';
 	import Star from '../../lib/Star.svelte';
+	import Conj from '../../lib/Conj.svelte';
 	import { S, addXP, addWords, newCollection, dropCollection, toggleIn } from '../../lib/store.svelte.js';
 	import { grade, norm } from '../../lib/quiz.js';
 	import { speak, today, ai } from '../../lib/fx.js';
@@ -196,6 +197,9 @@
 							<button class="btn sm" onclick={() => speak(w.ex || w.pt)}><Icon name="sound" size={16} /> {t.hear}</button>
 							<button class="btn sm" disabled={busy === w.id} onclick={() => example(w)}>{#if busy === w.id}<span class="spin"></span>{:else}<Icon name="spark" size={16} />{/if} New example</button>
 						</div>
+						{#if w.pos === 'verb'}
+							<details class="cj"><summary class="small">{meta.locale.startsWith('zh') ? 'How this verb is used' : 'Conjugation'}</summary><div style="margin-top:10px"><Conj word={w} /></div></details>
+						{/if}
 						<label class="small dim">Your note<textarea bind:value={w.note} rows="2" placeholder="A memory hook, where you heard it, a mistake to avoid..."></textarea></label>
 						<label class="small dim">Part of speech
 							<select bind:value={w.pos}><option value="">not set</option>{#each POS as p}<option value={p}>{p}</option>{/each}</select>
@@ -240,6 +244,7 @@
 	.word { padding: 14px 18px; border-radius: 22px; }
 	.word .open { background: none; border: 0; padding: 0; color: inherit; font: inherit; text-align: left; cursor: pointer; min-width: 0; }
 	.word em { display: block; font: 400 13px var(--mono); color: var(--rose); font-style: normal; }
+	.cj summary { display: block; cursor: pointer; color: var(--rose); font-weight: 500; }
 	.pos { font: 500 10px var(--mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--dim); padding: 4px 8px; border-radius: 999px; background: var(--glass2); white-space: nowrap; }
 	.filters { flex-wrap: nowrap; overflow-x: auto; margin: 0 -18px; padding: 0 18px 2px; scrollbar-width: none; }
 	.filters::-webkit-scrollbar { display: none; }

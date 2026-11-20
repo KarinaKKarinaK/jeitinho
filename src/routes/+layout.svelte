@@ -30,7 +30,7 @@
 
 	const tabs = [['/', 'home', 'Home'], ['/learn', 'book', 'Learn'], ['/add', 'plus', 'Add material'], ['/bank', 'layers', 'Word bank'], ['/chat', 'chat', 'Chat'], ['/settings', 'gear', 'Settings']];
 	const path = $derived(page.url.pathname.replace(/\/$/, '') || '/');
-	const immersive = $derived(['/lesson', '/quiz', '/drill', '/checkpoint', '/speak', '/welcome'].includes(path));
+	const immersive = $derived(['/lesson', '/quiz', '/drill', '/checkpoint', '/speak', '/welcome', '/chapter'].includes(path));
 </script>
 
 <div class="bg"></div>

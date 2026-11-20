@@ -1,5 +1,5 @@
 import { lang, meta } from './lang.js';
-import { P } from './prefs.js';
+import { P, voiceOf } from './prefs.js';
 
 export const DAY = 864e5;
 
@@ -16,11 +16,11 @@ let turn = 0;
 export function speak(text, rate = P.rate) {
 	if (!text) return;
 	const me = ++turn;
-	if (caps.tts && P.voice !== 'device' && navigator.onLine && text.length <= 300) {
+	if (caps.tts && voiceOf(lang) !== 'device' && navigator.onLine && text.length <= 300) {
 		globalThis.speechSynthesis?.cancel();
 		player ??= new Audio(); // one shared element: once a tap has unlocked it, iOS lets later plays through
 		player.onerror = () => (caps.tts = false); // quota used up or service down: stay on the phone voice for this session, no repeated waiting
-		player.src = `/api/tts?l=${lang}&v=${P.voice}&t=` + encodeURIComponent(text.trim());
+		player.src = `/api/tts?l=${lang}&v=${voiceOf(lang)}&t=` + encodeURIComponent(text.trim());
 		player.defaultPlaybackRate = player.playbackRate = Math.max(0.6, Math.min(1.2, rate + 0.1));
 		player.play().catch(() => me === turn && local(text, rate));
 		return;

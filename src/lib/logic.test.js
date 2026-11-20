@@ -4,7 +4,8 @@ import { conj } from './conj.js';
 import { check, dailyQuiz, markAsked, fromKey, grade, cleanSteps, sayScore, songSteps, QUIZ_LEN } from './quiz.js';
 import { isPrivate } from './server/safefetch.js';
 import { decide, keepPlacement } from './sync.js';
-import { STAGES, current, milestones, ready, buildTest, passed, place, placementSteps, placementVerdict, retakeAt, forecast, BAND_N, EXTRA } from './roadmap.js';
+import { STAGES, current, milestones, ready, buildTest, passed, place, placementSteps, placementVerdict, retakeAt, forecast, BAND_N, EXTRA, chapterOpen, chapterPassed, chapterReady, chapterQuiz, passChapter, grandfather } from './roadmap.js';
+import { UNITS } from './content.js';
 import { LESSONS } from './content.js';
 
 test('conjugation', () => {
@@ -170,6 +171,34 @@ test('a song always yields a lesson, even from lyrics alone', () => {
 	assert.ok(full.some((q) => q.answer === 'a'), 'model questions are mixed in');
 	assert.ok(full.every((q) => q.kind !== 'info') && full.length <= 14);
 	assert.deepEqual(songSteps([]), []);
+});
+
+test('chapters open one at a time, by passing the quiz of the one before', () => {
+	const S = { done: {}, chapters: {}, badges: {} };
+	assert.equal(chapterOpen(S, 0), true);
+	assert.equal(chapterOpen(S, 1), false, 'chapter 2 starts locked');
+	assert.equal(chapterReady(S, 0), false);
+	for (const l of UNITS[0].lessons) S.done[l.id] = 1;
+	assert.equal(chapterReady(S, 0), true, 'all lessons done: the quiz is available');
+	assert.equal(chapterOpen(S, 1), false, 'finishing lessons alone does not open the next chapter');
+	const quiz = chapterQuiz(0);
+	assert.ok(quiz.length >= 5 && quiz.length <= 10 && quiz.every((q) => q.kind !== 'info' && q.answer));
+	passChapter(S, 0, 'd');
+	assert.equal(chapterPassed(S, 0), true);
+	assert.equal(chapterOpen(S, 1), true);
+	assert.equal(chapterOpen(S, 2), false);
+	// someone who was already on a later lesson before chapters existed keeps their access
+	const old = { done: { [UNITS[2].lessons[0].id]: 1 } };
+	const kept = { chapters: grandfather(old) };
+	assert.equal(chapterOpen(kept, 2), true);
+	assert.equal(chapterOpen(kept, 3), false);
+	// testing out of early levels passes the chapters made only of those lessons
+	const P2 = { ...mkS(), done: {}, badges: {}, chapters: {} };
+	place(P2, 2, 'd');
+	assert.equal(chapterPassed(P2, 0), true);
+	// every chapter's lessons come before or with the stage that needs them: chapter order follows the roadmap
+	const firstStage = UNITS.map((u) => Math.min(...u.lessons.map((l) => STAGES.findIndex((s) => s.lessons.includes(l.id)))));
+	assert.deepEqual(firstStage, [...firstStage].sort((a, b) => a - b));
 });
 
 test('sync decision after sign-in', () => {

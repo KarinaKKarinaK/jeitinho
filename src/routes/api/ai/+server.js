@@ -68,26 +68,31 @@ const notes = (list) => (Array.isArray(list) ? list : []).slice(0, 6).map((n) =>
 // What changes per language in the prompts. Everything else is shared.
 const AI = {
 	pt: {
+		conj: 'Rows, in this order: Presente, Pretérito perfeito, Pretérito imperfeito, Futuro (the everyday form: vou falar), Condicional, Subjuntivo presente, Subjuntivo imperfeito, Subjuntivo futuro, Particípio e gerúndio. In each tense row give four forms written with the pronoun: eu, você, nós, vocês.',
 		who: 'an English speaker who also knows Spanish learn Brazilian Portuguese', form: '', say: 'pronunciation spelled for an English speaker with the stressed syllable in CAPS',
 		notes: 'with Spanish contrasts when useful', read: '',
 		chat: 'You are Bia, a warm, funny mineira from Belo Horizonte chatting with a learner of Brazilian Portuguese. Reply in natural spoken Brazilian Portuguese with light mineirês (uai, trem, cê, sô, bão)'
 	},
 	zh: {
+		conj: 'Chinese verbs do not conjugate, so give usage patterns instead. Rows, in this order: Negation (不 and 没), Completed (了), Experience (过), In progress (在 or 正在), Result complements often used with this verb, Can and cannot (得 and 不), Typical objects. Each form is a short example in simplified characters followed by pinyin with tone marks and the English meaning in brackets.',
 		who: 'an English speaker learn Mandarin Chinese', form: ', in simplified characters', say: 'pinyin with tone marks',
 		notes: 'on measure words, particles, tones or word order', read: 'pinyin with tone marks',
 		chat: 'You are Lin, a warm, funny Beijinger chatting with a learner of Mandarin. Reply in natural spoken Mandarin, in simplified characters, with everyday particles (吧, 呢, 啊)'
 	},
 	pl: {
+		conj: 'Rows, in this order: Aspect pair (this verb and its aspect partner, saying which is imperfective and which perfective), Present (or simple future if the verb is perfective): ja, ty, on, my, wy, oni; Past, masculine: ja, ty, on, my, wy, oni; Past, feminine: ja, ty, ona, my, wy, one; Future (będę form, only for imperfective verbs); Imperative: ty, my, wy; Conditional: on, ona. Write each form with its pronoun.',
 		who: 'an English speaker learn Polish', form: '', say: 'pronunciation spelled for an English speaker with the stressed syllable in CAPS',
 		notes: 'on cases, verb aspect or word order', read: '',
 		chat: 'You are Kasia, a warm, funny Varsovian chatting with a learner of Polish. Reply in natural spoken Polish'
 	},
 	ja: {
+		conj: 'Rows, in this order, one form each: Group (ichidan, godan or irregular), Dictionary form, ます form, て form, ない form, た form, Potential, Passive, Causative, Volitional, Conditional (ば), Imperative. Write each form in normal Japanese followed by its hiragana reading and romaji in brackets, for example: 書きます (かきます, kakimasu).',
 		who: 'an English speaker learn Japanese', form: ', in normal Japanese writing (kanji with kana)', say: 'the reading in hiragana, then " · ", then romaji',
 		notes: 'on particles, politeness level or verb forms', read: 'the reading in hiragana',
 		chat: 'You are Yuki, a warm, funny person from Tokyo chatting with a learner of Japanese. Reply in natural spoken Japanese, polite but friendly (です/ます with casual touches)'
 	},
 	es: {
+		conj: 'Rows, in this order: Presente, Pretérito indefinido, Pretérito imperfecto, Pretérito perfecto, Futuro, Condicional, Subjuntivo presente, Subjuntivo imperfecto, Imperativo (tú and usted), Participio y gerundio. In each tense row give six forms written with the pronoun: yo, tú, él, nosotros, vosotros, ellos.',
 		who: 'an English speaker learn Spanish', form: '', say: 'pronunciation spelled for an English speaker with the stressed syllable in CAPS',
 		notes: 'on tenses, ser vs estar, or the subjunctive', read: '',
 		chat: 'You are Lucía, a warm, funny madrileña chatting with a learner of Spanish. Reply in natural spoken Spanish'
@@ -106,7 +111,7 @@ const decode = (t) => t.replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/
 const strip = (html) =>
 	decode(html.replace(/<(script|style|noscript|svg|nav|footer|header)[\s\S]*?<\/\1>/gi, ' ').replace(/<[^>]+>/g, ' ')).replace(/\s+/g, ' ').trim();
 
-async function song(id, g) {
+async function song(id, g, level) {
 	const html = await (await fetch(`https://open.spotify.com/track/${id}`, { headers: { 'user-agent': 'Mozilla/5.0' }, signal: AbortSignal.timeout(9000) })).text();
 	const title = meta(html, 'og:title').replace(/\s*[-(].*(remaster|ao vivo|live|version|versão).*$/i, '');
 	const artist = meta(html, 'og:description').split(' · ')[0];
@@ -131,7 +136,7 @@ async function song(id, g) {
 		], 2600),
 		llm([
 			{ role: 'system', content: who(g) },
-			{ role: 'user', content: `Song: "${title}" by ${artist}. Lyrics:\n${numbered}\n\nReturn ONLY JSON: {"summary":"2 sentences in English on what the song is about",${wordsOf(g)},"notes":["up to 4 notes on grammar, slang or pronunciation heard in this song"],"steps":[6 to 8 quiz steps about this song's vocabulary and grammar]}\nUp to 12 words. ${stepsOf(g)}` }
+			{ role: 'user', content: `Song: "${title}" by ${artist}. Lyrics:\n${numbered}\n\nReturn ONLY JSON: {"summary":"2 sentences in English on what the song is about",${wordsOf(g)},"notes":["up to 4 notes on grammar, slang or pronunciation heard in this song"],"steps":[6 to 8 quiz steps about this song's vocabulary and grammar]}\nChoose 8 to 12 words or expressions from the lyrics that are worth a place in a learner's word bank at level ${level}: idioms and fixed expressions (give the whole expression), vivid verbs, colloquial and less common words, anything a learner would have to look up. Give verbs as the infinitive and nouns and adjectives in dictionary form, never the inflected form sung. NEVER pick pronouns, possessives, articles, prepositions, numbers, or everyday basics like be, have, go, say, do, here, there, good, bad, my, your, no, yes. If the song is simple, pick fewer words rather than trivial ones. ${stepsOf(g)}` }
 		], 3200)
 	]);
 	const out = les.status === 'fulfilled' ? les.value : {};
@@ -168,7 +173,7 @@ async function importOp(b) {
 		url = u.href;
 		const sp = u.hostname === 'open.spotify.com' && u.pathname.match(/\/track\/([A-Za-z0-9]{10,30})/);
 		const yt = /(^|\.)youtube\.com$|^youtu\.be$/.test(u.hostname) && (u.searchParams.get('v') || (u.pathname.match(/^\/(?:shorts\/|embed\/)?([\w-]{11})/) || [])[1]);
-		if (sp) return { ...(await song(sp[1], g)), url };
+		if (sp) return { ...(await song(sp[1], g, ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'].includes(b.level) ? b.level : 'A2')), url };
 		if (yt && /^[\w-]{11}$/.test(yt)) {
 			type = 'video';
 			({ title, text, warn } = await youtube(yt));
@@ -236,6 +241,22 @@ async function defineOp(b) {
 	return { pt, en: s(out.en, 160), say: s(out.say, 120), pos: POS.includes(out.pos) ? out.pos : '', note: s(out.note, 300), ex: line, exEn: s(b.lineEn, 300) };
 }
 
+// Conjugation (or, for Chinese, usage patterns) of one verb, as rows the app can show in a table.
+async function conjugateOp(b) {
+	const g = cfg(b);
+	const verb = s(b.word, 60).trim();
+	if (!verb) error(400, 'Which verb?');
+	const out = await llm([
+		{ role: 'system', content: who(g) },
+		{ role: 'user', content: `Give the forms of the ${g.name} verb "${verb}"${b.en ? ` (meaning: "${s(b.en, 120)}")` : ''}. If what was given is an inflected form, use its dictionary form. If it is not a verb, return {"verb":"","rows":[]}.\n${g.conj}\nBe exact: irregular forms, stem changes and spelling changes must be right.\nReturn ONLY JSON: {"verb":"dictionary form","note":"one short English line: regular or irregular, and what to watch out for","rows":[{"label":"row name","forms":["form 1","form 2"]}]}` }
+	], 1500);
+	const rows = (Array.isArray(out.rows) ? out.rows : []).slice(0, 14)
+		.map((r) => ({ label: s(r?.label, 60), forms: (Array.isArray(r?.forms) ? r.forms : [r?.forms]).slice(0, 8).map((f) => s(f, 160)).filter(Boolean) }))
+		.filter((r) => r.label && r.forms.length);
+	if (!rows.length) error(422, `"${verb}" does not look like a verb.`);
+	return { verb: s(out.verb, 60) || verb, note: s(out.note, 300), rows };
+}
+
 // Writes a fresh example sentence for a word in the learner's bank.
 async function exampleOp(b) {
 	const g = cfg(b);
@@ -273,7 +294,7 @@ export async function POST({ request }) {
 	// the passcode guards the shared free quota; with your own key you are not using it
 	if (!mine && env.APP_PASSCODE && request.headers.get('x-pass') !== env.APP_PASSCODE) error(401, 'Wrong passcode. Set it in Settings.');
 	const b = await request.json().catch(() => error(400, 'Bad request'));
-	const op = { import: importOp, chat: chatOp, lesson: lessonOp, grade: gradeOp, define: defineOp, example: exampleOp }[b?.op];
+	const op = { import: importOp, chat: chatOp, lesson: lessonOp, grade: gradeOp, define: defineOp, example: exampleOp, conjugate: conjugateOp }[b?.op];
 	if (!op) error(400, 'Unknown op');
 	return json(await own.run(mine, () => op(b)));
 }

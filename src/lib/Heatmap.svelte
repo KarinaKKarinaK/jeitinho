@@ -1,12 +1,14 @@
 <script>
 	// Minutes studied per day, laid out like a GitHub contribution graph: weeks run left to right with
 	// month names above, weekdays run top to bottom, and the last column ends today.
-	// It shows the last six months, or fewer weeks on a narrow screen. Colour strength follows the minutes.
+	// Every square is the same size. It shows as many weeks as fit the width, up to about ten months.
+	// Colour strength follows the minutes.
 	import { S } from './store.svelte.js';
 	import { today, DAY } from './fx.js';
 
 	let width = $state(0);
-	const weeks = $derived(Math.max(12, Math.min(26, Math.floor((width - 30) / 16))));
+	const CELL = 15, GAP = 4, LABELS = 30;
+	const weeks = $derived(Math.max(10, Math.min(44, Math.floor((width - LABELS + GAP) / (CELL + GAP)))));
 	const end = new Date();
 	const cols = $derived(
 		Array.from({ length: weeks }, (_, c) =>
@@ -48,14 +50,16 @@
 <p class="dim small row" style="gap:6px">{total} {total === 1 ? 'minute' : 'minutes'} on {active} {active === 1 ? 'day' : 'days'} <span class="grow"></span> less <i class="k" style:--o={0}></i><i class="k" style:--o={0.3}></i><i class="k" style:--o={0.55}></i><i class="k" style:--o={0.8}></i><i class="k" style:--o={1}></i> more</p>
 
 <style>
-	.wrap { width: 100%; min-height: 120px; }
+	.wrap { width: 100%; min-height: 150px; }
 	/* one label column, then a column per week that stretches to fill the card */
-	.graph { display: grid; grid-template-columns: 28px repeat(var(--n), 1fr); gap: 3px; align-items: center; }
-	.mo, .wd { font: 400 10px var(--mono); color: var(--faint); white-space: nowrap; overflow: visible; }
-	.mo { height: 14px; }
+	/* fixed columns: a month name may spill over its column but can never stretch it */
+	.graph { display: grid; grid-template-columns: 26px repeat(var(--n), 15px); grid-auto-rows: 15px; gap: 4px; align-items: center; justify-content: space-between; }
+	.graph > :first-child, .mo { grid-row: 1; height: 14px; }
+	.mo, .wd { font: 400 10px var(--mono); color: var(--faint); white-space: nowrap; overflow: visible; min-width: 0; width: 15px; }
+	.wd { width: 26px; }
 	/* rounded squares; the accent colour is laid over the empty cell at an opacity set by the minutes */
 	i { display: block; border-radius: 4px; background: linear-gradient(color-mix(in srgb, var(--rose) calc(var(--o, 0) * 100%), transparent) 0 0), var(--glass2); }
-	.graph i { aspect-ratio: 1; width: 100%; transition: transform 0.15s; }
+	.graph i { width: 15px; height: 15px; transition: transform 0.15s; }
 	.graph i:hover { transform: scale(1.25); }
 	.k { width: 12px; height: 12px; flex: none; border-radius: 3px; }
 	.sx { visibility: hidden; }

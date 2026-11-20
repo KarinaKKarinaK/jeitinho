@@ -6,7 +6,8 @@ const KEY = 'jeitinho:prefs';
 
 export const DEFAULTS = {
 	theme: 'dark', // dark | light | auto
-	voice: 'sarah', // a cloud voice id, or 'device' for the phone's own voice
+	voice: 'auto', // 'auto' (the default for the language), a cloud voice id, or 'device' for the phone's own voice
+	voiceSet: 2, // bumped when the defaults change, so an old saved default does not stick
 	rate: 0.9,
 	autoplay: true, // read answers aloud after you check them
 	sfx: true, // sounds and vibration on right and wrong
@@ -21,17 +22,22 @@ export const DEFAULTS = {
 	model: '' // the model to use with your own key
 };
 
-// Voices on the ElevenLabs free plan. None is a native speaker of the languages taught here;
-// "device" uses the phone's own voice for the language, which is.
-export const VOICES = [
-	['sarah', 'Sarah', 'female, calm'],
-	['jessica', 'Jessica', 'female, bright'],
-	['alice', 'Alice', 'female, clear'],
-	['brian', 'Brian', 'male, deep'],
-	['george', 'George', 'male, warm'],
-	['liam', 'Liam', 'male, energetic'],
-	['device', 'Device voice', 'native accent, works offline']
-];
+// Six cloud voices (ElevenLabs free plan), the same six for every language. They are shown under a name
+// that fits the language being learned; the voice behind the name is in the last column.
+// None is a native speaker of these languages. "Device voice" is the phone's own voice for the language, which is.
+const NAMES = {
+	pt: ['Luíza', 'Camila', 'Beatriz', 'Rafael', 'Thiago', 'Mateus'],
+	zh: ['Xiǎoyǔ 小雨', 'Měilín 美琳', 'Jìng 静', 'Wěi 伟', 'Hào 浩', 'Míng 明'],
+	pl: ['Kasia', 'Ola', 'Zosia', 'Marek', 'Tomek', 'Kuba'],
+	ja: ['Yui ゆい', 'Hana はな', 'Aoi あおい', 'Ren れん', 'Haruto はると', 'Sōta そうた'],
+	es: ['Lucía', 'Carmen', 'Elena', 'Javier', 'Diego', 'Pablo']
+};
+const IDS = [['sarah', 'female, calm'], ['jessica', 'female, bright'], ['alice', 'female, clear'], ['brian', 'male, deep'], ['george', 'male, warm'], ['liam', 'male, energetic']];
+export const voicesFor = (lang) => [...IDS.map(([id, about], i) => [id, (NAMES[lang] || NAMES.pt)[i], about]), ['device', 'Device voice', 'native accent, works offline']];
+// The voice used until you pick one. For Portuguese, Alice (shown as Beatriz) came out clearest of the
+// female voices when a pt-BR speech recogniser transcribed each of them reading the same sentence.
+const FIRST = { pt: 'alice' };
+export const voiceOf = (lang) => (P.voice === 'auto' ? FIRST[lang] || 'sarah' : P.voice);
 
 function load() {
 	try {
@@ -42,6 +48,7 @@ function load() {
 }
 
 export const P = load();
+if (P.voiceSet !== 2) Object.assign(P, { voice: 'auto', voiceSet: 2 }); // one time: move everyone to the new per-language default
 P.key = ''; // filled by unlock() from the encrypted vault
 
 // Called once at startup. Also moves a key saved by an older version out of plain storage.

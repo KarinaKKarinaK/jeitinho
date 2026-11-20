@@ -20,6 +20,8 @@
 | | |
 | --- | --- |
 | **Daily quiz** | 11 hard questions from your word bank and drills. A time decay keeps recent questions out. |
+| **Chapters** | Lessons are grouped into chapters. Finish a chapter, pass its quiz, and the next one opens. |
+| **Grammar** | Every explanation from the course as a searchable reference, and a conjugation table for any verb (usage patterns for Mandarin). |
 | **Five languages** | Each has its own course of 20 or more lessons, drills, placement test and roadmap. Switch on the home screen; progress is kept separately per language under one account. |
 | **Placement test** | New learners take a short test that climbs a level at a time and stops when it gets too hard. |
 | **Drills** | The hard part of each language: verb tenses (Portuguese, Spanish), tones and measure words (Mandarin), cases and aspect (Polish), particles and verb forms (Japanese). |

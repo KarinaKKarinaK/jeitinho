@@ -1,7 +1,8 @@
 <script>
 	import { page } from '$app/state';
 	import Exercise from '../../lib/Exercise.svelte';
-	import { LESSONS } from '../../lib/content.js';
+	import { LESSONS, CHAPTER_OF } from '../../lib/content.js';
+	import { chapterOpen } from '../../lib/roadmap.js';
 	import { S, addXP } from '../../lib/store.svelte.js';
 	import { cleanSteps, songSteps } from '../../lib/quiz.js';
 
@@ -21,7 +22,9 @@
 	}
 </script>
 
-{#if steps.length}
+{#if id in CHAPTER_OF && !chapterOpen(S, CHAPTER_OF[id])}
+	<div class="stack"><h2>This chapter is locked</h2><p class="dim">Pass the quiz of chapter {CHAPTER_OF[id]} to open it.</p><a class="btn" href="/learn">Back to the chapters</a></div>
+{:else if steps.length}
 	<Exercise {steps} retry back={song ? `/song?id=${song.id}` : '/learn'} onfinish={finish} />
 {:else}
 	<div class="stack"><h2>Lesson not found</h2><a class="btn" href="/learn">Back to lessons</a></div>

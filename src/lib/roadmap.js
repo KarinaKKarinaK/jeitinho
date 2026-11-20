@@ -1,4 +1,4 @@
-import { LESSONS, PLACEMENT } from './content.js';
+import { LESSONS, PLACEMENT, UNITS } from './content.js';
 import { fromKey } from './quiz.js';
 import { pack } from './lang.js';
 
@@ -44,6 +44,26 @@ export function milestones(S, stage) {
 	if (mastered) list.push({ label: `Master ${mastered} words (review gap of a week or more)`, have: masteredCount(S), need: mastered, href: '/bank?tab=review' });
 	list.push({ label: `Complete ${quizzes} daily ${quizzes === 1 ? 'quiz' : 'quizzes'}`, have: S.nquiz || 0, need: quizzes, href: '/quiz' });
 	return list.map((m) => ({ ...m, have: Math.min(m.have, m.need), ok: m.have >= m.need }));
+}
+
+// ---------- chapters ----------
+// A chapter (a unit of lessons) opens when the one before it is passed. You pass a chapter by finishing
+// its lessons and then scoring 80% on a quiz drawn from them. The key is the chapter's first lesson id.
+export const CHAPTER_PASS = 0.8;
+const ckey = (i) => UNITS[i]?.lessons[0].id;
+export const chapterPassed = (S, i) => !!S.chapters?.[ckey(i)];
+export const chapterOpen = (S, i) => i <= 0 || chapterPassed(S, i - 1);
+export const chapterReady = (S, i) => UNITS[i].lessons.every((l) => l.id in S.done); // lessons done: the quiz is available
+export function chapterQuiz(i) {
+	const pool = UNITS[i].lessons.flatMap((l) => l.steps.filter((q) => q.kind !== 'info'));
+	return shuffle(pool).slice(0, 10);
+}
+export const passChapter = (S, i, date) => ((S.chapters ??= {}), (S.chapters[ckey(i)] = date));
+// People who used the app before chapters existed keep what they had: every chapter up to the last one
+// they touched counts as passed. Returns the chapters object to store.
+export function grandfather(S) {
+	const last = UNITS.findLastIndex((u) => u.lessons.some((l) => l.id in (S.done || {})));
+	return Object.fromEntries(UNITS.slice(0, Math.max(0, last)).map((u) => [u.lessons[0].id, 'earlier']));
 }
 
 // Placement: where you start after passing n bands of the placement test (0 = none).
@@ -102,6 +122,9 @@ export function place(S, bands, date) {
 		S.badges[s.id] ??= date;
 		for (const id of s.lessons) S.done[id] ??= 0; // marked done so "next lesson" starts in the right place; still open to take
 	}
+	// chapters made up entirely of lessons you tested out of are passed too
+	S.chapters ??= {};
+	UNITS.forEach((u, c) => u.lessons.every((l) => l.id in S.done) && (S.chapters[ckey(c)] ??= date));
 	S.placed = i ? STAGES[i - 1].id : null;
 	S.onboarded = true;
 	return current(S) || STAGES.at(-1); // a retake never moves you down
