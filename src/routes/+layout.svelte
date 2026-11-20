@@ -97,7 +97,7 @@
 	a span { display: none; }
 	/* desktop: the pill becomes a side rail with labels */
 	@media (min-width: 900px) {
-		nav { left: 24px; top: 28px; bottom: auto; transform: none; flex-direction: column; border-radius: 30px; padding: 10px; gap: 6px; }
+		nav { left: 24px; top: 50%; bottom: auto; transform: translateY(-50%); flex-direction: column; border-radius: 30px; padding: 10px; gap: 6px; }
 		a { width: 196px; height: 52px; display: flex; align-items: center; gap: 14px; padding: 0 20px; font-weight: 500; font-size: 15px; }
 		a span { display: inline; }
 		a:hover:not(.on) { background: var(--glass2); color: var(--ink); }
