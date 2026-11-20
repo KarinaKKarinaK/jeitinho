@@ -115,7 +115,7 @@ Found a problem? Please [open an issue](https://github.com/KarinaKKarinaK/jeitin
 | Language | Follows | Type answers in |
 | --- | --- | --- |
 | Brazilian Portuguese | CEFR, Celpe-Bras | Portuguese |
-| Mandarin Chinese | HSK levels 1 to 9 | characters or pinyin |
+| Mandarin Chinese | HSK levels 1 to 6, 32 lessons | characters or pinyin |
 | Polish | State certificate exams, A1 to C2 | Polish |
 | Japanese | JLPT N5 to N1 | Japanese, kana or romaji |
 | Spanish | Instituto Cervantes curriculum, DELE | Spanish |

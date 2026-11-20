@@ -5,6 +5,8 @@ import { toneOf, syllables } from '../tone.js';
 import { I, C, T, L, tableDrill } from './kit.js';
 import { withMore } from './kit.js';
 import { MORE, SEED_POS } from './words/zh.js';
+import { UNITS5 } from './zh-hsk5.js';
+import { UNITS6 } from './zh-hsk6.js';
 
 // typed answer: characters, or pinyin (tone marks optional, flagged when missing)
 const Z = (prompt, zh, py, explain) => T(prompt, zh, `${zh} = ${py}${explain ? '. ' + explain : ''}`, [py]);
@@ -588,7 +590,7 @@ DRILLS.pairs = {
 
 export default {
 	code: 'zh',
-	units: UNITS,
+	units: [...UNITS, ...UNITS5, ...UNITS6],
 	seed: withMore(SEED, MORE, SEED_POS),
 	placement: PLACEMENT,
 	keys: 'āáǎàēéěèīíǐìōóǒòūúǔùǚǜ', // pinyin tone marks
@@ -603,10 +605,10 @@ export default {
 		['B1.2', 'Real conversation', 'Compare, react and keep a chat going (HSK 3)', ['zh-comp-1', 'zh-conv-1'], ['particles', 'order']],
 		['B2.1', 'Results', 'Use complements, 把 and 被 (HSK 4)', ['zh-res-1', 'zh-ba-1'], ['comp', 'particles']],
 		['B2.2', 'Long sentences', 'Link ideas with paired connectors (HSK 4)', ['zh-con-1'], ['connect', 'comp']],
-		['B2.3', 'Every structure', 'Switch between structures mid-sentence (HSK 5)', ['zh-con-2', 'zh-bj-1'], ALL],
-		['C1.1', 'Idioms', 'Catch chengyu and regional speech (HSK 5)', ['zh-idi-1'], ALL],
-		['C1.2', 'Written Chinese', 'Read formal text and news (HSK 6)', ['zh-c2-1'], ALL],
-		['C1.3', 'Almost there', 'Argue, joke and tell stories at speed (HSK 6)', [], ALL],
+		['B2.3', 'Every structure', 'Switch between structures mid-sentence (HSK 5)', ['zh-con-2', 'zh-bj-1', 'zh-h5-1', 'zh-h5-2', 'zh-h5-3'], ALL],
+		['C1.1', 'Idioms', 'Catch chengyu and regional speech (HSK 5)', ['zh-idi-1', 'zh-h5-4', 'zh-h5-5', 'zh-h5-6'], ALL],
+		['C1.2', 'Written Chinese', 'Read formal text and news (HSK 6)', ['zh-c2-1', 'zh-h6-1', 'zh-h6-2', 'zh-h6-3'], ALL],
+		['C1.3', 'Almost there', 'Argue, joke and tell stories at speed (HSK 6)', ['zh-h6-4', 'zh-h6-5', 'zh-h6-6'], ALL],
 		['C2.1', 'Mastery', 'Surprise natives with your word choice (HSK 7 to 9)', [], ALL],
 		['C2.2', 'Near native', 'Hold your own anywhere, on anything (HSK 7 to 9)', [], ALL]
 	],
