@@ -4,7 +4,7 @@ import { conj } from './conj.js';
 import { check, dailyQuiz, markAsked, fromKey, grade, cleanSteps, sayScore, QUIZ_LEN } from './quiz.js';
 import { isPrivate } from './server/safefetch.js';
 import { decide, keepPlacement } from './sync.js';
-import { STAGES, current, milestones, ready, buildTest, passed, place, placementSteps, EXTRA } from './roadmap.js';
+import { STAGES, current, milestones, ready, buildTest, passed, place, placementSteps, placementVerdict, retakeAt, forecast, BAND_N, EXTRA } from './roadmap.js';
 import { LESSONS } from './content.js';
 
 test('conjugation', () => {
@@ -102,10 +102,10 @@ test('placement retakes draw different questions', () => {
 	const S = { placeSeen: [] };
 	const a = placementSteps(S, 1).map((q) => q.prompt);
 	const b = placementSteps(S, 1).map((q) => q.prompt);
-	assert.equal(a.length, 4);
-	assert.equal(new Set([...a, ...b]).size, 8, 'second attempt shares no question with the first');
-	assert.equal(S.placeSeen.length, 8);
-	for (let i = 0; i < 40; i++) assert.equal(placementSteps(S, 4).length, 4, 'still 4 questions once the pool is used up');
+	assert.equal(a.length, BAND_N);
+	assert.equal(new Set([...a, ...b]).size, 2 * BAND_N, 'second attempt shares no question with the first');
+	assert.equal(S.placeSeen.length, 2 * BAND_N);
+	for (let i = 0; i < 40; i++) assert.equal(placementSteps(S, 4).length, BAND_N, 'still a full set once the pool is used up');
 });
 
 test('a placement earned signed out survives signing in to an existing account', () => {
@@ -120,6 +120,42 @@ test('a placement earned signed out survives signing in to an existing account',
 	assert.ok('perf-1' in m.done && 'sons-1' in m.done);
 	assert.equal(keepPlacement(remote, { ...local, uid: 'someone' }, ids), remote, 'data that already belongs to an account is never merged');
 	assert.equal(keepPlacement({ ...remote, placed: 'B1.2' }, local, ids).placed, 'B1.2', 'the further starting point wins');
+});
+
+test('placement is forgiving: two slips per level, and one weak level gets a second chance', () => {
+	assert.deepEqual(placementVerdict([4]), { stop: false, bands: 1 }, '4 of 6 passes');
+	assert.deepEqual(placementVerdict([6, 3]), { stop: false, bands: 1 }, 'one failed level: keep going');
+	assert.deepEqual(placementVerdict([6, 3, 5]), { stop: false, bands: 3 }, 'passing the next level counts');
+	assert.deepEqual(placementVerdict([6, 3, 5, 2]), { stop: true, bands: 3 }, 'second failed level ends it');
+	assert.deepEqual(placementVerdict([1]), { stop: true, bands: 0 }, 'a level that goes badly ends it');
+	assert.deepEqual(placementVerdict([6, 6, 6, 6, 6]), { stop: true, bands: 5 });
+	const now = Date.now();
+	assert.equal(retakeAt({ placedAt: 0 }, now), 0);
+	assert.ok(retakeAt({ placedAt: now - 864e5 }, now) > now, 'a day later: not yet');
+	assert.equal(retakeAt({ placedAt: now - 4 * 864e5 }, now), 0, 'four days later: allowed');
+});
+
+test('forecast: a date from recent minutes, never sooner than the calendar allows', () => {
+	const now = new Date(2026, 5, 10, 12).getTime();
+	const S = { ...mkS(), done: {}, badges: {}, nquiz: 0, mins: {} };
+	const st = STAGES[0];
+	assert.equal(forecast(S, st, now).date, null, 'no recent study: no date');
+	S.mins = { '2026-06-10': 20, '2026-06-09': 20, '2026-06-08': 20, '2026-06-07': 20 };
+	const f = forecast(S, st, now);
+	assert.equal(f.avg, 20);
+	assert.ok(f.days >= 1 && f.date.getTime() === now + f.days * 864e5);
+	S.mins = { '2026-06-10': 600, '2026-06-09': 600, '2026-06-08': 600, '2026-06-07': 600 };
+	assert.ok(forecast(S, STAGES[3], now).days >= 10 - 0, 'ten daily quizzes cannot be done in fewer than their days');
+});
+
+test('quiz settings: no audio questions, no drills, other lengths', () => {
+	const S = mkS();
+	const quiet = dailyQuiz(S, 's1', undefined, { quizAudio: false });
+	assert.ok(quiet.every((k) => !k.endsWith(':listen')));
+	const plain = dailyQuiz(S, 's2', undefined, { quizDrills: false, quizLen: 7 });
+	assert.equal(plain.length, 7);
+	assert.ok(plain.every((k) => !k.startsWith('conj:')));
+	assert.equal(dailyQuiz(S, 's3', undefined, { quizLen: 15 }).length, 15);
 });
 
 test('sync decision after sign-in', () => {

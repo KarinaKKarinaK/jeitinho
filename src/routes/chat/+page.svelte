@@ -50,7 +50,7 @@
 			S.chat.push({ role: 'assistant', content: r.reply, en: r.en, say: r.say });
 			if (S.chat.length > 60) S.chat.splice(0, S.chat.length - 60);
 			addXP(2);
-			speak(r.reply, S.rate);
+			speak(r.reply);
 		} catch (e) {
 			err = e.message;
 		}
@@ -78,7 +78,7 @@
 					{#if m.say}<p class="small" style="color:var(--rose)">{m.say}</p>{/if}
 					{#if showEn[i]}<p class="dim small">{m.en}</p>{/if}
 					<div class="row tools">
-						<button onclick={() => speak(m.content, S.rate)} aria-label="Hear it"><Icon name="sound" size={16} /></button>
+						<button onclick={() => speak(m.content)} aria-label="Hear it"><Icon name="sound" size={16} /></button>
 						{#if m.en}<button onclick={() => (showEn[i] = !showEn[i])}>EN</button>{/if}
 					</div>
 				</div>
@@ -117,5 +117,5 @@
 	.rec { background: var(--bad); color: #17121c; animation: pulse 0.9s ease-in-out infinite; }
 	@keyframes pulse { 50% { box-shadow: 0 0 0 10px rgba(255, 143, 143, 0); } from, to { box-shadow: 0 0 0 0 rgba(255, 143, 143, 0.6); } }
 	@media (min-width: 900px) { .send { left: calc(50% + 114px); bottom: 28px; width: min(700px, calc(100% - 336px)); } }
-	.send input { border-radius: 999px; background: rgba(30, 24, 36, 0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
+	.send input { border-radius: 999px; background: var(--nav); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
 </style>

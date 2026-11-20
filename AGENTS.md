@@ -6,12 +6,13 @@ Mobile-first web app for learning Brazilian Portuguese (with Belo Horizonte dial
 - Pages are client-only (`ssr = false`, prerendered). All user state is one object in localStorage (`src/lib/store.svelte.js`), mirrored to Supabase when signed in (`src/lib/cloud.svelte.js`, table in `supabase/schema.sql`).
 - Languages are packs in `src/lib/langs/<code>.js` (course, starter words, placement test, drills, roadmap stages, interface text). `src/lib/lang.js` loads the active one; `src/lib/langs/kit.js` has the shared helpers; `src/lib/packs.test.js` is the contract every pack must pass. To add a language: write the pack, register it in `lang.js`, add it to `langs/meta.js` and to the `AI` map in `src/routes/api/ai/+server.js`.
 - Each language keeps its own state (localStorage key and database row per language). `src/lib/quiz.js` answer check + SRS + daily quiz, `src/lib/roadmap.js` stages and checkpoint tests, `src/lib/Exercise.svelte` question runner, `src/lib/conj.js` Portuguese conjugator.
-- Server code: `src/routes/api/ai` (ops: import, chat, lesson, grade), `api/tts` (ElevenLabs voice), `api/stt` (Deepgram speech to text), `api/config` (public settings and which keys exist), `api/reminder` (calendar file), `src/lib/server/safefetch.js`. Offline cache: `src/service-worker.js`.
+- Server code: `src/routes/api/ai` (ops: import, chat, lesson, grade), `api/tts` (ElevenLabs voice), `api/stt` (Deepgram speech to text), `api/config` (public settings and which keys exist), `api/reminder` (calendar file), `api/push` (daily web push, called hourly by a database job), `src/lib/server/safefetch.js`. Offline cache: `src/service-worker.js`.
 - Rules:
   - Only free OpenRouter models. Keep the `isFree` filter in the AI route.
   - LLM output is untrusted: pass lesson steps through `cleanSteps`, never render it with `{@html}`.
   - User-supplied URLs go through `safeFetch` (blocks private addresses).
   - No em dashes or emojis in UI copy. Only runtime dependency is `@supabase/supabase-js`, loaded lazily. Do not add more.
+  - Device settings (theme, voice, quiz options, own API key) live in `src/lib/prefs.js`, in the browser only. A user's own key must never be stored or logged on the server.
   - New state fields go in `blank()` in the store so old saves and synced rows still load.
   - Never expose the Supabase service role key; the browser only gets the anon key.
   - Use relative imports, not `$lib`.

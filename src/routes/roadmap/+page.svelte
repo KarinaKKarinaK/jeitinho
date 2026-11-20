@@ -67,7 +67,7 @@
 	li:last-child::before { display: none; }
 	li.got::before { background: linear-gradient(var(--lime), var(--rose)); }
 	.badge { width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center; font: 500 13px var(--mono); border: 1px solid var(--line); background: var(--glass); color: var(--dim); position: relative; z-index: 1; }
-	.here .badge { color: var(--ink); border-color: #fff; box-shadow: 0 0 0 5px rgba(255, 255, 255, 0.07), 0 0 32px -4px rgba(227, 163, 198, 0.7); }
+	.here .badge { color: var(--ink); border-color: var(--ink); box-shadow: 0 0 0 5px rgba(255, 255, 255, 0.07), 0 0 32px -4px rgba(227, 163, 198, 0.7); }
 	.got .badge { border: 0; color: #17121c; }
 	.got .badge.A { background: linear-gradient(150deg, #f6c6de, var(--rose)); }
 	.got .badge.B { background: linear-gradient(150deg, var(--rose), var(--amber)); }

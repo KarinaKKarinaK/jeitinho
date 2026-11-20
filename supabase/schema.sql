@@ -27,3 +27,17 @@ create policy "own notes" on storage.objects
 	for all to authenticated
 	using (bucket_id = 'notes' and (storage.foldername(name))[1] = (select auth.uid())::text)
 	with check (bucket_id = 'notes' and (storage.foldername(name))[1] = (select auth.uid())::text);
+
+-- Daily reminders: one row per browser that asked for them. No policies, so only the server
+-- (service role) can read or write it. hour is in UTC.
+create table if not exists public.push_subs (
+	endpoint text primary key check (length(endpoint) < 1100),
+	hour smallint not null check (hour between 0 and 23),
+	created_at timestamptz not null default now()
+);
+alter table public.push_subs enable row level security;
+
+-- To send them, schedule an hourly call to the app (run once, with your own URL and CRON_SECRET):
+--   create extension if not exists pg_cron; create extension if not exists pg_net;
+--   select cron.schedule('jeitinho-reminders', '0 * * * *',
+--     $$ select net.http_post(url := 'https://YOUR-URL/api/push', headers := '{"x-cron":"YOUR_CRON_SECRET"}'::jsonb) $$);

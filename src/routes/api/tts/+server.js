@@ -4,6 +4,12 @@ import { LANGS } from '../../../lib/langs/meta.js';
 
 export const prerender = false;
 
+// Voices every ElevenLabs free plan can use. The id sent by the app is looked up here, never passed through.
+const VOICES = {
+	sarah: 'EXAVITQu4vr4xnSDxMaL', jessica: 'cgSgspJ2msm6clMCkdW9', alice: 'Xb7hH8MSUJpSbSDYk0k2',
+	brian: 'nPczCjzI2devNBz1zQrb', george: 'JBFqnCBsd6RMkjVDRZzb', liam: 'TX3LPaxmHKxFdv7VOQHJ'
+};
+
 // Natural voice from ElevenLabs. The free plan has a monthly character quota and no card on file,
 // so when it runs out this returns an error and the app falls back to the phone's own voice.
 // Each phrase is cached at the CDN for a year, so a phrase is only paid for (in free credits) once.
@@ -15,7 +21,7 @@ export async function GET({ url, request }) {
 	if (!text || text.length > 300) error(400, 'Text must be 1 to 300 characters.');
 	const lang = LANGS[url.searchParams.get('l')] ? url.searchParams.get('l') : 'pt';
 	const model = env.ELEVENLABS_MODEL || 'eleven_flash_v2_5';
-	const voice = (env.ELEVENLABS_VOICE_ID || 'EXAVITQu4vr4xnSDxMaL').replace(/\W/g, '');
+	const voice = VOICES[url.searchParams.get('v')] || (env.ELEVENLABS_VOICE_ID || VOICES.sarah).replace(/\W/g, '');
 	const r = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voice}?output_format=mp3_44100_64`, {
 		method: 'POST',
 		headers: { 'xi-api-key': env.ELEVENLABS_API_KEY, 'content-type': 'application/json' },

@@ -16,6 +16,18 @@ self.addEventListener('activate', (e) =>
 	e.waitUntil(caches.keys().then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))).then(() => self.clients.claim()))
 );
 
+// Daily reminder. The push carries no data (so nothing private travels through the push service):
+// the text lives here.
+self.addEventListener('push', (e) =>
+	e.waitUntil(self.registration.showNotification('jeitinho', { body: 'Your daily quiz is ready. Keep the streak alive.', icon: '/icon-192.png', badge: '/icon-192.png', tag: 'daily' }))
+);
+self.addEventListener('notificationclick', (e) => {
+	e.notification.close();
+	e.waitUntil(
+		self.clients.matchAll({ type: 'window' }).then((list) => (list[0] ? list[0].navigate('/quiz').then((c) => c.focus()) : self.clients.openWindow('/quiz')))
+	);
+});
+
 self.addEventListener('fetch', (e) => {
 	const url = new URL(e.request.url);
 	const font = FONTS.includes(url.origin);

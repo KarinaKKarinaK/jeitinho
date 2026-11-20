@@ -31,6 +31,8 @@
 | **Roadmap** | 14 checkpoints from A1.1 to C2.2. Milestones, then a test, then a badge. B and C tests add listening, speaking and graded writing. |
 | **Accounts** | Google, GitHub or email. Progress syncs across devices. Works signed out too. |
 | **Offline** | Lessons, quiz, drill and word bank work with no connection. |
+| **Settings** | Light and dark themes, seven voices, quiz length and content, daily goal, daily push reminders, and your own OpenRouter key for a stronger model. |
+| **Progress** | Your level, a forecast date for the next one, and a map of minutes studied per day. |
 
 ## Quick start
 
@@ -56,6 +58,7 @@ Lessons, quiz, drill and word bank need no keys.
 | `DEEPGRAM_API_KEY` | Speaking practice, voice chat | [console.deepgram.com](https://console.deepgram.com), free credit |
 | `SUPABASE_URL`, `SUPABASE_ANON_KEY` | Accounts, sync, saved photos | Vercel, Storage, add Supabase (free plan) |
 | `APP_PASSCODE` | Locks AI and speech behind a passcode | You choose it |
+| `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `CRON_SECRET`, `SUPABASE_SERVICE_ROLE_KEY` | Daily push reminders | Generate a P-256 key pair; see the note at the end of `supabase/schema.sql` |
 
 ### Accounts
 
@@ -104,7 +107,7 @@ src/service-worker.js     offline cache
 ## Limits
 
 - Speaking is scored by whether each word was understood, not sound by sound.
-- The daily reminder is a repeating calendar event, not a push notification.
+- Push reminders arrive on the hour you pick. On iPhone they need the app on the home screen.
 - YouTube often hides captions from servers. Paste the transcript when that happens.
 - Badges are this app's own checkpoints modeled on CEFR and each language's official exam levels, not a certificate.
 - The courses were written with AI help and have not all been reviewed by native speakers. Report anything that sounds off.

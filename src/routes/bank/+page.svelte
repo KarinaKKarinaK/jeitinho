@@ -53,7 +53,7 @@
 	{#if card}
 		{#key card.id}
 			<div class="stack" in:fly={{ y: 16, duration: 220 }}>
-				<button class="card flash" onclick={() => { flip = true; speak(card.pt, S.rate); }}>
+				<button class="card flash" onclick={() => { flip = true; speak(card.pt); }}>
 					<p class="eyebrow">{card.reps ? 'Review' : 'New word'}</p>
 					<h2>{card.en}</h2>
 					{#if flip}
@@ -117,7 +117,7 @@
 						{#if w.say}<p class="say">{w.say}</p>{/if}
 						{#if w.ex}<p>{w.ex}</p><p class="dim small">{w.exEn}</p>{/if}
 						<div class="chips">
-							<button class="btn sm" onclick={() => speak(w.ex || w.pt, S.rate)}><Icon name="sound" size={16} /> Ouvir</button>
+							<button class="btn sm" onclick={() => speak(w.ex || w.pt)}><Icon name="sound" size={16} /> Ouvir</button>
 							<button class="btn sm" onclick={() => S.words.splice(S.words.indexOf(w), 1)}><Icon name="trash" size={16} /> Remove</button>
 						</div>
 					</div>

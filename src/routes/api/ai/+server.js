@@ -3,6 +3,11 @@ import * as env from '$app/env/private';
 import { safeFetch } from '../../../lib/server/safefetch.js';
 import { cleanSteps } from '../../../lib/quiz.js';
 import { LANGS } from '../../../lib/langs/meta.js';
+import { AsyncLocalStorage } from 'node:async_hooks';
+
+// A user can bring their own OpenRouter key and model (Settings). It rides along with the request,
+// is used for that request only, and is never stored or logged on the server.
+const own = new AsyncLocalStorage();
 
 export const config = { maxDuration: 60 };
 
@@ -15,8 +20,11 @@ const models = () =>
 // Free models get rate limited, and some spend the whole answer thinking. So try them one at a time
 // and move on whenever one fails or sends back something that is not JSON.
 async function llm(messages, max = 2500) {
-	if (!env.OPENROUTER_API_KEY) error(503, 'AI is not set up yet. Add OPENROUTER_API_KEY in the Vercel project settings.');
-	const list = models();
+	const mine = own.getStore();
+	if (!mine && !env.OPENROUTER_API_KEY) error(503, 'AI is not set up yet. Add OPENROUTER_API_KEY in the Vercel project settings.');
+	// the shared key can only ever call free models; your own key calls the model you chose
+	const list = mine ? [mine.model] : models();
+	const key = mine ? mine.key : env.OPENROUTER_API_KEY;
 	if (!list.length) error(500, 'OPENROUTER_MODELS has no free model in it.');
 	const deadline = Date.now() + 55000;
 	let limited = false;
@@ -25,13 +33,14 @@ async function llm(messages, max = 2500) {
 		if (left < 4000) break;
 		const r = await fetch('https://openrouter.ai/api/v1/chat/completions', {
 			method: 'POST',
-			headers: { authorization: `Bearer ${env.OPENROUTER_API_KEY}`, 'content-type': 'application/json' },
+			headers: { authorization: `Bearer ${key}`, 'content-type': 'application/json' },
 			// thinking counts against max_tokens: keep it short and leave headroom
 			body: JSON.stringify({ model, messages, max_tokens: max + 2000, temperature: 0.4, reasoning: { effort: 'low', exclude: true } }),
 			signal: AbortSignal.timeout(left)
 		}).catch(() => null);
 		if (!r) break; // timed out
-		if (r.status === 401) error(502, 'OpenRouter rejected the key. Check OPENROUTER_API_KEY.');
+		if (r.status === 401) error(502, mine ? 'OpenRouter rejected your key. Check it in Settings.' : 'OpenRouter rejected the key. Check OPENROUTER_API_KEY.');
+		if (mine && (r.status === 402 || r.status === 404 || r.status === 400)) error(502, r.status === 402 ? 'Your OpenRouter account has no credit for this model.' : 'OpenRouter does not know that model. Check the model name in Settings.');
 		if (r.status === 429) limited = true;
 		if (!r.ok) continue;
 		const d = await r.json().catch(() => ({}));
@@ -205,9 +214,14 @@ async function gradeOp(b) {
 
 export async function POST({ request }) {
 	// Optional lock so strangers cannot burn your free quota: set APP_PASSCODE in Vercel and type it in the app settings.
-	if (env.APP_PASSCODE && request.headers.get('x-pass') !== env.APP_PASSCODE) error(401, 'Wrong passcode. Set it in Settings on the home screen.');
+	const key = request.headers.get('x-user-key') || '';
+	const model = request.headers.get('x-user-model') || '';
+	const mine = key ? { key, model } : null;
+	if (mine && (!/^sk-or-[\w-]{20,200}$/.test(key) || !/^[\w.\-:/]{3,100}$/.test(model))) error(400, 'Your own key or model name does not look right. Check Settings.');
+	// the passcode guards the shared free quota; with your own key you are not using it
+	if (!mine && env.APP_PASSCODE && request.headers.get('x-pass') !== env.APP_PASSCODE) error(401, 'Wrong passcode. Set it in Settings.');
 	const b = await request.json().catch(() => error(400, 'Bad request'));
 	const op = { import: importOp, chat: chatOp, lesson: lessonOp, grade: gradeOp }[b?.op];
 	if (!op) error(400, 'Unknown op');
-	return json(await op(b));
+	return json(await own.run(mine, () => op(b)));
 }

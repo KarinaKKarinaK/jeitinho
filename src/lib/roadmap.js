@@ -49,7 +49,7 @@ export function milestones(S, stage) {
 // Placement: where you start after passing n bands of the placement test (0 = none).
 // Deliberately cautious at the top: four questions are not enough to hand out C1.
 const START = ['A1.1', 'A2.1', 'B1.1', 'B2.1', 'B2.3', 'C1.2'];
-// Questions for one band of the placement test: 4 drawn at random from that band's own questions plus
+// Questions for one band of the placement test: 6 drawn at random from that band's own questions plus
 // the questions of the lessons taught at that level. Ones you have already been shown are left out,
 // so retaking the test does not repeat until the pool runs dry. Returns the questions and marks them seen.
 export function placementSteps(S, i) {
@@ -58,13 +58,44 @@ export function placementSteps(S, i) {
 	const pool = [...new Map([...PLACEMENT[i].steps, ...fromLessons].map((q) => [q.prompt, q])).values()];
 	const seen = new Set(S.placeSeen || []);
 	let fresh = pool.filter((q) => !seen.has(q.prompt));
-	if (fresh.length < 4) fresh = pool; // every question used: start over
-	const picked = shuffle(fresh).slice(0, 4);
+	if (fresh.length < BAND_N) fresh = pool; // every question used: start over
+	const picked = shuffle(fresh).slice(0, BAND_N);
 	S.placeSeen = [...new Set([...(S.placeSeen || []), ...picked.map((q) => q.prompt)])].slice(-600);
 	return picked;
 }
 
-export const PASS_BAND = 3; // right answers out of 4 to clear a band
+export const BAND_N = 6; // questions per level
+export const PASS_BAND = 4; // right answers needed: two slips are forgiven
+export const RETAKE_DAYS = 3;
+
+// Decides after each level whether the test goes on, and where you land.
+// scores = right answers per level so far. One failed level does not end the test: you get the next
+// level as a second chance. It ends after two failed levels, or when a level goes badly (under 2 right).
+// You are placed at the highest level you passed.
+export function placementVerdict(scores, total = 5) {
+	const fails = scores.filter((s) => s < PASS_BAND).length;
+	const stop = scores.length >= total || fails >= 2 || scores.at(-1) < 2;
+	return { stop, bands: scores.findLastIndex((s) => s >= PASS_BAND) + 1 };
+}
+
+// When the next retake is allowed (ms), or 0 if it is allowed now.
+export const retakeAt = (S, now = Date.now()) => (S.placedAt && now - S.placedAt < RETAKE_DAYS * 864e5 ? S.placedAt + RETAKE_DAYS * 864e5 : 0);
+
+// Forecast: when you should reach the next badge if you keep up your average of the last 4 days.
+// A rough estimate: about 6 minutes a lesson, 5 a daily quiz, 1.5 a word, 8 for the test. It also respects the
+// calendar: one daily quiz per day, and a word needs about 11 days of spaced reviews to count as mastered.
+export function forecast(S, stage, now = Date.now()) {
+	const day = (d) => {
+		const x = new Date(now - d * 864e5);
+		return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`;
+	};
+	const avg = [0, 1, 2, 3].reduce((n, d) => n + (S.mins?.[day(d)] || 0), 0) / 4;
+	const left = Object.fromEntries(milestones(S, stage).map((m) => [m.href.split('?')[0], m.need - m.have]));
+	const minutes = (left['/lesson'] || 0) * 6 + (left['/quiz'] || 0) * 5 + (left['/bank'] || 0) * 1.5 + 8;
+	if (avg < 0.5) return { avg: 0, minutes, date: null };
+	const days = Math.max(Math.ceil(minutes / avg), left['/quiz'] || 0, left['/bank'] ? 11 : 0, 1);
+	return { avg, minutes, days, date: new Date(now + days * 864e5) };
+}
 export function place(S, bands, date) {
 	const i = STAGES.findIndex((s) => s.id === START[Math.min(bands, START.length - 1)]);
 	for (const s of STAGES.slice(0, i)) {
@@ -73,7 +104,7 @@ export function place(S, bands, date) {
 	}
 	S.placed = i ? STAGES[i - 1].id : null;
 	S.onboarded = true;
-	return STAGES[i];
+	return current(S) || STAGES.at(-1); // a retake never moves you down
 }
 
 export const ready = (S, stage) => milestones(S, stage).every((m) => m.ok);

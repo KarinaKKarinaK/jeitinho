@@ -5,7 +5,7 @@ import { caps } from './fx.js';
 import { lang } from './lang.js';
 
 // status: off (not configured) | out (signed out) | syncing | synced | error
-export const cloud = $state({ ready: false, status: 'off', user: null, error: '', recovery: false, at: 0, ai: false, tts: false, stt: false });
+export const cloud = $state({ ready: false, status: 'off', user: null, error: '', recovery: false, at: 0, ai: false, tts: false, stt: false, push: '' });
 
 let sb;
 let timer;
@@ -13,7 +13,7 @@ let timer;
 export async function init() {
 	try {
 		const cfg = await (await fetch('/api/config')).json();
-		Object.assign(caps, { ai: !!cfg.ai, tts: !!cfg.tts, stt: !!cfg.stt });
+		Object.assign(caps, { ai: !!cfg.ai, tts: !!cfg.tts, stt: !!cfg.stt, push: cfg.push || '' });
 		Object.assign(cloud, caps);
 		if (!cfg.url || !cfg.key) return;
 		const { createClient } = await import('@supabase/supabase-js');

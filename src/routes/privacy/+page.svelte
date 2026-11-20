@@ -15,7 +15,7 @@
 
 	<section class="card stack">
 		<h3>Without an account</h3>
-		<p class="dim">Your progress, word bank and saved material stay in this browser, on this device. Nothing about you is stored on a server.</p>
+		<p class="dim">Your progress, word bank, saved material, settings and the minutes you study each day stay in this browser, on this device. Nothing about you is stored on a server.</p>
 	</section>
 
 	<section class="card stack">
@@ -31,8 +31,14 @@
 			<li><b>Deepgram</b>: your voice recordings, only when you press record.</li>
 			<li><b>ElevenLabs</b>: the phrases the app reads aloud.</li>
 			<li><b>LRCLIB, Spotify and YouTube</b>: the song or video you paste a link to.</li>
+			<li><b>Your own AI key</b>: if you add one in Settings it stays on your device. It is sent with your own requests so they can be answered, and is never stored on the server.</li>
 		</ul>
 		<p class="dim">Your name and email are never sent to these services.</p>
+	</section>
+
+	<section class="card stack">
+		<h3>Daily reminders</h3>
+		<p class="dim">If you turn on notifications, we store the address your browser gives us for sending them and the hour you chose. It is not linked to your account or email, the notification carries no personal content, and turning reminders off deletes it.</p>
 	</section>
 
 	<section class="card stack">

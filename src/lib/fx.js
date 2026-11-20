@@ -1,4 +1,5 @@
 import { lang, meta } from './lang.js';
+import { P } from './prefs.js';
 
 export const DAY = 864e5;
 
@@ -6,20 +7,20 @@ export const today = (d = new Date()) =>
 	`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
 // Which optional services the server has keys for. Filled in by cloud.svelte.js at startup.
-export const caps = { ai: false, tts: false, stt: false };
+export const caps = { ai: false, tts: false, stt: false, push: '' };
 
 let voice;
 let player;
 let turn = 0;
 // Natural cloud voice when it is set up and we are online. Otherwise the phone's built-in pt-BR voice: free and offline.
-export function speak(text, rate = 0.9) {
+export function speak(text, rate = P.rate) {
 	if (!text) return;
 	const me = ++turn;
-	if (caps.tts && navigator.onLine && text.length <= 300) {
+	if (caps.tts && P.voice !== 'device' && navigator.onLine && text.length <= 300) {
 		globalThis.speechSynthesis?.cancel();
 		player ??= new Audio(); // one shared element: once a tap has unlocked it, iOS lets later plays through
 		player.onerror = () => (caps.tts = false); // quota used up or service down: stay on the phone voice for this session, no repeated waiting
-		player.src = `/api/tts?l=${lang}&t=` + encodeURIComponent(text.trim());
+		player.src = `/api/tts?l=${lang}&v=${P.voice}&t=` + encodeURIComponent(text.trim());
 		player.defaultPlaybackRate = player.playbackRate = Math.max(0.6, Math.min(1.2, rate + 0.1));
 		player.play().catch(() => me === turn && local(text, rate));
 		return;
@@ -41,6 +42,7 @@ function local(text, rate) {
 
 let ctx;
 export function ding(ok) {
+	if (!P.sfx) return;
 	try {
 		ctx ??= new (window.AudioContext || window.webkitAudioContext)();
 		(ok ? [660, 990] : [233, 185]).forEach((f, k) => {
@@ -89,7 +91,8 @@ export async function hear(blob, pass = '') {
 export async function ai(op, body, pass = '') {
 	const r = await fetch('/api/ai', {
 		method: 'POST',
-		headers: { 'content-type': 'application/json', 'x-pass': pass },
+		// with your own key set in Settings, requests use your key and your model instead of the shared free ones
+		headers: { 'content-type': 'application/json', 'x-pass': pass, ...(P.key && { 'x-user-key': P.key, 'x-user-model': P.model }) },
 		body: JSON.stringify({ op, lang, ...body })
 	});
 	const d = await r.json().catch(() => ({}));

@@ -13,7 +13,9 @@ export const GET = () =>
 			// which optional services have a key on the server (the keys themselves never leave it)
 			ai: !!env.OPENROUTER_API_KEY,
 			tts: !!env.ELEVENLABS_API_KEY,
-			stt: !!env.DEEPGRAM_API_KEY
+			stt: !!env.DEEPGRAM_API_KEY,
+			// public half of the push key pair; empty when daily notifications are not set up
+			push: (env.SUPABASE_SERVICE_ROLE_KEY && env.VAPID_PRIVATE_KEY && env.VAPID_PUBLIC_KEY) || ''
 		},
 		{ headers: { 'cache-control': 'public, max-age=300' } }
 	);

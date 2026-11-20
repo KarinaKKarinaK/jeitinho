@@ -105,19 +105,22 @@ function pick(cands, n, rnd) {
 	return out;
 }
 
-export function dailyQuiz(S, seed, now = Date.now()) {
+// opts: { quizLen, quizAudio, quizDrills } from Settings
+export function dailyQuiz(S, seed, now = Date.now(), opts = {}) {
+	const len = opts.quizLen || QUIZ_LEN;
+	const drills = opts.quizDrills !== false;
 	const rnd = rng(seed);
 	const decay = (k) => (S.asked[k] ? 1 - Math.exp(-(now - S.asked[k]) / DAY / TAU) : 1);
 	const words = [];
 	for (const w of S.words) {
 		const need = w.reps === 0 ? 1.5 : w.due <= now ? 2 : 0.5; // overdue and new words first
-		for (const type of hasCloze(w) ? ['type', 'cloze', 'listen'] : ['type', 'listen']) {
+		for (const type of (hasCloze(w) ? ['type', 'cloze', 'listen'] : ['type', 'listen']).filter((x) => x !== 'listen' || opts.quizAudio !== false)) {
 			const key = `${w.id}:${type}`;
 			words.push({ key, group: w.id, wt: need * decay(key) * decay('w:' + w.id) });
 		}
 	}
-	const a = pick(words, 8, rnd);
-	const b = pick(pack.drill.pool().map((c) => ({ ...c, wt: c.wt * decay(c.key) })), QUIZ_LEN - a.length, rnd);
+	const a = pick(words, drills ? Math.round((len * 8) / 11) : len, rnd);
+	const b = pick(pack.drill.pool().map((c) => ({ ...c, wt: c.wt * decay(c.key) })), drills ? len - a.length : 0, rnd);
 	const all = [...a, ...b];
 	for (let i = all.length - 1; i > 0; i--) {
 		const j = Math.floor(rnd() * (i + 1));

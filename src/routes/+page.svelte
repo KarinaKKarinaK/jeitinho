@@ -4,21 +4,21 @@
 	import { S, streak, level } from '../lib/store.svelte.js';
 	import { LESSON_LIST } from '../lib/content.js';
 	import { today, DAY } from '../lib/fx.js';
-	import { QUIZ_LEN } from '../lib/quiz.js';
+	import { P } from '../lib/prefs.js';
 	import { cloud } from '../lib/cloud.svelte.js';
-	import { lang, t, AVAILABLE, switchLang } from '../lib/lang.js';
+	import { lang, meta, t, AVAILABLE, switchLang } from '../lib/lang.js';
 	import { current, earned, milestones } from '../lib/roadmap.js';
 
 	// brand new here: offer the placement test once
 	if (!S.onboarded && S.xp === 0 && !Object.keys(S.done).length) goto('/welcome', { replaceState: true });
 
-	const GOAL = 60; // XP that fills a day ring
+	const GOAL = P.goal; // XP that fills a day ring
+	const QUIZ_LEN = P.quizLen;
 	const now = Date.now();
 	const week = Array.from({ length: 7 }, (_, k) => {
 		const d = new Date(now - (6 - k) * DAY);
 		return { key: today(d), label: k === 6 ? t.today : t.days[d.getDay()], now: k === 6 };
 	});
-	let remind = $state('19:00');
 	const hour = new Date().getHours();
 	const hello = t.hello[hour < 12 ? 0 : hour < 18 ? 1 : 2];
 	let picking = $state(false);
@@ -28,22 +28,6 @@
 	const lv = $derived(level());
 	const stage = $derived(current(S));
 	const ms = $derived(stage ? milestones(S, stage) : []);
-
-	function exportData() {
-		const a = document.createElement('a');
-		a.href = URL.createObjectURL(new Blob([JSON.stringify(S)], { type: 'application/json' }));
-		a.download = `jeitinho-${today()}.json`;
-		a.click();
-	}
-	async function importData(e) {
-		try {
-			const d = JSON.parse(await e.target.files[0].text());
-			if (!Array.isArray(d.words)) throw 0;
-			Object.assign(S, d);
-		} catch {
-			alert('That file is not a jeitinho backup.');
-		}
-	}
 </script>
 
 <div class="stack rise home">
@@ -53,7 +37,7 @@
 			<h2>{lv.name}</h2>
 		</div>
 		<div class="row" style="gap:8px">
-			<button class="streak lang" onclick={() => (picking = !picking)} aria-label="Switch language" aria-expanded={picking}>{lang.toUpperCase()}</button>
+			<button class="streak lang" onclick={() => (picking = !picking)} aria-label="Switch language" aria-expanded={picking}>{meta.short}</button>
 			<div class="streak" class:lit={streak() > 0}><Icon name="flame" size={18} /> {streak()}</div>
 			<a class="icon-btn" class:solid={!!cloud.user} href="/account" aria-label={cloud.user ? 'Account, signed in' : 'Sign in'}><Icon name="user" size={20} /></a>
 		</div>
@@ -64,7 +48,7 @@
 			<p class="eyebrow">Your languages</p>
 			{#each AVAILABLE as l}
 				<button class="item" class:done={l.code === lang} onclick={() => (l.code === lang ? (picking = false) : switchLang(l.code))}>
-					<span class="dot">{l.code.toUpperCase()}</span>
+					<span class="dot">{l.short}</span>
 					<span class="grow"><b>{l.label}</b><small>{l.name}</small></span>
 					{#if l.code === lang}<Icon name="check" size={18} />{/if}
 				</button>
@@ -115,20 +99,11 @@
 		<div class="bar"><i style:width="{stage ? (ms.reduce((a, m) => a + m.have / m.need, 0) / ms.length) * 100 : 100}%"></i></div>
 	</a>
 
-	<details class="card">
-		<summary>Settings</summary>
-		<div class="stack" style="margin-top:16px">
-			<label class="small dim">Voice speed: {S.rate}<input type="range" min="0.5" max="1.2" step="0.1" bind:value={S.rate} /></label>
-			<label class="small dim">Passcode (only if you set APP_PASSCODE)<input type="password" bind:value={S.pass} autocomplete="off" /></label>
-			<div class="row small dim"><Icon name="bell" size={18} /><span class="grow">Daily reminder</span><input type="time" bind:value={remind} aria-label="Reminder time" /><a class="btn sm" href="/api/reminder?t={remind}" data-sveltekit-reload>Add to calendar</a></div>
-			<div class="chips">
-				<button class="btn sm" onclick={exportData}>Export backup</button>
-				<a class="btn sm" href="/welcome">Placement test</a>
-				<label class="btn sm">Import backup<input type="file" accept="application/json" hidden onchange={importData} /></label>
-			</div>
-			<p class="small dim">{cloud.user ? `Signed in as ${cloud.user.email}. Progress syncs to your account.` : 'Your progress lives only on this device.'} <a href="/account" style="text-decoration:underline">{cloud.user ? 'Account' : 'Sign in to save it'}</a></p>
-		</div>
-	</details>
+	<a class="item" href="/settings">
+		<span class="dot"><Icon name="gear" /></span>
+		<span class="grow"><b>Settings</b><small>Theme, voice, quiz, reminders, your own AI key</small></span>
+		<Icon name="chev" size={18} />
+	</a>
 
 	<p class="foot"><a href="/privacy">Privacy</a><span>·</span><a href="https://github.com/KarinaKKarinaK/jeitinho" target="_blank" rel="noopener noreferrer">Open source</a></p>
 </div>
@@ -157,7 +132,7 @@
 	@keyframes ring-in { from { transform: scale(0.5); opacity: 0; } }
 	input[type='time'] { background: rgba(0, 0, 0, 0.25); color: var(--ink); border: 0; border-radius: 12px; padding: 8px 10px; font: 400 15px var(--font); }
 	.day.now { color: var(--ink); }
-	.ring { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; font-size: 11px; color: var(--dim); background: radial-gradient(closest-side, #15111a 76%, transparent 79%), conic-gradient(var(--lime) calc(var(--p) * 360deg), var(--line) 0); transition: --p 0.6s; }
+	.ring { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; font-size: 11px; color: var(--dim); background: radial-gradient(closest-side, var(--ring-bg) 76%, transparent 79%), conic-gradient(var(--lime) calc(var(--p) * 360deg), var(--line) 0); transition: --p 0.6s; }
 	.day.now .ring { width: 46px; height: 46px; margin-top: -3px; color: var(--ink); box-shadow: 0 0 24px -6px rgba(228, 240, 96, 0.5); }
 	.pill { display: inline-flex; align-items: center; gap: 4px; height: 38px; padding: 0 14px 0 18px; border-radius: 999px; background: #fff; color: #17121c; font-weight: 500; font-size: 15px; }
 	.hero { transition: transform 0.15s; }

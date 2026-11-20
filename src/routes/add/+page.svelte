@@ -85,7 +85,7 @@
 						<label class="w" class:off={off[i]}>
 							<input type="checkbox" checked={!off[i]} onchange={() => (off[i] = !off[i])} />
 							<span class="grow"><b>{w.pt}</b> <small>{w.en}</small>{#if w.say}<em>{w.say}</em>{/if}</span>
-							<button class="icon-btn sm" onclick={(e) => { e.preventDefault(); speak(w.pt, S.rate); }} aria-label="Hear {w.pt}"><Icon name="sound" size={16} /></button>
+							<button class="icon-btn sm" onclick={(e) => { e.preventDefault(); speak(w.pt); }} aria-label="Hear {w.pt}"><Icon name="sound" size={16} /></button>
 						</label>
 					{/each}
 				</div>

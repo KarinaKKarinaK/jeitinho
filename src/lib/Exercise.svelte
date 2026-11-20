@@ -6,6 +6,7 @@
 	import { check, sayScore } from './quiz.js';
 	import { S } from './store.svelte.js';
 	import { pack, meta, t } from './lang.js';
+	import { P } from './prefs.js';
 
 	let { steps, retry = false, back = '/', onanswer = () => {}, onfinish = () => 0 } = $props();
 
@@ -80,7 +81,7 @@
 		}
 		// missed questions come back once at the end of a lesson
 		if (!r.ok && retry && !q.again) queue.push({ ...$state.snapshot(q), again: true });
-		if (q.speak && q.kind !== 'choice') speak(q.speak, S.rate);
+		if (P.autoplay && q.speak && q.kind !== 'choice') speak(q.speak);
 	}
 
 	function next() {
@@ -102,7 +103,7 @@
 	}
 
 	$effect(() => {
-		if (xp === null && !res && q.kind === 'listen') speak(q.speak, S.rate);
+		if (xp === null && !res && q.kind === 'listen') speak(q.speak);
 		input?.focus();
 	});
 </script>
@@ -129,16 +130,16 @@
 				<p class="eyebrow">{t.learn}</p>
 				<h1>{q.title}</h1>
 				{#if q.html}<div class="body">{@html q.body}</div>{:else}<div class="body">{q.body}</div>{/if}
-				{#if q.say}<button class="btn sm" onclick={() => speak(q.say, S.rate)}><Icon name="sound" size={18} /> {t.hear}</button>{/if}
+				{#if q.say}<button class="btn sm" onclick={() => speak(q.say)}><Icon name="sound" size={18} /> {t.hear}</button>{/if}
 			{:else}
 				<p class="eyebrow">{q.again ? t.again : q.label || (q.kind === 'choice' ? 'Choose' : q.kind === 'listen' ? 'Listen and type' : q.kind === 'say' ? 'Say it out loud' : q.kind === 'write' ? 'Write in Portuguese' : t.typeLabel)}</p>
 				{#if q.kind === 'listen'}
-					<button class="play" onclick={() => speak(q.speak, S.rate)} aria-label="Play audio"><Icon name="sound" size={38} /></button>
+					<button class="play" onclick={() => speak(q.speak)} aria-label="Play audio"><Icon name="sound" size={38} /></button>
 					<p class="dim">{q.prompt} <button class="chip" onclick={() => speak(q.speak, 0.6)}>slow</button></p>
 				{:else}
 					<h1 class="prompt">{q.prompt}</h1>
 					{#if q.sub}<p class="dim">{q.sub}</p>{/if}
-					{#if q.audio}<button class="btn sm" onclick={() => speak(q.speak, S.rate)}><Icon name="sound" size={18} /> {t.hear}</button>{/if}
+					{#if q.audio}<button class="btn sm" onclick={() => speak(q.speak)}><Icon name="sound" size={18} /> {t.hear}</button>{/if}
 				{/if}
 
 				{#if q.kind === 'choice'}
@@ -148,7 +149,7 @@
 						{/each}
 					</div>
 				{:else if q.kind === 'say'}
-					<button class="btn sm" onclick={() => speak(q.speak, S.rate)}><Icon name="sound" size={18} /> {t.hear}</button>
+					<button class="btn sm" onclick={() => speak(q.speak)}><Icon name="sound" size={18} /> {t.hear}</button>
 					{#if stop}<p class="rec"><i></i> {t.recording}</p>{/if}
 					{#if res?.marks}<p class="marks">{#each res.marks as m}<span class:miss={!m.ok}>{m.w}</span>{' '}{/each}</p>{/if}
 				{:else if q.kind === 'write'}
@@ -171,7 +172,7 @@
 			<div class="fb" class:ok={res.ok} class:shake={!res.ok} in:fly={{ y: 30, duration: 220 }} role="status">
 				<div class="row">
 					<b class="grow">{res.skipped ? t.skipped : q.kind === 'write' ? (res.ok ? t.polished : t.fixed) : res.ok ? t.right : t.answer}</b>
-					{#if !res.skipped && (q.speak || q.kind !== 'choice')}<button class="icon-btn sm" onclick={() => speak(q.speak || q.answer, S.rate)} aria-label="Hear it"><Icon name="sound" size={18} /></button>{/if}
+					{#if !res.skipped && (q.speak || q.kind !== 'choice')}<button class="icon-btn sm" onclick={() => speak(q.speak || q.answer)} aria-label="Hear it"><Icon name="sound" size={18} /></button>{/if}
 				</div>
 				{#if !res.ok || (q.kind === 'write' && !res.skipped)}<p class="ans">{q.answer}</p>{/if}
 				{#if res.note}<p class="small">{res.note}</p>{/if}
@@ -197,14 +198,14 @@
 	.opts { display: grid; gap: 10px; width: 100%; margin-top: 6px; }
 	.opt { text-align: left; padding: 17px 20px; border-radius: 22px; border: 1px solid var(--line); background: var(--glass); color: var(--ink); font: 400 17px var(--font); cursor: pointer; transition: transform 0.12s, border-color 0.15s, background 0.15s; }
 	.opt:active { transform: scale(0.98); }
-	.opt.on { border-color: #fff; background: var(--glass2); }
+	.opt.on { border-color: var(--ink); background: var(--glass2); }
 	.opt.good { border-color: var(--ok); background: rgba(166, 232, 143, 0.14); }
 	.opt.bad { border-color: var(--bad); background: rgba(255, 143, 143, 0.12); }
 	.play { width: 108px; height: 108px; border-radius: 50%; border: 0; cursor: pointer; color: #fff; background: linear-gradient(160deg, #d79ac3, #7d569c); box-shadow: 0 20px 40px -18px rgba(201, 130, 190, 0.8); transition: transform 0.12s; }
 	.play:active { transform: scale(0.93); }
 	footer { position: sticky; bottom: calc(env(safe-area-inset-bottom) + 12px); display: grid; gap: 12px; margin-top: 24px; }
-	.fb { padding: 16px 18px; border-radius: 24px; border: 1px solid rgba(255, 143, 143, 0.5); background: rgba(48, 20, 26, 0.92); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); display: grid; gap: 6px; }
-	.fb.ok { border-color: rgba(166, 232, 143, 0.5); background: rgba(22, 40, 24, 0.92); }
+	.fb { padding: 16px 18px; border-radius: 24px; border: 1px solid rgba(255, 143, 143, 0.5); background: var(--bad-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); display: grid; gap: 6px; }
+	.fb.ok { border-color: rgba(166, 232, 143, 0.5); background: var(--ok-bg); }
 	.fb b { font-weight: 500; color: var(--bad); }
 	.fb.ok b { color: var(--ok); }
 	.ans { font-size: 22px; }
