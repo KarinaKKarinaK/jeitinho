@@ -2,7 +2,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import { LANGS } from './langs/meta.js';
+import { LANGS, POS } from './langs/meta.js';
 import { STAGE_IDS } from './langs/kit.js';
 
 const codes = fs.readdirSync(new URL('./langs/', import.meta.url)).map((f) => f.replace('.js', '')).filter((c) => LANGS[c]);
@@ -41,7 +41,9 @@ for (const code of codes) {
 		}
 
 		// starter words
-		assert.ok(p.seed.length >= 30, 'at least 30 starter words');
+		assert.ok(p.seed.length >= 150, `${p.seed.length} starter words, need at least 150`);
+		for (const w of p.seed) assert.ok(POS.includes(w.pos), `seed ${w.pt}: part of speech "${w.pos}"`);
+		assert.equal(new Set(p.seed.map((w) => w.pt.toLowerCase())).size, p.seed.length, 'starter words are unique');
 		for (const w of p.seed) {
 			assert.ok(w.pt && w.en && w.ex && w.exEn, `seed ${w.pt}`);
 		}

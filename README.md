@@ -24,7 +24,7 @@
 | **Placement test** | New learners take a short test that climbs a level at a time and stops when it gets too hard. |
 | **Drills** | The hard part of each language: verb tenses (Portuguese, Spanish), tones and measure words (Mandarin), cases and aspect (Polish), particles and verb forms (Japanese). |
 | **Real speech** | Regional and spoken language, not only the textbook: mineirês from Belo Horizonte, the Beijing r, Kansai-ben, vosotros and vos. |
-| **Word bank** | Spaced repetition, with export to Anki. |
+| **Word bank** | 175 to 215 starter words per language, tagged by part of speech. Stars, your own notes, collections, AI example sentences, spaced repetition and export to Anki. |
 | **Songs** | Paste a Spotify link: lyrics with line by line translation, tap any word to see what it means and keep it, then a quiz built from the song. |
 | **Import** | An article, a YouTube link, pasted text or a photo of your notes becomes flashcards. |
 | **Speaking** | Say a sentence, see which words were understood. Voice mode in the chat. |

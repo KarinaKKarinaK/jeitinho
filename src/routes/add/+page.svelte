@@ -2,6 +2,7 @@
 	import { fly } from 'svelte/transition';
 	import { goto } from '$app/navigation';
 	import Icon from '../../lib/Icon.svelte';
+	import Star from '../../lib/Star.svelte';
 	import { S, addWords } from '../../lib/store.svelte.js';
 	import { ai, speak, today } from '../../lib/fx.js';
 	import { t, meta } from '../../lib/lang.js';
@@ -88,6 +89,7 @@
 						<label class="w" class:off={off[i]}>
 							<input type="checkbox" checked={!off[i]} onchange={() => (off[i] = !off[i])} />
 							<span class="grow"><b>{w.pt}</b> <small>{w.en}</small>{#if w.say}<em>{w.say}</em>{/if}</span>
+							<Star word={w} src={res.title} />
 							<button class="icon-btn sm" onclick={(e) => { e.preventDefault(); speak(w.pt); }} aria-label="Hear {w.pt}"><Icon name="sound" size={16} /></button>
 						</label>
 					{/each}

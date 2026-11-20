@@ -2,6 +2,8 @@
 // Stage targets follow the JLPT levels (N5 to N1) and the JF Standard can-do approach, mapped onto CEFR.
 // Every typed answer also accepts the hiragana reading and Hepburn romaji, so no Japanese keyboard is needed.
 import { I, C, T, L, tableDrill } from './kit.js';
+import { withMore } from './kit.js';
+import { MORE, SEED_POS } from './words/ja.js';
 
 // accepted spellings: the reading in kana, romaji, plus common variants (私 typed as わたし, the particle を typed as wo)
 const alt = (ja, kana, romaji, more = []) => {
@@ -695,7 +697,7 @@ const ALL = Object.keys(DRILLS);
 export default {
 	code: 'ja',
 	units: UNITS,
-	seed: SEED,
+	seed: withMore(SEED, MORE, SEED_POS),
 	placement: PLACEMENT,
 	keys: '', // no accent key row: answers are typed in kana or plain romaji
 	levels: [[0, 'Shoshinsha 初心者'], [150, 'Kankoukyaku 観光客'], [500, 'Ryuugakusei 留学生'], [1200, 'Nihontsuu 日本通'], [2500, 'Perapera ペラペラ'], [5000, 'Neitibu kyuu ネイティブ級']],

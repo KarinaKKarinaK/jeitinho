@@ -2,6 +2,8 @@
 // Stage targets follow the Polish state certificate standards (Państwowa Komisja do spraw
 // Poświadczania Znajomości Języka Polskiego jako Obcego), levels A1 to C2.
 import { I, C, T, L, tableDrill } from './kit.js';
+import { withMore } from './kit.js';
+import { MORE, SEED_POS } from './words/pl.js';
 
 // The answer check strips accents but cannot turn ł into l, so every answer with ł
 // also accepts a copy with plain l. Typed with no Polish letters at all it still passes, with a warning.
@@ -723,7 +725,7 @@ const ALL = Object.keys(DRILLS);
 export default {
 	code: 'pl',
 	units: UNITS,
-	seed: SEED,
+	seed: withMore(SEED, MORE, SEED_POS),
 	placement: PLACEMENT,
 	keys: 'ąćęłńóśźż',
 	levels: [[0, 'Turysta'], [150, 'Początkujący'], [500, 'Bywalec'], [1200, 'Gaduła'], [2500, 'Swój człowiek'], [5000, 'Prawie rodowity']],

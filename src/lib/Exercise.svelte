@@ -2,6 +2,7 @@
 	import { fly, scale } from 'svelte/transition';
 	import { untrack } from 'svelte';
 	import Icon from './Icon.svelte';
+	import Star from './Star.svelte';
 	import { speak, ding, ai, record, hear } from './fx.js';
 	import { check, sayScore } from './quiz.js';
 	import { S } from './store.svelte.js';
@@ -172,6 +173,7 @@
 			<div class="fb" class:ok={res.ok} class:shake={!res.ok} in:fly={{ y: 30, duration: 220 }} role="status">
 				<div class="row">
 					<b class="grow">{res.skipped ? t.skipped : q.kind === 'write' ? (res.ok ? t.polished : t.fixed) : res.ok ? t.right : t.answer}</b>
+					{#if q.wid}{@const bw = S.words.find((w) => w.id === q.wid)}{#if bw}<Star word={bw} />{/if}{/if}
 					{#if !res.skipped && (q.speak || q.kind !== 'choice')}<button class="icon-btn sm" onclick={() => speak(q.speak || q.answer)} aria-label="Hear it"><Icon name="sound" size={18} /></button>{/if}
 				</div>
 				{#if !res.ok || (q.kind === 'write' && !res.skipped)}<p class="ans">{q.answer}</p>{/if}

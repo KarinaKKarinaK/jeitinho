@@ -2,6 +2,8 @@
 // Stage targets follow the Instituto Cervantes Plan Curricular (A1 to C2, the basis of the DELE exams).
 // Neutral standard Spanish, with Spain and Latin America differences pointed out where they matter.
 import { I, C, T, L } from './kit.js';
+import { withMore } from './kit.js';
+import { MORE, SEED_POS } from './words/es.js';
 
 const UNITS = [
 	{
@@ -681,7 +683,7 @@ const ALL = Object.keys(TENSES);
 export default {
 	code: 'es',
 	units: UNITS,
-	seed: SEED,
+	seed: withMore(SEED, MORE, SEED_POS),
 	placement: PLACEMENT,
 	keys: 'áéíóúüñ¿¡',
 	articles: /^(el|la|los|las|un|una|unos|unas) /,

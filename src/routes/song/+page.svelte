@@ -2,6 +2,7 @@
 	import { page } from '$app/state';
 	import { fly } from 'svelte/transition';
 	import Icon from '../../lib/Icon.svelte';
+	import Star from '../../lib/Star.svelte';
 	import { S, addWords } from '../../lib/store.svelte.js';
 	import { ai, speak } from '../../lib/fx.js';
 	import { wordKey, songSteps } from '../../lib/quiz.js';
@@ -73,13 +74,13 @@
 			{#if suggested.length}
 				<p class="eyebrow">Suggested from this song</p>
 				{#each suggested as w}
-					<div class="item"><span class="grow"><b>{w.pt}</b><small>{w.en}</small></span><button class="btn sm" onclick={() => keep(w)}><Icon name="plus" size={16} /> Keep</button></div>
+					<div class="item"><span class="grow"><b>{w.pt}</b><small>{w.en}</small></span><Star word={w} src={m.title} /><button class="btn sm" onclick={() => keep(w)}><Icon name="plus" size={16} /> Keep</button></div>
 				{/each}
 				<button class="btn" onclick={() => suggested.forEach(keep)}>Keep all {suggested.length}</button>
 			{/if}
 			<p class="eyebrow">Your words from this song</p>
 			{#each mine as w}
-				<div class="item done"><span class="dot"><Icon name="check" size={18} /></span><span class="grow"><b>{w.pt}</b><small>{w.en}</small></span><button class="icon-btn sm" onclick={() => speak(w.pt)} aria-label="Hear {w.pt}"><Icon name="sound" size={16} /></button></div>
+				<div class="item done"><span class="dot"><Icon name="check" size={18} /></span><span class="grow"><b>{w.pt}</b><small>{w.en}</small></span><Star word={w} /><button class="icon-btn sm" onclick={() => speak(w.pt)} aria-label="Hear {w.pt}"><Icon name="sound" size={16} /></button></div>
 			{:else}
 				<p class="dim small">None yet. Keep a suggestion above, or go back to the lyrics and tap words.</p>
 			{/each}
@@ -107,6 +108,7 @@
 			{:else}
 				<div class="row">
 					<span class="grow"><b>{tapped.pt}</b>{#if tapped.say}<em>{tapped.say}</em>{/if}</span>
+					<Star word={tapped} src={m.title} />
 					<button class="icon-btn sm" onclick={() => speak(tapped.pt)} aria-label="Hear it"><Icon name="sound" size={16} /></button>
 					<button class="icon-btn sm" onclick={() => (tapped = null)} aria-label="Close"><Icon name="x" size={16} /></button>
 				</div>

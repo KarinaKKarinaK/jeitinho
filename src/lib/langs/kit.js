@@ -5,6 +5,13 @@ export const C = (prompt, answer, wrong, explain) => ({ kind: 'choice', prompt, 
 export const T = (prompt, answer, explain, accept) => ({ kind: 'type', prompt, answer, explain, accept, speak: answer });
 export const L = (answer, explain, accept) => ({ kind: 'listen', prompt: 'Type what you hear', speak: answer, answer, explain, accept });
 
+// A pack's starter word bank: its own seed (tagged with parts of speech) plus the bigger list in words/<code>.js.
+// more rows are [word, meaning, reading, example, example in English, part of speech].
+export const withMore = (seed, more = [], seedPos = {}) => [
+	...seed.map((w) => ({ ...w, pos: w.pos || seedPos[w.pt] || '' })),
+	...more.map(([pt, en, say, ex, exEn, pos]) => ({ pt, en, say, ex, exEn, pos }))
+];
+
 // English interface text. A pack overrides the ones it wants in its own language.
 export const UI = {
 	check: 'Check', next: 'Continue', start: 'Start', right: 'Correct!', answer: 'Correct answer:', again: 'Again', learn: 'Learn',

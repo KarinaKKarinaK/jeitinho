@@ -1,5 +1,7 @@
 // Brazilian Portuguese pack: course, starter words, placement test, verb drill, roadmap.
 import { I, C, T, L } from './kit.js';
+import { withMore } from './kit.js';
+import { MORE, SEED_POS } from './words/pt.js';
 import { conj, table, PRON, TENSES, VERBS } from '../conj.js';
 
 const UNITS = [
@@ -532,7 +534,7 @@ const ALL = ['pres', 'perf', 'imp', 'cond', 'sp', 'si', 'sf'];
 export default {
 	code: 'pt',
 	units: UNITS,
-	seed: SEED,
+	seed: withMore(SEED, MORE, SEED_POS),
 	placement: PLACEMENT,
 	keys: 'áâãàçéêíóôõú',
 	articles: /^(o|a|os|as|um|uma) /,

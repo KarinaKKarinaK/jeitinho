@@ -2,6 +2,8 @@
 // Stage targets follow the HSK levels (Chinese Proficiency Grading Standards) mapped onto CEFR.
 // Simplified characters. Every typed answer also accepts pinyin, so no Chinese keyboard is needed.
 import { I, C, T, L, tableDrill } from './kit.js';
+import { withMore } from './kit.js';
+import { MORE, SEED_POS } from './words/zh.js';
 
 // typed answer: characters, or pinyin (tone marks optional, flagged when missing)
 const Z = (prompt, zh, py, explain) => T(prompt, zh, `${zh} = ${py}${explain ? '. ' + explain : ''}`, [py]);
@@ -563,7 +565,7 @@ const ALL = Object.keys(DRILLS);
 export default {
 	code: 'zh',
 	units: UNITS,
-	seed: SEED,
+	seed: withMore(SEED, MORE, SEED_POS),
 	placement: PLACEMENT,
 	keys: 'āáǎàēéěèīíǐìōóǒòūúǔùǚǜ', // pinyin tone marks
 	levels: [[0, 'Lǎowài 老外'], [150, 'Yóukè 游客'], [500, 'Liúxuéshēng 留学生'], [1200, 'Zhōngguótōng 中国通'], [2500, 'Bàn ge Zhōngguórén'], [5000, 'Mǔyǔ shuǐpíng 母语水平']],
