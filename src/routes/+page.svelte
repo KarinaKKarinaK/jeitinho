@@ -9,7 +9,7 @@
 	const now = Date.now();
 	const week = Array.from({ length: 7 }, (_, k) => {
 		const d = new Date(now - (6 - k) * DAY);
-		return { key: today(d), label: ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'][d.getDay()], now: k === 6 };
+		return { key: today(d), label: ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'][d.getDay()], now: k === 6 };
 	});
 	const hour = new Date().getHours();
 	const hello = hour < 12 ? 'Bom dia' : hour < 18 ? 'Boa tarde' : 'Boa noite';
