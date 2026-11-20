@@ -31,7 +31,8 @@ export const lang = code;
 export const meta = LANGS[code];
 export const pack = (await packs[code]()).default;
 export const t = { ...UI, ...pack.ui };
-export const TEXTS = reading[code] ? (await reading[code]()).TEXTS : [];
+// loaded only when the Reading tab is opened, so they do not slow down the first screen
+export const loadTexts = () => (reading[code] ? reading[code]().then((m) => m.TEXTS) : Promise.resolve([]));
 
 // Switching reloads the app so every screen picks up the other language and its own progress.
 export function switchLang(c, to = '/') {

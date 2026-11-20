@@ -5,13 +5,18 @@
 	import Icon from '../../lib/Icon.svelte';
 	import Star from '../../lib/Star.svelte';
 	import { S, addWords, addXP } from '../../lib/store.svelte.js';
-	import { TEXTS } from '../../lib/content.js';
 	import { ai, speak, today } from '../../lib/fx.js';
 	import { wordKey, splitSentences as sentences } from '../../lib/quiz.js';
-	import { meta, lang } from '../../lib/lang.js';
+	import { meta, lang, loadTexts } from '../../lib/lang.js';
 
 	// Reading practice: the course's graded texts plus your own. Point at a word (or tap it on a phone)
 	// to see what it means here and its part of speech; tap to keep it.
+	let TEXTS = $state([]);
+	let loaded = $state(false);
+	onMount(async () => {
+		TEXTS = await loadTexts();
+		loaded = true;
+	});
 	const id = $derived(page.url.searchParams.get('id'));
 	const all = $derived([...TEXTS.map((x) => ({ ...x, own: false })), ...S.texts.map((x) => ({ ...x, own: true }))]);
 	const text = $derived(all.find((x) => x.id === id));
@@ -119,6 +124,8 @@
 			<p class="dim small">No graded texts for this language yet. Add your own from the Add tab.</p>
 		{/each}
 	</div>
+{:else if !text && !loaded}
+	<span class="spin"></span>
 {:else if !text}
 	<div class="stack"><h2>Text not found</h2><a class="btn" href="/read">Back to reading</a></div>
 {:else}
