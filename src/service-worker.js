@@ -8,7 +8,10 @@ const build = paths(immutable);
 // Offline: the whole app shell is cached on install, so lessons, the quiz, the drill and the
 // word bank open with no connection. AI, sync and cloud voice still need the network.
 const CACHE = `jeitinho-${version}`;
-const SHELL = [...build, ...paths(assets), ...paths(prerendered)];
+// The prepared reading meanings are per language and only matter to someone reading in that language,
+// so they are not downloaded up front: they are cached the first time they are used.
+const LAZY = /^\/gloss\//;
+const SHELL = [...build, ...paths(assets).filter((p) => !LAZY.test(p)), ...paths(prerendered)];
 const FONTS = ['https://fonts.googleapis.com', 'https://fonts.gstatic.com'];
 
 self.addEventListener('install', (e) => e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting())));
@@ -42,7 +45,7 @@ self.addEventListener('fetch', (e) => {
 			}
 			try {
 				const res = await fetch(e.request);
-				if (font && res.ok) cache.put(e.request, res.clone());
+				if ((font || LAZY.test(url.pathname)) && res.ok) cache.put(e.request, res.clone());
 				return res;
 			} catch (err) {
 				// offline: pages use query strings (/lesson?id=...), so match on the path alone
