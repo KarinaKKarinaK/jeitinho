@@ -6,6 +6,8 @@ import { limited } from '../../../lib/server/limit.js';
 export const prerender = false;
 
 // Voices every ElevenLabs free plan can use. The id sent by the app is looked up here, never passed through.
+const MAX = 160;
+const spent = { day: '', chars: 0 };
 const VOICES = {
 	sarah: 'EXAVITQu4vr4xnSDxMaL', jessica: 'cgSgspJ2msm6clMCkdW9', alice: 'Xb7hH8MSUJpSbSDYk0k2',
 	brian: 'nPczCjzI2devNBz1zQrb', george: 'JBFqnCBsd6RMkjVDRZzb', liam: 'TX3LPaxmHKxFdv7VOQHJ'
@@ -16,12 +18,17 @@ const VOICES = {
 // Each phrase is cached at the CDN for a year, so a phrase is only paid for (in free credits) once.
 export async function GET({ url, request, getClientAddress }) {
 	// cached phrases never reach this function, so this only counts new phrases: 40 per visitor in 5 minutes
-	if (limited('tts', getClientAddress(), 40)) error(429, 'Too many voice requests. Try again in a few minutes.');
+	if (limited('tts', getClientAddress(), 15)) error(429, 'Too many voice requests. Try again in a few minutes.');
 	// browsers say where a request comes from: refuse other sites embedding this to drain the free quota
 	if (['cross-site', 'same-site'].includes(request.headers.get('sec-fetch-site'))) error(403, 'Forbidden');
 	if (!env.ELEVENLABS_API_KEY) error(503, 'Voice is not set up.');
 	const text = (url.searchParams.get('t') || '').trim();
-	if (!text || text.length > 300) error(400, 'Text must be 1 to 300 characters.');
+	if (!text || text.length > MAX) error(400, `Text must be 1 to ${MAX} characters.`);
+	// a ceiling on new characters per day, so one visitor cannot use up the month for everyone
+	// ponytail: per server instance, like the limiter. The hard stop is the credit cap set on the ElevenLabs key itself.
+	const day = new Date().toISOString().slice(0, 10);
+	if (spent.day !== day) Object.assign(spent, { day, chars: 0 });
+	if ((spent.chars += text.length) > 2500) error(429, 'The natural voice has reached its limit for today.');
 	const lang = LANGS[url.searchParams.get('l')] ? url.searchParams.get('l') : 'pt';
 	const model = env.ELEVENLABS_MODEL || 'eleven_flash_v2_5';
 	const voice = VOICES[url.searchParams.get('v')] || (env.ELEVENLABS_VOICE_ID || VOICES.sarah).replace(/\W/g, '');

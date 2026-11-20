@@ -16,7 +16,7 @@ let turn = 0;
 export function speak(text, rate = P.rate) {
 	if (!text) return;
 	const me = ++turn;
-	if (caps.tts && voiceOf(lang) !== 'device' && navigator.onLine && text.length <= 300) {
+	if (caps.tts && voiceOf(lang) !== 'device' && navigator.onLine && text.length <= 160) {
 		globalThis.speechSynthesis?.cancel();
 		player ??= new Audio(); // one shared element: once a tap has unlocked it, iOS lets later plays through
 		// quota used up or service down: stay on the phone voice for this session, and say so once

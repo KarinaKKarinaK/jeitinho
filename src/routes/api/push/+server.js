@@ -1,6 +1,12 @@
 import { json, error } from '@sveltejs/kit';
 import * as env from '$app/env/private';
 import crypto from 'node:crypto';
+import { limited } from '../../../lib/server/limit.js';
+
+const same = (a, b) => {
+	const [x, y] = [a, b].map((v) => crypto.createHash('sha256').update(String(v)).digest());
+	return crypto.timingSafeEqual(x, y);
+};
 
 // Daily reminders by web push, with no paid service:
 // - the browser subscribes and tells us the hour (UTC) it wants the reminder
@@ -37,13 +43,13 @@ export function _vapid(endpoint, now = Date.now()) {
 }
 
 // subscribe or change the hour: { endpoint, hour } (hour in UTC, 0 to 23)
-export async function POST({ request }) {
+export async function POST({ request, getClientAddress }) {
 	if (!ready()) error(503, 'Notifications are not set up.');
 	// hourly job
 	if (request.headers.get('x-cron')) {
-		if (!env.CRON_SECRET || request.headers.get('x-cron') !== env.CRON_SECRET) error(401, 'No.');
+		if (!env.CRON_SECRET || !same(request.headers.get('x-cron'), env.CRON_SECRET)) error(401, 'No.');
 		const hour = new Date().getUTCHours();
-		const subs = await (await db(`?hour=eq.${hour}&select=endpoint&limit=2000`)).json();
+		const subs = await (await db(`?hour=eq.${hour}&select=endpoint&order=created_at.asc&limit=2000`)).json();
 		let sent = 0, gone = 0;
 		await Promise.all(
 			(Array.isArray(subs) ? subs : []).map(async ({ endpoint }) => {
@@ -56,6 +62,7 @@ export async function POST({ request }) {
 		);
 		return json({ hour, sent, gone });
 	}
+	if (limited('push', getClientAddress(), 10)) error(429, 'Too many requests.');
 	const b = await request.json().catch(() => ({}));
 	const endpoint = endpointOf(b.endpoint);
 	const hour = Number(b.hour);

@@ -151,7 +151,7 @@
 							onpointerenter={(e) => e.pointerType === 'mouse' && hover(e, k, s, p.t)} onpointerleave={leave}
 							onclick={(e) => { tip = null; show(e, k, s, p.t, true); }}>{p.t}</button>{:else}{p.t}{/if}{/each}
 					{/each}
-					<button class="say" onclick={() => sents.forEach((s, i) => setTimeout(() => i === 0 && speak(sents.join(' ').slice(0, 290)), 0))} aria-label="Hear this paragraph"><Icon name="sound" size={15} /></button>
+					<button class="say" onclick={() => speak(sents.join(' '))} aria-label="Hear this paragraph"><Icon name="sound" size={15} /></button>
 				</p>
 				{#if showEn && parasEn[pi]}<p class="en" lang="en">{parasEn[pi]}</p>{/if}
 			</div>

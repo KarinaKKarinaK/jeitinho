@@ -34,5 +34,24 @@ export async function safeFetch(raw, hops = 3) {
 	}
 	if (!r.ok) throw new Error(`The page answered ${r.status}`);
 	if (+r.headers.get('content-length') > 3e6) throw new Error('Page is too large');
+	if (!/^(text\/|application\/(xhtml|xml|json))/i.test(r.headers.get('content-type') || 'text/')) throw new Error('That link is not a web page');
 	return r;
+}
+
+// Reads a response as text but stops at max bytes. A server can leave out content-length and keep
+// sending; without this the whole body would be pulled into memory.
+export async function readText(res, max = 1.5e6) {
+	const reader = res.body.getReader();
+	const chunks = [];
+	let size = 0;
+	for (;;) {
+		const { done, value } = await reader.read();
+		if (done) break;
+		chunks.push(value);
+		if ((size += value.length) >= max) {
+			await reader.cancel();
+			break;
+		}
+	}
+	return new TextDecoder().decode(Buffer.concat(chunks).subarray(0, max));
 }

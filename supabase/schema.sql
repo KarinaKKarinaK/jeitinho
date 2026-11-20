@@ -55,3 +55,9 @@ create table if not exists public.reports (
 	created_at timestamptz not null default now()
 );
 alter table public.reports enable row level security;
+
+-- Tighter limits on the progress table (safe to run again): only the languages the app has, and 1.5 MB a row.
+alter table public.progress drop constraint if exists progress_lang_check;
+alter table public.progress add constraint progress_lang_check check (lang in ('pt', 'zh', 'pl', 'ja', 'es'));
+alter table public.progress drop constraint if exists progress_data_check;
+alter table public.progress add constraint progress_data_check check (octet_length(data::text) < 1500000);

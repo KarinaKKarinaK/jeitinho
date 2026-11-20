@@ -1,6 +1,6 @@
 import { json, error } from '@sveltejs/kit';
 import * as env from '$app/env/private';
-import { safeFetch } from '../../../lib/server/safefetch.js';
+import { safeFetch, readText } from '../../../lib/server/safefetch.js';
 import { cleanSteps } from '../../../lib/quiz.js';
 import { LANGS, POS } from '../../../lib/langs/meta.js';
 import { limited } from '../../../lib/server/limit.js';
@@ -179,7 +179,7 @@ async function youtube(id) {
 	try {
 		const tracks = JSON.parse(html.match(/"captionTracks":(\[.*?\])/)[1]);
 		const u = new URL((tracks.find((t) => t.languageCode?.startsWith('pt')) || tracks[0]).baseUrl);
-		if (!u.hostname.endsWith('youtube.com')) throw 0;
+		if (u.protocol !== 'https:' || !(u.hostname === 'youtube.com' || u.hostname.endsWith('.youtube.com'))) throw 0;
 		u.searchParams.set('fmt', 'json3');
 		const cap = await (await fetch(u, { signal: AbortSignal.timeout(9000) })).json();
 		text = cap.events.flatMap((e) => e.segs || []).map((x) => x.utf8).join('').replace(/\s+/g, ' ');
@@ -203,7 +203,7 @@ async function importOp(b) {
 			({ title, text, warn } = await youtube(yt));
 		} else {
 			type = 'article';
-			const html = (await (await safeFetch(url).catch((e) => error(422, e.message))).text()).slice(0, 1.5e6);
+			const html = await readText(await safeFetch(url).catch((e) => error(422, e.message)));
 			title = decode(html.match(/<title[^>]*>([^<]*)/i)?.[1] || '').trim();
 			text = strip(html);
 		}
@@ -331,10 +331,14 @@ export async function POST({ request, getClientAddress }) {
 	const model = request.headers.get('x-user-model') || '';
 	const mine = key ? { key, model } : null;
 	if (mine && (!/^sk-or-[\w-]{20,200}$/.test(key) || !/^[\w.\-:/]{3,100}$/.test(model))) error(400, 'Your own key or model name does not look right. Check Settings.');
-	if (!mine && limited('ai', getClientAddress(), 40)) error(429, 'That is a lot of requests in a short time. Take a short break and try again.');
+	// Everyone is limited, own key or not: a made-up key must not be a way around the limit, and importing
+	// a link makes this server fetch a page, so that gets a tighter limit of its own.
+	const ip = getClientAddress();
+	if (limited(mine ? 'ai-own' : 'ai', ip, mine ? 120 : 40)) error(429, 'That is a lot of requests in a short time. Take a short break and try again.');
 	// the passcode guards the shared free quota; with your own key you are not using it
 	if (!mine && env.APP_PASSCODE && request.headers.get('x-pass') !== env.APP_PASSCODE) error(401, 'Wrong passcode. Set it in Settings.');
 	const b = await request.json().catch(() => error(400, 'Bad request'));
+	if (b?.op === 'import' && limited('import', ip, 12)) error(429, 'That is a lot of requests in a short time: imports are limited to a dozen every few minutes.');
 	const op = { import: importOp, chat: chatOp, lesson: lessonOp, grade: gradeOp, define: defineOp, example: exampleOp, conjugate: conjugateOp, gloss: glossOp }[b?.op];
 	if (!op) error(400, 'Unknown op');
 	return json(await own.run(mine, () => op(b)));
