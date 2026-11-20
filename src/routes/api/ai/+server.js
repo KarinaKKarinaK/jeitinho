@@ -14,11 +14,11 @@ export const config = { maxDuration: 60 };
 // Cost guard: only free OpenRouter models can ever be called, whatever the env says.
 const isFree = (id) => id.endsWith(':free') || id === 'openrouter/free';
 const models = () =>
-	(env.OPENROUTER_MODELS || 'nvidia/nemotron-3.5-super-vl:free,google/gemma-4-31b-it:free,google/gemma-4-26b-a4b-it:free,openrouter/free')
+	(env.OPENROUTER_MODELS || 'nvidia/nemotron-3.5-super-vl:free,baidu/ernie-5.5-flash-preview:free,google/gemma-4-31b-it:free,openrouter/free')
 		.split(',').map((s) => s.trim()).filter(isFree).slice(0, 4);
 
-// Free models get rate limited, and some spend the whole answer thinking. So try them one at a time
-// and move on whenever one fails or sends back something that is not JSON.
+// Free models are unpredictable: one is rate limited, one thinks for a minute, one answers in ten seconds.
+// So ask them all at once and take the first answer that is valid JSON. They are free, so the extra calls cost nothing.
 async function llm(messages, max = 2500) {
 	const mine = own.getStore();
 	if (!mine && !env.OPENROUTER_API_KEY) error(503, 'AI is not set up yet. Add OPENROUTER_API_KEY in the Vercel project settings.');
@@ -26,31 +26,31 @@ async function llm(messages, max = 2500) {
 	const list = mine ? [mine.model] : models();
 	const key = mine ? mine.key : env.OPENROUTER_API_KEY;
 	if (!list.length) error(500, 'OPENROUTER_MODELS has no free model in it.');
-	const deadline = Date.now() + 55000;
-	let limited = false;
-	for (const model of list) {
-		const left = deadline - Date.now();
-		if (left < 4000) break;
+	const stop = new AbortController();
+	const status = [];
+	const ask = async (model) => {
 		const r = await fetch('https://openrouter.ai/api/v1/chat/completions', {
 			method: 'POST',
 			headers: { authorization: `Bearer ${key}`, 'content-type': 'application/json' },
 			// thinking counts against max_tokens: keep it short and leave headroom
 			body: JSON.stringify({ model, messages, max_tokens: max + 2000, temperature: 0.4, reasoning: { effort: 'low', exclude: true } }),
-			signal: AbortSignal.timeout(left)
-		}).catch(() => null);
-		if (!r) break; // timed out
-		if (r.status === 401) error(502, mine ? 'OpenRouter rejected your key. Check it in Settings.' : 'OpenRouter rejected the key. Check OPENROUTER_API_KEY.');
-		if (mine && (r.status === 402 || r.status === 404 || r.status === 400)) error(502, r.status === 402 ? 'Your OpenRouter account has no credit for this model.' : 'OpenRouter does not know that model. Check the model name in Settings.');
-		if (r.status === 429) limited = true;
-		if (!r.ok) continue;
-		const d = await r.json().catch(() => ({}));
-		try {
-			return JSON.parse((d.choices?.[0]?.message?.content || '').match(/\{[\s\S]*\}/)[0]);
-		} catch {
-			/* empty or broken answer: next model */
-		}
+			signal: AbortSignal.any([stop.signal, AbortSignal.timeout(52000)])
+		});
+		status.push(r.status);
+		if (!r.ok) throw new Error(String(r.status));
+		const d = await r.json();
+		return JSON.parse((d.choices?.[0]?.message?.content || '').match(/\{[\s\S]*\}/)[0]); // throws on an empty or broken answer
+	};
+	try {
+		return await Promise.any(list.map(ask));
+	} catch {
+		if (status.includes(401)) error(502, mine ? 'OpenRouter rejected your key. Check it in Settings.' : 'OpenRouter rejected the key. Check OPENROUTER_API_KEY.');
+		if (mine && status.some((x) => x === 402 || x === 404 || x === 400)) error(502, status.includes(402) ? 'Your OpenRouter account has no credit for this model.' : 'OpenRouter does not know that model. Check the model name in Settings.');
+		const limited = status.length && status.every((x) => x === 429);
+		error(limited ? 429 : 502, limited ? 'The free models are busy right now. Try again in a minute.' : 'The models did not give a usable answer in time. Try again.');
+	} finally {
+		stop.abort(); // the race is over: drop the slower requests
 	}
-	error(limited ? 429 : 502, limited ? 'The free models are busy right now. Try again in a minute.' : 'The free models did not give a usable answer. Try again.');
 }
 
 const s = (v, n = 300) => (typeof v === 'string' ? v.slice(0, n) : '');
@@ -108,15 +108,32 @@ async function song(id, g) {
 	if (!title) error(422, 'Could not read that Spotify link.');
 	const q = new URLSearchParams({ track_name: title, artist_name: artist });
 	const hits = await (await fetch(`https://lrclib.net/api/search?${q}`, { signal: AbortSignal.timeout(9000) })).json().catch(() => []);
-	const lyr = (Array.isArray(hits) ? hits : []).find((h) => h.plainLyrics)?.plainLyrics;
+	let lyr = (Array.isArray(hits) ? hits : []).find((h) => h.plainLyrics)?.plainLyrics;
+	if (!lyr) {
+		// the strict title and artist match found nothing: try a loose search (covers, live versions, spelling differences)
+		const loose = await (await fetch(`https://lrclib.net/api/search?${new URLSearchParams({ q: `${title} ${artist}` })}`, { signal: AbortSignal.timeout(9000) })).json().catch(() => []);
+		lyr = (Array.isArray(loose) ? loose : []).find((h) => h.plainLyrics)?.plainLyrics;
+	}
 	if (!lyr) error(404, `Found "${title}" by ${artist}, but no lyrics for it. Paste the lyrics as text instead.`);
-	const lines = lyr.split('\n').map((l) => l.trim()).filter(Boolean).slice(0, 70);
-	const out = await llm([
-		{ role: 'system', content: who(g) },
-		{ role: 'user', content: `Song: "${title}" by ${artist}. Lyric lines, numbered:\n${lines.map((l, i) => `${i + 1}. ${l}`).join('\n')}\n\nReturn ONLY JSON: {"summary":"2 sentences in English on what the song is about","lines":["natural English translation of each line, same count and order"],${wordsOf(g)},"notes":["up to 4 notes on grammar, slang or pronunciation heard in this song"],"steps":[6 to 8 quiz steps about this song's vocabulary and grammar]}\nUp to 12 words. ${stepsOf(g)}` }
-	], 5000);
-	const en = Array.isArray(out.lines) ? out.lines : [];
-	return { type: 'song', title: `${title} · ${artist}`, summary: s(out.summary, 500), lyrics: lines.map((pt, i) => ({ pt, en: s(en[i]) })), words: words(out.words), notes: notes(out.notes), steps: cleanSteps(out.steps) };
+	const lines = lyr.split('\n').map((l) => l.trim()).filter(Boolean).slice(0, 48); // enough for a lesson, and short enough for a free model to finish in time
+	// Two smaller jobs side by side finish where one big one times out on free models:
+	// the line by line translation, and the words plus lesson.
+	const numbered = lines.map((l, i) => `${i + 1}. ${l}`).join('\n');
+	const [tr, les] = await Promise.allSettled([
+		llm([
+			{ role: 'system', content: who(g) },
+			{ role: 'user', content: `Song: "${title}" by ${artist}. Lyric lines, numbered:\n${numbered}\n\nReturn ONLY JSON: {"lines":["natural English translation of each line, same count and order, ${lines.length} items"]}` }
+		], 2600),
+		llm([
+			{ role: 'system', content: who(g) },
+			{ role: 'user', content: `Song: "${title}" by ${artist}. Lyrics:\n${numbered}\n\nReturn ONLY JSON: {"summary":"2 sentences in English on what the song is about",${wordsOf(g)},"notes":["up to 4 notes on grammar, slang or pronunciation heard in this song"],"steps":[6 to 8 quiz steps about this song's vocabulary and grammar]}\nUp to 12 words. ${stepsOf(g)}` }
+		], 3200)
+	]);
+	if (les.status === 'rejected' && tr.status === 'rejected') throw les.reason;
+	const out = les.status === 'fulfilled' ? les.value : {};
+	const en = tr.status === 'fulfilled' && Array.isArray(tr.value.lines) ? tr.value.lines : [];
+	const warn = tr.status === 'rejected' ? 'The translation did not come through this time. Import the song again to get it.' : les.status === 'rejected' ? 'The lesson did not come through this time. Import the song again to get it.' : '';
+	return { type: 'song', warn, title: `${title} · ${artist}`, summary: s(out.summary, 500), lyrics: lines.map((pt, i) => ({ pt, en: s(en[i]) })), words: words(out.words), notes: notes(out.notes), steps: cleanSteps(out.steps) };
 }
 
 async function youtube(id) {
