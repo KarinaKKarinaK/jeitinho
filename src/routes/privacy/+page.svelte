@@ -31,7 +31,7 @@
 			<li><b>Deepgram</b>: your voice recordings, only when you press record.</li>
 			<li><b>ElevenLabs</b>: the phrases the app reads aloud.</li>
 			<li><b>LRCLIB, Spotify and YouTube</b>: the song or video you paste a link to.</li>
-			<li><b>Your own AI key</b>: if you add one in Settings it stays on your device. It is sent with your own requests so they can be answered, and is never stored on the server.</li>
+			<li><b>Your own AI key</b>: if you add one in Settings it is kept encrypted on your device and never shown again. It is sent with your own requests so they can be answered, and is never stored on the server or synced to your account.</li>
 		</ul>
 		<p class="dim">Your name and email are never sent to these services.</p>
 	</section>

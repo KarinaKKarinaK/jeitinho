@@ -3,7 +3,7 @@
 	import { page } from '$app/state';
 	import { onMount } from 'svelte';
 	import { S, persist } from '../lib/store.svelte.js';
-	import { applyTheme } from '../lib/prefs.js';
+	import { applyTheme, unlock } from '../lib/prefs.js';
 	import { today } from '../lib/fx.js';
 	import { init } from '../lib/cloud.svelte.js';
 	import Icon from '../lib/Icon.svelte';
@@ -12,6 +12,7 @@
 	$effect(persist);
 	init();
 	applyTheme();
+	unlock();
 
 	// Active minutes: a minute counts when the app is on screen and you touched it in the last minute.
 	onMount(() => {

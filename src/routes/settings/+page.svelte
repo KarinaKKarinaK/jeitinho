@@ -2,14 +2,32 @@
 	import { onMount } from 'svelte';
 	import Icon from '../../lib/Icon.svelte';
 	import { S, reset } from '../../lib/store.svelte.js';
-	import { P, VOICES, savePrefs } from '../../lib/prefs.js';
+	import { P, VOICES, savePrefs, setKey, unlock } from '../../lib/prefs.js';
 	import { cloud } from '../../lib/cloud.svelte.js';
 	import { speak, today } from '../../lib/fx.js';
 	import { meta, pack } from '../../lib/lang.js';
 	import { retakeAt } from '../../lib/roadmap.js';
 
 	// a live copy of the settings; every change is saved straight away
-	let p = $state({ ...P });
+	let p = $state({ ...P, key: undefined });
+	// the API key is handled apart: typed once, then only its last four characters are ever shown
+	let draft = $state('');
+	let tail = $state('');
+	const showTail = () => (tail = P.key ? P.key.slice(-4) : '');
+	async function saveKey() {
+		err = note = '';
+		const k = draft.trim();
+		if (!/^sk-or-[\w-]{20,200}$/.test(k)) return void (err = 'That does not look like an OpenRouter key. It starts with sk-or-.');
+		await setKey(k);
+		draft = '';
+		showTail();
+		note = 'Key saved, encrypted on this device.';
+	}
+	async function dropKey() {
+		await setKey('');
+		showTail();
+		note = 'Key removed from this device.';
+	}
 	$effect(() => savePrefs($state.snapshot(p)));
 
 	let pushOn = $state(false);
@@ -22,6 +40,8 @@
 	const sample = pack.seed.find((w) => w.ex)?.ex || pack.seed[0].pt;
 
 	onMount(async () => {
+		await unlock();
+		showTail();
 		if (canPush) pushOn = !!(await (await navigator.serviceWorker.getRegistration())?.pushManager.getSubscription());
 	});
 
@@ -117,10 +137,15 @@
 		</div>
 		<label class="sw"><input type="checkbox" bind:checked={p.quizAudio} /><span>Listening questions (turn off when you cannot play sound)</span></label>
 		<label class="sw"><input type="checkbox" bind:checked={p.quizDrills} /><span>Grammar drills mixed in with your words</span></label>
-		<div class="row"><span class="grow dim">Daily goal</span>
-			<div class="tabs">{#each [[30, 'Light'], [60, 'Steady'], [120, 'Intense']] as [n, label]}<button class:on={p.goal === n} onclick={() => (p.goal = n)}>{label}</button>{/each}</div>
+		<p class="dim small">Quiz changes apply from the next quiz that is built.</p>
+	</section>
+
+	<section class="card stack">
+		<h3>Daily goal</h3>
+		<div class="row"><span class="grow dim">Minutes a day</span>
+			<div class="tabs">{#each [5, 10, 15, 30, 45] as n}<button class:on={p.goalMin === n} onclick={() => (p.goalMin = n)}>{n}</button>{/each}</div>
 		</div>
-		<p class="dim small">The goal is {p.goal} XP to fill a day ring. Quiz changes apply from the next quiz that is built.</p>
+		<p class="dim small">The day rings on the home screen fill as you study toward {p.goalMin} minutes. Go past it and a second lap starts.</p>
 	</section>
 
 	<section class="card stack">
@@ -141,11 +166,18 @@
 
 	<section class="card stack">
 		<h3>Your own AI model</h3>
-		<p class="dim small">Optional. The app uses free models, which can be slow or busy. Paste your own OpenRouter key and any model name to use a stronger one. You pay OpenRouter for what you use. The key stays on this device and is sent only with your own requests.</p>
-		<input type="password" bind:value={p.key} placeholder="sk-or-..." autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Your OpenRouter key" />
+		<p class="dim small">Optional. The app uses free models, which can be slow or busy. Paste your own OpenRouter key and any model name to use a stronger one. You pay OpenRouter for what you use.</p>
+		{#if tail}
+			<div class="row"><span class="grow">Key saved: <code>sk-or-••••{tail}</code></span><button class="btn sm" onclick={dropKey}>Remove</button></div>
+		{:else}
+			<div class="row">
+				<input class="grow" type="password" bind:value={draft} placeholder="sk-or-..." autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Your OpenRouter key" />
+				<button class="btn sm" disabled={!draft.trim()} onclick={saveKey}>Save</button>
+			</div>
+		{/if}
 		<input type="text" bind:value={p.model} placeholder="model, for example anthropic/claude-sonnet-5-5" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Model name" />
-		{#if p.key && !p.model}<p class="err">Add a model name, or the key is not used.</p>{/if}
-		{#if p.key}<button class="btn sm" style="align-self:flex-start" onclick={() => { p.key = ''; p.model = ''; }}>Remove my key</button>{/if}
+		{#if tail && !p.model}<p class="err">Add a model name, or the key is not used.</p>{/if}
+		<p class="dim small">The key is encrypted on this device with a key the browser will not let anyone export. It is never shown again, never synced to your account, and never stored on the server.</p>
 	</section>
 
 	<section class="card stack">

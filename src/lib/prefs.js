@@ -1,5 +1,7 @@
-// Personal settings for this device: appearance, audio, quiz, reminders, your own AI key.
-// Kept in the browser only (never synced), so an API key you paste here stays on this device.
+// Personal settings for this device: appearance, audio, quiz, reminders.
+// Kept in the browser only, never synced. Your own API key is not in here: it is held encrypted by vault.js
+// and only placed in memory (P.key) while the app is open.
+import { seal, unseal } from './vault.js';
 const KEY = 'jeitinho:prefs';
 
 export const DEFAULTS = {
@@ -11,10 +13,9 @@ export const DEFAULTS = {
 	quizLen: 11,
 	quizAudio: true, // listening questions in the daily quiz
 	quizDrills: true, // grammar drills in the daily quiz
-	goal: 60, // XP that fills a day ring
+	goalMin: 15, // minutes of study that fill a day ring
 	notifyAt: '19:00',
-	key: '', // your own OpenRouter key (optional)
-	model: '' // the model to use with it
+	model: '' // the model to use with your own key
 };
 
 // Voices on the ElevenLabs free plan. None is a native speaker of the languages taught here;
@@ -38,18 +39,42 @@ function load() {
 }
 
 export const P = load();
+P.key = ''; // filled by unlock() from the encrypted vault
+
+// Called once at startup. Also moves a key saved by an older version out of plain storage.
+let opening;
+export const unlock = () => (opening ??= open()); // runs once, however many screens ask
+async function open() {
+	try {
+		const old = JSON.parse(localStorage.getItem(KEY) || '{}').key;
+		if (old) await seal(old);
+		P.key = await unseal();
+		if (old) savePrefs();
+	} catch {
+		/* no storage: no saved key */
+	}
+}
+
+export async function setKey(key) {
+	P.key = key;
+	await seal(key);
+}
 
 export function applyTheme() {
 	if (typeof document === 'undefined') return;
 	const light = P.theme === 'light' || (P.theme === 'auto' && matchMedia('(prefers-color-scheme: light)').matches);
 	document.documentElement.dataset.theme = light ? 'light' : 'dark';
-	document.querySelector('meta[name="theme-color"]')?.setAttribute('content', light ? '#f7f2f5' : '#0c0a0f');
+	document.querySelector('meta[name="theme-color"]')?.setAttribute('content', light ? '#f3f7f7' : '#0c0a0f');
 }
 
 export function savePrefs(next) {
-	if (next) Object.assign(P, next);
+	if (next) {
+		const { key: _never, ...rest } = next;
+		Object.assign(P, rest);
+	}
 	try {
-		localStorage.setItem(KEY, JSON.stringify(P));
+		const { key: _secret, ...plain } = P; // the API key is never written here
+		localStorage.setItem(KEY, JSON.stringify(plain));
 	} catch {
 		/* storage blocked: settings last for this visit only */
 	}

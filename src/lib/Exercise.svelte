@@ -201,7 +201,7 @@
 	.opt.on { border-color: var(--ink); background: var(--glass2); }
 	.opt.good { border-color: var(--ok); background: rgba(166, 232, 143, 0.14); }
 	.opt.bad { border-color: var(--bad); background: rgba(255, 143, 143, 0.12); }
-	.play { width: 108px; height: 108px; border-radius: 50%; border: 0; cursor: pointer; color: #fff; background: linear-gradient(160deg, #d79ac3, #7d569c); box-shadow: 0 20px 40px -18px rgba(201, 130, 190, 0.8); transition: transform 0.12s; }
+	.play { width: 108px; height: 108px; border-radius: 50%; border: 0; cursor: pointer; color: #fff; background: var(--grad); box-shadow: 0 20px 40px -18px var(--glow); transition: transform 0.12s; }
 	.play:active { transform: scale(0.93); }
 	footer { position: sticky; bottom: calc(env(safe-area-inset-bottom) + 12px); display: grid; gap: 12px; margin-top: 24px; }
 	.fb { padding: 16px 18px; border-radius: 24px; border: 1px solid rgba(255, 143, 143, 0.5); background: var(--bad-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); display: grid; gap: 6px; }
@@ -225,7 +225,7 @@
 	.marks .miss { color: var(--bad); text-decoration: underline wavy; text-underline-offset: 5px; }
 	textarea { font-size: 18px; }
 	.fin { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; text-align: center; }
-	.ring { width: 170px; height: 170px; border-radius: 50%; display: grid; place-content: center; background: radial-gradient(closest-side, var(--bg) 82%, transparent 84%), conic-gradient(var(--lime), var(--rose), var(--mauve), var(--lime)); animation: pop 0.7s cubic-bezier(0.3, 1.6, 0.5, 1); box-shadow: 0 0 80px -10px rgba(227, 163, 198, 0.55); }
+	.ring { width: 170px; height: 170px; border-radius: 50%; display: grid; place-content: center; background: radial-gradient(closest-side, var(--bg) 82%, transparent 84%), conic-gradient(var(--lime), var(--rose), var(--mauve), var(--lime)); animation: pop 0.7s cubic-bezier(0.3, 1.6, 0.5, 1); box-shadow: 0 0 80px -10px var(--glow); }
 	.ring span { font-size: 64px; font-weight: 300; line-height: 1; }
 	.ring small { color: var(--dim); }
 	@keyframes pop { from { transform: scale(0.4) rotate(-40deg); opacity: 0; } }

@@ -1,9 +1,9 @@
 <script>
 	import Icon from '../../lib/Icon.svelte';
+	import Heatmap from '../../lib/Heatmap.svelte';
 	import { S } from '../../lib/store.svelte.js';
 	import { current, earned, forecast, masteredCount } from '../../lib/roadmap.js';
 	import { meta } from '../../lib/lang.js';
-	import { today, DAY } from '../../lib/fx.js';
 	import { cloud, oauth, signIn, signUp, forgot, setPassword, signOut, pull, wipe } from '../../lib/cloud.svelte.js';
 
 	let mode = $state('in');
@@ -37,16 +37,6 @@
 	const stage = $derived(current(S));
 	const badge = $derived(earned(S));
 	const fc = $derived(stage ? forecast(S, stage) : null);
-	const WEEKS = 18;
-	const end = new Date();
-	// columns are weeks, rows are weekdays; the last column ends today
-	const cells = Array.from({ length: WEEKS * 7 }, (_, i) => {
-		const d = new Date(end.getTime() - (WEEKS * 7 - 1 - i - (6 - end.getDay())) * DAY);
-		return { key: today(d), future: d > end, label: d.toLocaleDateString(undefined, { day: 'numeric', month: 'short' }) };
-	});
-	const shade = (m) => (m >= 30 ? 4 : m >= 15 ? 3 : m >= 5 ? 2 : m > 0 ? 1 : 0);
-	const total = $derived(Object.values(S.mins || {}).reduce((a, b) => a + b, 0));
-	const activeDays = $derived(Object.values(S.mins || {}).filter((m) => m > 0).length);
 	const when = $derived(cloud.at ? new Date(cloud.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '');
 </script>
 
@@ -72,12 +62,7 @@
 				</p>
 				<p class="dim small">An estimate from your remaining milestones and your recent minutes. <a href="/roadmap" class="u">See the roadmap</a></p>
 			{/if}
-			<div class="map" role="img" aria-label="Minutes studied per day over the last {WEEKS} weeks">
-				{#each cells as c}
-					<i class="s{c.future ? 'x' : shade(S.mins?.[c.key] || 0)}" title="{c.label}: {Math.round(S.mins?.[c.key] || 0)} min"></i>
-				{/each}
-			</div>
-			<p class="dim small row" style="gap:6px">{Math.round(total)} minutes on {activeDays} {activeDays === 1 ? 'day' : 'days'} <span class="grow"></span> less <i class="s0 k"></i><i class="s1 k"></i><i class="s2 k"></i><i class="s3 k"></i><i class="s4 k"></i> more</p>
+			<Heatmap />
 		</div>
 	{/if}
 
@@ -158,13 +143,4 @@
 	.prog .small b { display: inline; }
 	.lvl { width: 54px; height: 54px; flex: none; border-radius: 50%; display: grid; place-items: center; font: 500 13px var(--mono); color: #17121c; background: linear-gradient(150deg, #e4f060, #e3a3c6); }
 	.u { text-decoration: underline; text-underline-offset: 3px; }
-	/* activity map: weeks left to right, Sunday at the top */
-	.map { display: grid; grid-template-rows: repeat(7, 1fr); grid-auto-flow: column; grid-auto-columns: 1fr; gap: 3px; }
-	.map i, .k { display: block; aspect-ratio: 1; border-radius: 4px; background: var(--glass2); }
-	.k { width: 12px; flex: none; }
-	.s1 { background: color-mix(in srgb, var(--rose) 35%, var(--glass2)) !important; }
-	.s2 { background: color-mix(in srgb, var(--rose) 60%, var(--glass2)) !important; }
-	.s3 { background: color-mix(in srgb, var(--rose) 85%, var(--glass2)) !important; }
-	.s4 { background: var(--lime) !important; }
-	.sx { visibility: hidden; }
 </style>

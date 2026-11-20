@@ -74,7 +74,7 @@
 
 <style>
 	.intro { flex: 1; justify-content: center; align-items: flex-start; }
-	.intro img { border-radius: 24px; box-shadow: 0 24px 50px -20px rgba(201, 130, 190, 0.7); }
-	.badge { width: 110px; height: 110px; border-radius: 50%; display: grid; place-items: center; font: 500 26px var(--mono); color: #17121c; background: linear-gradient(150deg, var(--lime), var(--rose)); box-shadow: 0 0 70px -10px rgba(227, 163, 198, 0.7); animation: pop 0.6s cubic-bezier(0.3, 1.6, 0.5, 1); }
+	.intro img { border-radius: 24px; box-shadow: 0 24px 50px -20px var(--glow); }
+	.badge { width: 110px; height: 110px; border-radius: 50%; display: grid; place-items: center; font: 500 26px var(--mono); color: #17121c; background: linear-gradient(150deg, var(--lime), var(--rose)); box-shadow: 0 0 70px -10px var(--glow); animation: pop 0.6s cubic-bezier(0.3, 1.6, 0.5, 1); }
 	@keyframes pop { from { transform: scale(0.4) rotate(-30deg); opacity: 0; } }
 </style>

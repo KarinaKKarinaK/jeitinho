@@ -1,6 +1,7 @@
 <script>
 	import { goto } from '$app/navigation';
 	import Icon from '../lib/Icon.svelte';
+	import Heatmap from '../lib/Heatmap.svelte';
 	import { S, streak, level } from '../lib/store.svelte.js';
 	import { LESSON_LIST } from '../lib/content.js';
 	import { today, DAY } from '../lib/fx.js';
@@ -12,13 +13,13 @@
 	// brand new here: offer the placement test once
 	if (!S.onboarded && S.xp === 0 && !Object.keys(S.done).length) goto('/welcome', { replaceState: true });
 
-	const GOAL = P.goal; // XP that fills a day ring
+	const GOAL = P.goalMin; // minutes of study that fill a day ring
 	const QUIZ_LEN = P.quizLen;
 	const now = Date.now();
 	// two weeks of rings; phones show the last seven, wide screens show all fourteen
 	const week = Array.from({ length: 14 }, (_, k) => {
 		const d = new Date(now - (13 - k) * DAY);
-		return { key: today(d), label: k === 13 ? t.today : t.days[d.getDay()], now: k === 13, old: k < 7 };
+		return { key: today(d), label: k === 13 ? t.today : t.days[d.getDay()], date: d.getDate(), now: k === 13, old: k < 7 };
 	});
 	const hour = new Date().getHours();
 	const hello = t.hello[hour < 12 ? 0 : hour < 18 ? 1 : 2];
@@ -60,9 +61,12 @@
 
 	<div class="week">
 		{#each week as d}
+			{@const m = Math.round(S.mins?.[d.key] || 0)}
 			<div class="day" class:now={d.now} class:old={d.old}>
 				<span>{d.label}</span>
-				<div class="ring" style:--p={Math.min(1, (S.days[d.key] || 0) / GOAL)}>{S.days[d.key] || ''}</div>
+				<!-- first lap fills toward the daily goal; past the goal a second lap starts on top -->
+				<div class="ring" class:done={m >= GOAL} style:--p={Math.min(1, m / GOAL)} style:--x={Math.min(1, Math.max(0, m / GOAL - 1))} title="{m} of {GOAL} minutes">{m || ''}</div>
+				<small>{d.date}</small>
 			</div>
 		{/each}
 	</div>
@@ -91,6 +95,11 @@
 		<a class="card" href="/speak"><Icon name="mic" /><h3>{t.speak}</h3><p class="dim small">Say it out loud, get scored</p></a>
 	</div>
 
+	<a class="card stack heat" href="/account" aria-label="Your activity">
+		<div class="row"><p class="eyebrow grow">Minutes per day</p><span class="dim small">goal {GOAL} min</span></div>
+		<Heatmap />
+	</a>
+
 	<a class="card xp" href="/roadmap">
 		<div class="row">
 			<span class="lvl">{earned(S)?.id || '0'}</span>
@@ -108,7 +117,7 @@
 	.streak { display: flex; align-items: center; gap: 6px; height: 44px; padding: 0 16px; border-radius: 999px; border: 1px solid var(--line); background: var(--glass); color: var(--dim); font-weight: 500; }
 	@media (min-width: 900px) {
 		.home { display: grid; grid-template-columns: 1.15fr 1fr; gap: 18px; align-items: start; }
-		.home > header, .home > .langs, .home > .week { grid-column: 1 / -1; }
+		.home > header, .home > .langs, .home > .week, .home > .heat { grid-column: 1 / -1; }
 		.home > .week { justify-content: space-between; margin-bottom: 6px; }
 		.home > .week > .day.old { display: grid; }
 		.home > .hero { grid-row: span 2; min-height: 100%; }
@@ -130,7 +139,10 @@
 	@keyframes ring-in { from { transform: scale(0.5); opacity: 0; } }
 	input[type='time'] { background: rgba(0, 0, 0, 0.25); color: var(--ink); border: 0; border-radius: 12px; padding: 8px 10px; font: 400 15px var(--font); }
 	.day.now { color: var(--ink); }
-	.ring { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; font-size: 11px; color: var(--dim); background: radial-gradient(closest-side, var(--ring-bg) 76%, transparent 79%), conic-gradient(var(--lime) calc(var(--p) * 360deg), var(--line) 0); transition: --p 0.6s; }
+	.ring { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; font: 500 11px var(--mono); color: var(--dim); background: radial-gradient(closest-side, var(--ring-bg) 76%, transparent 79%), conic-gradient(var(--rose) calc(var(--x) * 360deg), var(--lime) 0 calc(var(--p) * 360deg), var(--glass2) 0); }
+	.ring.done { color: var(--ink); }
+	.day small { font: 400 11px var(--mono); color: var(--faint); }
+	.day.now small { color: var(--ink); }
 	.day.now .ring { width: 46px; height: 46px; margin-top: -3px; color: var(--ink); box-shadow: 0 0 24px -6px rgba(228, 240, 96, 0.5); }
 	.pill { display: inline-flex; align-items: center; gap: 4px; height: 38px; padding: 0 14px 0 18px; border-radius: 999px; background: #fff; color: #17121c; font-weight: 500; font-size: 15px; }
 	.hero { transition: transform 0.15s; }
