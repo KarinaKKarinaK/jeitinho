@@ -232,7 +232,11 @@
 					<div class="row"><b class="grow">HSK {hskN}</b><span class="small dim">{hskAll.length - hskMissing.length} of {hskAll.length} words in your bank</span></div>
 					<div class="bar"><i style:width="{hskAll.length ? ((hskAll.length - hskMissing.length) / hskAll.length) * 100 : 0}%"></i></div>
 					{#if hskMissing.length}
-						<button class="btn sm primary" style="align-self:flex-start" onclick={() => addWords($state.snapshot(hskMissing), 'HSK ' + hskN)}><Icon name="plus" size={16} /> Add the {hskMissing.length} missing words</button>
+						<!-- the higher levels are long: add them a batch at a time so reviews do not pile up -->
+						<div class="row" style="flex-wrap:wrap">
+							{#if hskMissing.length > 60}<button class="btn sm primary" onclick={() => addWords($state.snapshot(hskMissing.slice(0, 50)).reverse(), 'HSK ' + hskN)}><Icon name="plus" size={16} /> Add the next 50</button>{/if}
+							<button class="btn sm" class:primary={hskMissing.length <= 60} onclick={() => addWords($state.snapshot(hskMissing).reverse(), 'HSK ' + hskN)}><Icon name="plus" size={16} /> Add all {hskMissing.length} missing</button>
+						</div>
 					{:else}
 						<p class="small" style="color:var(--ok)">You have every word of this level. Review them until they stick.</p>
 					{/if}

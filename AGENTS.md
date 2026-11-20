@@ -17,7 +17,7 @@ Mobile-first web app for learning Brazilian Portuguese (with Belo Horizonte dial
   - Every endpoint that spends a shared free quota goes through `limited()` in `src/lib/server/limit.js`.
   - `.github/workflows`: tests and build on every push, and an uptime check every 30 minutes.
   - New state fields go in `blank()` in the store so old saves and synced rows still load. State from outside (storage, account, backup) passes through `clean()`; sync merges via `src/lib/sync.js` and never overwrites a copy it has not seen.
-  - Mandarin extras: `src/lib/tone.js` (tones, syllables), `src/lib/zhdata.js` loads `static/hsk.json` (HSK 1 to 3 words) and `static/hanzi.json` (character meanings). Both were written with AI help, not checked against the official lists.
+  - Mandarin extras: `src/lib/tone.js` (tones, syllables), `src/lib/zhdata.js` loads `static/hsk.json` (HSK words by level) and `static/hanzi.json` (character meanings). Both were written with AI help, not checked against the official lists.
   - Share image: `static/og.png` (1200x630).
   - Never expose the Supabase service role key; the browser only gets the anon key.
   - Use relative imports, not `$lib`.
