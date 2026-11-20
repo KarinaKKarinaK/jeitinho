@@ -2,6 +2,7 @@
 	import Icon from '../../lib/Icon.svelte';
 	import { S } from '../../lib/store.svelte.js';
 	import { STAGES, current, milestones, ready } from '../../lib/roadmap.js';
+	import { t } from '../../lib/lang.js';
 
 	const now = $derived(current(S));
 	const list = $derived(now ? milestones(S, now) : []);
@@ -16,7 +17,7 @@
 
 <div class="stack rise">
 	<div>
-		<p class="eyebrow">Roteiro</p>
+		<p class="eyebrow">{t.roadmap}</p>
 		<h1>Zero to C2</h1>
 		<p class="dim small" style="margin-top:8px">Hit the milestones, pass the checkpoint test, earn the badge. These are jeitinho's own checkpoints modeled on CEFR, not an official certificate.</p>
 	</div>
@@ -49,7 +50,7 @@
 							{:else}
 								<button class="btn wide" disabled>Test unlocks after the milestones</button>
 							{/if}
-							<p class="dim small">{s.n} questions or more, {Math.round(s.pass * 100)}% to pass. Verbs in {s.tenses.length} {s.tenses.length === 1 ? 'tense' : 'tenses'} plus words from your own bank{s.band === 'A' ? '' : ', then full sentences to hear, say and write'}.</p>
+							<p class="dim small">{s.n} questions or more, {Math.round(s.pass * 100)}% to pass. Drills on {s.tenses.length} {s.tenses.length === 1 ? 'topic' : 'topics'} plus words from your own bank{s.band === 'A' ? '' : ', then full sentences to hear, say and write'}.</p>
 						</div>
 					{/if}
 				</div>

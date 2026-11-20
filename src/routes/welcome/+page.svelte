@@ -5,6 +5,7 @@
 	import { PLACEMENT } from '../../lib/content.js';
 	import { place, PASS_BAND } from '../../lib/roadmap.js';
 	import { today } from '../../lib/fx.js';
+	import { lang, meta, t, AVAILABLE, switchLang } from '../../lib/lang.js';
 
 	let band = $state(-1); // -1 intro, 0..n-1 testing, n result
 	let passed = $state(0);
@@ -28,9 +29,12 @@
 {#if band === -1}
 	<div class="intro stack rise">
 		<img src="/icon.svg" alt="" width="84" height="84" />
-		<p class="eyebrow">Bem-vindo</p>
+		<p class="eyebrow">{t.welcome}</p>
 		<h1>Where should<br />you start?</h1>
-		<p class="dim">A short test finds your level. It gets harder as you go and stops when it gets too hard, so it takes 1 to 5 minutes.</p>
+		<div class="chips" role="group" aria-label="Language to learn">
+			{#each AVAILABLE as l}<button class="chip" class:on={l.code === lang} onclick={() => l.code !== lang && switchLang(l.code, '/welcome')}>{l.label}</button>{/each}
+		</div>
+		<p class="dim">A short test finds your level in {meta.name}. It gets harder as you go and stops when it gets too hard, so it takes 1 to 5 minutes.</p>
 		<button class="btn primary wide" onclick={() => (band = 0)}>Find my level</button>
 		<button class="btn wide" onclick={() => { done(0); goto('/'); }}>I am new, start from zero</button>
 	</div>
@@ -45,7 +49,7 @@
 		<h1>{stage.title}</h1>
 		<p class="dim">{passed ? `You cleared ${passed} of ${PLACEMENT.length} levels, so the earlier badges are yours and their lessons are marked done. You can still open them.` : 'You start at the beginning. That is the fastest way to get the sounds right.'}</p>
 		<p class="dim small">Next goal: {stage.can}.</p>
-		<a class="btn primary wide" href="/">Começar</a>
+		<a class="btn primary wide" href="/">{t.start}</a>
 	</div>
 {/if}
 

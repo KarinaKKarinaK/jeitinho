@@ -1,10 +1,13 @@
 import { today, DAY } from './fx.js';
 import { SEED } from './content.js';
 import { wordKey } from './quiz.js';
+import { lang, pack } from './lang.js';
 
 // State lives in localStorage so the app works offline and signed out.
 // When signed in, cloud.svelte.js mirrors the same object to the database.
-const KEY = 'jeitinho:v1';
+// One saved state per language. Portuguese keeps the original key so existing progress is untouched.
+const KEY = lang === 'pt' ? 'jeitinho:v1' : `jeitinho:v1:${lang}`;
+const PASS = 'jeitinho:pass'; // the passcode is shared by all languages on this device
 const REV = KEY + ':rev';
 
 export const newWord = (w, src = 'seed') => ({
@@ -13,13 +16,14 @@ export const newWord = (w, src = 'seed') => ({
 	src, added: Date.now(), due: 0, ivl: 0, ease: 2.5, reps: 0
 });
 
-const blank = () => ({ xp: 0, streak: 0, last: null, days: {}, done: {}, words: [], asked: {}, quiz: {}, materials: [], custom: {}, chat: [], pass: '', rate: 0.9, drill: ['perf'], uid: null, badges: {}, nquiz: 0, onboarded: false, placed: null });
+const blank = () => ({ xp: 0, streak: 0, last: null, days: {}, done: {}, words: [], asked: {}, quiz: {}, materials: [], custom: {}, chat: [], pass: '', rate: 0.9, drill: pack.drill.start, uid: null, badges: {}, nquiz: 0, onboarded: false, placed: null });
 const seeded = () => ({ ...blank(), words: SEED.map((w) => newWord(w)) });
 
 function load() {
 	try {
 		const s = JSON.parse(localStorage.getItem(KEY));
-		if (s) return { ...blank(), ...s };
+		if (s) return { ...blank(), ...s, pass: s.pass || localStorage.getItem(PASS) || '' };
+		return { ...seeded(), pass: localStorage.getItem(PASS) || '' };
 	} catch {
 		/* first run or private mode */
 	}
@@ -48,6 +52,7 @@ export function persist() {
 	last = s;
 	try {
 		localStorage.setItem(KEY, s);
+		localStorage.setItem(PASS, S.pass || '');
 		localStorage.setItem(REV, applying ?? Date.now());
 	} catch {
 		/* storage full or blocked */
@@ -90,7 +95,7 @@ export function addWords(list, src) {
 	return n;
 }
 
-const LEVELS = [[0, 'Gringo'], [150, 'Turista'], [500, 'Morador'], [1200, 'Belo-horizontino'], [2500, 'Mineiro honorário'], [5000, 'Quase nativo']];
+const LEVELS = pack.levels;
 export function level() {
 	const i = LEVELS.findLastIndex(([x]) => S.xp >= x);
 	const next = LEVELS[i + 1]?.[0];

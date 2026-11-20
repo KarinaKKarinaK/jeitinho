@@ -5,8 +5,9 @@
 	import { S, addXP } from '../../lib/store.svelte.js';
 	import { ai, speak, record, hear } from '../../lib/fx.js';
 	import { cloud } from '../../lib/cloud.svelte.js';
+	import { pack, t, meta } from '../../lib/lang.js';
 
-	const scenes = ['Bate-papo livre', 'Pedindo no boteco', 'Na padaria', 'Conhecendo a família', 'Entrevista de emprego'];
+	const scenes = pack.chat.scenes;
 	let scene = $state(scenes[0]);
 	let msg = $state('');
 	let busy = $state(false);
@@ -46,7 +47,7 @@
 		try {
 			const r = await ai('chat', { scene, messages: S.chat.slice(-12).map(({ role, content }) => ({ role, content })) }, S.pass);
 			Object.assign(S.chat[S.chat.length - 1], { fix: r.fix, tip: r.tip });
-			S.chat.push({ role: 'assistant', content: r.reply, en: r.en });
+			S.chat.push({ role: 'assistant', content: r.reply, en: r.en, say: r.say });
 			if (S.chat.length > 60) S.chat.splice(0, S.chat.length - 60);
 			addXP(2);
 			speak(r.reply, S.rate);
@@ -60,7 +61,7 @@
 </script>
 
 <header class="head">
-	<div><h1>Bate-papo</h1><p class="dim small">Bia, de Beagá. She fixes your Portuguese as you go.</p></div>
+	<div><h1>{t.chat}</h1><p class="dim small">{pack.chat.who}</p></div>
 	{#if S.chat.length}<button class="icon-btn sm" aria-label="Clear chat" onclick={() => (S.chat = [])}><Icon name="trash" size={16} /></button>{/if}
 </header>
 
@@ -74,6 +75,7 @@
 			{#if m.role === 'assistant'}
 				<div class="bubble">
 					<p>{m.content}</p>
+					{#if m.say}<p class="small" style="color:var(--rose)">{m.say}</p>{/if}
 					{#if showEn[i]}<p class="dim small">{m.en}</p>{/if}
 					<div class="row tools">
 						<button onclick={() => speak(m.content, S.rate)} aria-label="Hear it"><Icon name="sound" size={16} /></button>
@@ -87,7 +89,7 @@
 			{/if}
 		</div>
 	{:else}
-		<p class="dim" style="text-align:center;margin-top:40px">Say oi. Try: "Oi Bia, tudo bem?"</p>
+		<p class="dim" style="text-align:center;margin-top:40px">{pack.chat.hint}</p>
 	{/each}
 	{#if busy}<div class="m assistant"><div class="bubble"><span class="spin"></span></div></div>{/if}
 	{#if err}<p class="err" role="alert">{err}</p>{/if}
@@ -95,7 +97,7 @@
 </div>
 
 <form class="send" onsubmit={(e) => { e.preventDefault(); send(); }}>
-	<input type="text" bind:value={msg} lang="pt-BR" placeholder="Escreve em português..." autocomplete="off" maxlength="600" enterkeyhint="send" />
+	<input type="text" bind:value={msg} lang={meta.locale} placeholder={pack.chat.placeholder} autocomplete="off" maxlength="600" enterkeyhint="send" />
 	{#if cloud.stt}<button type="button" class="icon-btn" class:rec={!!stop} disabled={busy} onclick={talk} aria-label={stop ? 'Stop and send' : 'Speak your message'}><Icon name={stop ? 'check' : 'mic'} size={20} /></button>{/if}
 	<button class="icon-btn solid" disabled={busy || !msg.trim()} aria-label="Send"><Icon name="send" size={20} /></button>
 </form>

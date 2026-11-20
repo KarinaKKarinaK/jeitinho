@@ -3,6 +3,7 @@
 	import Icon from '../../lib/Icon.svelte';
 	import { S, addWords } from '../../lib/store.svelte.js';
 	import { ai, speak, today } from '../../lib/fx.js';
+	import { t, meta } from '../../lib/lang.js';
 	import { cloud, savePhoto } from '../../lib/cloud.svelte.js';
 
 	let text = $state('');
@@ -53,12 +54,12 @@
 	}
 </script>
 
-<header class="head"><h1>Adicionar</h1></header>
+<header class="head"><h1>{t.add}</h1></header>
 
 <div class="stack rise">
 	<div class="card stack">
-		<p class="eyebrow">Link ou texto</p>
-		<textarea bind:value={text} placeholder="Paste a Spotify song link, an article, a YouTube video, or any Portuguese text"></textarea>
+		<p class="eyebrow">{t.linkText}</p>
+		<textarea bind:value={text} placeholder="Paste a Spotify song link, an article, a YouTube video, or any text in {meta.name}"></textarea>
 		<div class="row">
 			<button class="btn primary grow" disabled={!!busy || text.trim().length < 8} onclick={go}>
 				{#if busy}<span class="spin"></span> {busy}{:else}<Icon name={isUrl ? 'link' : 'bolt'} size={18} /> {isUrl ? 'Import link' : 'Find the good words'}{/if}
@@ -111,7 +112,7 @@
 		<p class="small dim"><b>Spotify track link</b>: finds the lyrics, translates them line by line and builds a lesson.</p>
 		<p class="small dim"><b>Article link or pasted text</b>: pulls out the words worth learning.</p>
 		<p class="small dim"><b>Camera button</b>: photo of your lesson notes, transcribed into your bank.</p>
-		<p class="small dim">Everything is kept under Banco, Saved.</p>
+		<p class="small dim">Everything is kept under {t.bank}, Saved.</p>
 	</div>
 </div>
 

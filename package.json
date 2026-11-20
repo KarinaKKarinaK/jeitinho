@@ -12,7 +12,7 @@
 		"build": "vite build",
 		"preview": "vite preview",
 		"prepare": "svelte-kit sync || echo ''",
-		"test": "node --test src/lib/logic.test.js"
+		"test": "node --test src/lib/logic.test.js src/lib/packs.test.js"
 	},
 	"devDependencies": {
 		"@sveltejs/adapter-vercel": "^7.0.5",

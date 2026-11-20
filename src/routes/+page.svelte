@@ -6,6 +6,7 @@
 	import { today, DAY } from '../lib/fx.js';
 	import { QUIZ_LEN } from '../lib/quiz.js';
 	import { cloud } from '../lib/cloud.svelte.js';
+	import { lang, t, AVAILABLE, switchLang } from '../lib/lang.js';
 	import { current, earned, milestones } from '../lib/roadmap.js';
 
 	// brand new here: offer the placement test once
@@ -15,11 +16,12 @@
 	const now = Date.now();
 	const week = Array.from({ length: 7 }, (_, k) => {
 		const d = new Date(now - (6 - k) * DAY);
-		return { key: today(d), label: k === 6 ? 'Hoje' : ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sexta', 'Sáb'][d.getDay()], now: k === 6 };
+		return { key: today(d), label: k === 6 ? t.today : t.days[d.getDay()], now: k === 6 };
 	});
 	let remind = $state('19:00');
 	const hour = new Date().getHours();
-	const hello = hour < 12 ? 'Bom dia' : hour < 18 ? 'Boa tarde' : 'Boa noite';
+	const hello = t.hello[hour < 12 ? 0 : hour < 18 ? 1 : 2];
+	let picking = $state(false);
 	const quiz = $derived(S.quiz[today()]);
 	const next = $derived(LESSON_LIST.find((l) => !(l.id in S.done)));
 	const due = $derived(S.words.filter((w) => w.reps > 0 && w.due <= now).length);
@@ -51,10 +53,25 @@
 			<h2>{lv.name}</h2>
 		</div>
 		<div class="row" style="gap:8px">
+			<button class="streak lang" onclick={() => (picking = !picking)} aria-label="Switch language" aria-expanded={picking}>{lang.toUpperCase()}</button>
 			<div class="streak" class:lit={streak() > 0}><Icon name="flame" size={18} /> {streak()}</div>
 			<a class="icon-btn" class:solid={!!cloud.user} href="/account" aria-label={cloud.user ? 'Account, signed in' : 'Sign in'}><Icon name="user" size={20} /></a>
 		</div>
 	</header>
+
+	{#if picking}
+		<div class="card stack langs" style="gap:8px">
+			<p class="eyebrow">Your languages</p>
+			{#each AVAILABLE as l}
+				<button class="item" class:done={l.code === lang} onclick={() => (l.code === lang ? (picking = false) : switchLang(l.code))}>
+					<span class="dot">{l.code.toUpperCase()}</span>
+					<span class="grow"><b>{l.label}</b><small>{l.name}</small></span>
+					{#if l.code === lang}<Icon name="check" size={18} />{/if}
+				</button>
+			{/each}
+			<p class="small dim">Each language keeps its own progress, word bank and badges under the same account.</p>
+		</div>
+	{/if}
 
 	<div class="week">
 		{#each week as d}
@@ -66,27 +83,27 @@
 	</div>
 
 	<a class="card hero" href="/quiz">
-		<p class="eyebrow">Quiz do dia</p>
-		<h1>{QUIZ_LEN} perguntas<br />difíceis</h1>
+		<p class="eyebrow">{t.quiz}</p>
+		<h1>{QUIZ_LEN} {t.quizA}<br />{t.quizB}</h1>
 		<div class="row">
-			<span class="grow">{quiz?.done ? `Feito hoje · ${quiz.score}/${QUIZ_LEN}` : 'A fresh mix from your word bank and tenses'}</span>
-			<span class="pill">{quiz?.done ? 'Extra' : quiz ? 'Continuar' : 'Começar'} <Icon name="chev" size={16} /></span>
+			<span class="grow">{quiz?.done ? `${t.done} · ${quiz.score}/${QUIZ_LEN}` : 'A fresh mix from your word bank and drills'}</span>
+			<span class="pill">{quiz?.done ? t.extra : quiz ? t.next : t.start} <Icon name="chev" size={16} /></span>
 		</div>
 	</a>
 
 	{#if next}
 		<a class="item" href="/lesson?id={next.id}">
 			<span class="dot"><Icon name="book" /></span>
-			<span class="grow"><small>Próxima lição</small><b>{next.title}</b></span>
+			<span class="grow"><small>{t.nextLesson}</small><b>{next.title}</b></span>
 			<Icon name="chev" size={18} />
 		</a>
 	{/if}
 
 	<div class="tiles">
-		<a class="card" href="/drill"><Icon name="bolt" /><h3>Verbos</h3><p class="dim small">Drill eu vs você</p></a>
-		<a class="card" href="/bank?tab=review"><Icon name="layers" /><h3>Revisar</h3><p class="dim small">{due} due · {S.words.length} words</p></a>
-		<a class="card" href="/add"><Icon name="music" /><h3>Músicas e links</h3><p class="dim small">Turn them into lessons</p></a>
-		<a class="card" href="/speak"><Icon name="mic" /><h3>Falar</h3><p class="dim small">Say it out loud, get scored</p></a>
+		<a class="card" href="/drill"><Icon name="bolt" /><h3>{t.drill}</h3><p class="dim small">{t.drillSub}</p></a>
+		<a class="card" href="/bank?tab=review"><Icon name="layers" /><h3>{t.review}</h3><p class="dim small">{due} due · {S.words.length} words</p></a>
+		<a class="card" href="/add"><Icon name="music" /><h3>{t.songs}</h3><p class="dim small">Turn them into lessons</p></a>
+		<a class="card" href="/speak"><Icon name="mic" /><h3>{t.speak}</h3><p class="dim small">Say it out loud, get scored</p></a>
 	</div>
 
 	<a class="card xp" href="/roadmap">
@@ -116,6 +133,9 @@
 
 <style>
 	.streak { display: flex; align-items: center; gap: 6px; height: 44px; padding: 0 16px; border-radius: 999px; border: 1px solid var(--line); background: var(--glass); color: var(--dim); font-weight: 500; }
+	.streak.lang { font: 500 13px var(--mono); cursor: pointer; color: var(--ink); padding: 0 14px; }
+	.langs .item { width: 100%; color: var(--ink); font: inherit; text-align: left; cursor: pointer; }
+	.langs .dot { font: 500 12px var(--mono); }
 	.streak.lit { color: var(--amber); border-color: rgba(242, 166, 90, 0.4); }
 	.week { display: flex; justify-content: space-between; }
 	.day { display: grid; gap: 8px; justify-items: center; font: 500 11px var(--mono); letter-spacing: 0.04em; text-transform: uppercase; color: var(--dim); }

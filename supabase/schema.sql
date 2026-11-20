@@ -1,14 +1,16 @@
--- One row per user holding their whole app state. Run once in the Supabase SQL editor.
+-- One row per user and language, holding that language's whole app state. Run once in the Supabase SQL editor.
 create table if not exists public.progress (
-	user_id uuid primary key default auth.uid() references auth.users (id) on delete cascade,
+	user_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
+	lang text not null default 'pt' check (lang ~ '^[a-z]{2}$'),
 	data jsonb not null check (octet_length(data::text) < 3000000),
 	rev bigint not null default 0,
-	updated_at timestamptz not null default now()
+	updated_at timestamptz not null default now(),
+	primary key (user_id, lang)
 );
 
 alter table public.progress enable row level security;
 
--- A signed-in user can read and write only their own row. Nobody else can see anything.
+-- A signed-in user can read and write only their own rows. Nobody else can see anything.
 drop policy if exists "own row" on public.progress;
 create policy "own row" on public.progress
 	for all to authenticated

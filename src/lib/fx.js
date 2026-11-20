@@ -1,3 +1,5 @@
+import { lang, meta } from './lang.js';
+
 export const DAY = 864e5;
 
 export const today = (d = new Date()) =>
@@ -17,7 +19,7 @@ export function speak(text, rate = 0.9) {
 		globalThis.speechSynthesis?.cancel();
 		player ??= new Audio(); // one shared element: once a tap has unlocked it, iOS lets later plays through
 		player.onerror = () => (caps.tts = false); // quota used up or service down: stay on the phone voice for this session, no repeated waiting
-		player.src = '/api/tts?t=' + encodeURIComponent(text.trim());
+		player.src = `/api/tts?l=${lang}&t=` + encodeURIComponent(text.trim());
 		player.defaultPlaybackRate = player.playbackRate = Math.max(0.6, Math.min(1.2, rate + 0.1));
 		player.play().catch(() => me === turn && local(text, rate));
 		return;
@@ -29,9 +31,9 @@ function local(text, rate) {
 	if (typeof speechSynthesis === 'undefined') return;
 	player?.pause();
 	const u = new SpeechSynthesisUtterance(text);
-	voice ??= speechSynthesis.getVoices().find((v) => v.lang.replace('_', '-') === 'pt-BR');
+	voice ??= speechSynthesis.getVoices().find((v) => v.lang.replace('_', '-') === meta.locale);
 	if (voice) u.voice = voice;
-	u.lang = 'pt-BR';
+	u.lang = meta.locale;
 	u.rate = rate;
 	speechSynthesis.cancel();
 	speechSynthesis.speak(u);
@@ -78,7 +80,7 @@ export async function record() {
 
 // Send a recording to be transcribed: { text, words: [{ w, c }] }
 export async function hear(blob, pass = '') {
-	const r = await fetch('/api/stt', { method: 'POST', headers: { 'content-type': blob.type || 'audio/mp4', 'x-pass': pass }, body: blob });
+	const r = await fetch(`/api/stt?l=${lang}`, { method: 'POST', headers: { 'content-type': blob.type || 'audio/mp4', 'x-pass': pass }, body: blob });
 	const d = await r.json().catch(() => ({}));
 	if (!r.ok) throw new Error(d.message || `Request failed (${r.status})`);
 	return d;
@@ -88,7 +90,7 @@ export async function ai(op, body, pass = '') {
 	const r = await fetch('/api/ai', {
 		method: 'POST',
 		headers: { 'content-type': 'application/json', 'x-pass': pass },
-		body: JSON.stringify({ op, ...body })
+		body: JSON.stringify({ op, lang, ...body })
 	});
 	const d = await r.json().catch(() => ({}));
 	if (!r.ok) throw new Error(d.message || `Request failed (${r.status})`);

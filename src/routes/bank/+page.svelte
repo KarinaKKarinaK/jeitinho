@@ -5,6 +5,7 @@
 	import { S, addXP, addWords } from '../../lib/store.svelte.js';
 	import { grade, norm } from '../../lib/quiz.js';
 	import { speak, today } from '../../lib/fx.js';
+	import { t } from '../../lib/lang.js';
 	import { cloud, photoUrl, dropPhoto } from '../../lib/cloud.svelte.js';
 
 	let tab = $state(page.url.searchParams.get('tab') || 'words');
@@ -40,7 +41,7 @@
 </script>
 
 <header class="head">
-	<h1>Banco</h1>
+	<h1>{t.bank}</h1>
 	<div class="tabs">
 		{#each [['words', 'Words'], ['review', `Review ${due.length || ''}`], ['saved', 'Saved']] as [k, label]}
 			<button class:on={tab === k} onclick={() => (tab = k)}>{label}</button>
@@ -76,7 +77,7 @@
 			</div>
 		{/key}
 	{:else}
-		<div class="card stack" style="text-align:center"><h2>Tudo em dia</h2><p class="dim">Nothing due. Add words from a song or an article.</p><a class="btn primary" href="/add">Add material</a></div>
+		<div class="card stack" style="text-align:center"><h2>{t.allDone}</h2><p class="dim">Nothing due. Add words from a song or an article.</p><a class="btn primary" href="/add">Add material</a></div>
 	{/if}
 {:else if tab === 'saved'}
 	<div class="stack">

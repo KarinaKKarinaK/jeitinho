@@ -1,27 +1,33 @@
 import { DAY } from './fx.js';
-import { conj, table, PRON, TENSES, VERBS } from './conj.js';
+import { pack, meta, t } from './lang.js';
 
 // ---------- answer checking ----------
-export const norm = (s) =>
-	String(s).toLowerCase().normalize('NFC').replace(/[.,!?¿¡;:"“”()]/g, '').replace(/\s+/g, ' ').trim();
-const bare = (s) => norm(s).normalize('NFD').replace(/\p{M}/gu, '').replace(/^(o|a|os|as|um|uma) /, '');
+const PUNCT = /[.,!?¿¡;:"“”()。，！？、；：「」『』（）…·]/g;
+export const norm = (s) => {
+	s = String(s).toLowerCase().normalize('NFC').replace(PUNCT, '').replace(/\s+/g, ' ').trim();
+	return meta.chars ? s.replace(/ /g, '') : s; // Chinese and Japanese: spacing never matters
+};
+// bare = forgiving form: no accents or tone marks on Latin letters (kana marks are kept), no leading article
+const bare = (s) => norm(s).normalize('NFD').replace(/(?<=\p{Script=Latin})\p{M}+/gu, '').normalize('NFC').replace(pack.articles || /^$/, '');
 export const wordKey = bare;
 
 export function check(val, q) {
 	const ok = [q.answer, ...(q.accept || [])].flatMap((a) => a.split('/')).map((a) => a.trim());
 	if (ok.some((a) => norm(a) === norm(val))) return { ok: true };
-	if (ok.some((a) => bare(a) === bare(val))) return { ok: true, note: 'Right, but check the accents or article.' };
+	if (ok.some((a) => bare(a) === bare(val))) return { ok: true, note: t.near };
 	return { ok: false };
 }
 
 // Speaking: which of the expected words did the recogniser hear? Word order is not checked.
 // ponytail: this scores whether you were understood, not each sound. Phoneme-level scoring needs a paid pronunciation API.
 export function sayScore(expected, heard) {
-	// the recogniser writes spoken shortcuts out in full (tô comes back as estou), so compare them as equals
-	const full = (w) => ({ to: 'estou', ta: 'esta', tava: 'estava', pra: 'para', ce: 'voce', ne: 'nao e' })[bare(w)] || bare(w);
-	const pool = heard.flatMap((h) => full(h.w ?? h).split(' '));
-	const marks = norm(expected).split(' ').map((w) => {
-		const i = pool.indexOf(full(w).split(' ')[0]);
+	// the recogniser writes spoken shortcuts out in full, so a pack can list forms to treat as equal
+	const alias = pack.spoken || {};
+	const full = (w) => (alias[bare(w)] || bare(w)).split(' ');
+	const split = (s) => (meta.chars ? [...norm(s)] : norm(s).split(' ')); // no spaces in Chinese or Japanese: go character by character
+	const pool = heard.flatMap((h) => split(h.w ?? h)).flatMap(full);
+	const marks = split(expected).map((w) => {
+		const i = pool.indexOf(full(w)[0]);
 		if (i >= 0) pool.splice(i, 1);
 		return { w, ok: i >= 0 };
 	});
@@ -52,30 +58,19 @@ export function wordQ(w, type) {
 	const explain = [`${w.pt} = ${w.en}`, w.say && `Say it: ${w.say}`, w.ex && `${w.ex}${w.exEn ? '  (' + w.exEn + ')' : ''}`]
 		.filter(Boolean)
 		.join('\n');
-	const base = { key: `${w.id}:${type}`, wid: w.id, answer: w.pt, speak: w.pt, explain };
+	// Chinese and Japanese words can also be answered by their reading (pinyin, kana or romaji)
+	const accept = meta.chars && w.say ? w.say.split(' · ') : undefined;
+	const base = { key: `${w.id}:${type}`, wid: w.id, answer: w.pt, accept, speak: w.pt, explain };
 	if (type === 'cloze')
 		return { ...base, kind: 'type', label: 'Fill the gap', prompt: w.ex.replace(new RegExp(esc(w.pt), 'i'), '_____'), sub: w.exEn || w.en };
 	if (type === 'listen') return { ...base, kind: 'listen', label: 'Listen and type', prompt: 'Type what you hear' };
-	return { ...base, kind: 'type', label: 'Say it in Portuguese', prompt: w.en };
-}
-
-export function conjQ(verb, tense, p) {
-	return {
-		key: `conj:${verb}:${tense}:${p}`,
-		kind: 'type',
-		label: TENSES[tense].name,
-		prompt: `${TENSES[tense].cue} ${PRON[p]} _____`,
-		sub: `${verb} · ${VERBS[verb]}`,
-		answer: conj(verb, tense, p),
-		speak: `${PRON[p]} ${conj(verb, tense, p)}`,
-		explain: table(verb, tense),
-		html: true
-	};
+	return { ...base, kind: 'type', label: t.sayLabel, prompt: w.en };
 }
 
 export function fromKey(S, key) {
-	const [a, b, c, d] = key.split(':');
-	if (a === 'conj') return VERBS[b] && TENSES[c] ? conjQ(b, c, +d) : null;
+	const d = pack.drill.make(key);
+	if (d) return d;
+	const [a, b] = key.split(':');
 	const w = S.words.find((x) => x.id === a);
 	return w ? wordQ(w, b === 'cloze' && !hasCloze(w) ? 'type' : b) : null;
 }
@@ -110,18 +105,6 @@ function pick(cands, n, rnd) {
 	return out;
 }
 
-export function conjPool(S, now, tenses = Object.keys(TENSES), persons = [0, 1, 2, 3], decay = () => 1) {
-	const pool = [];
-	for (const v of Object.keys(VERBS))
-		for (const t of tenses)
-			for (const p of persons) {
-				const key = `conj:${v}:${t}:${p}`;
-				// eu and você get double weight: that pair is where the mistakes are
-				pool.push({ key, group: `${v}:${t}`, wt: (p < 2 ? 2 : 1) * decay(key) });
-			}
-	return pool;
-}
-
 export function dailyQuiz(S, seed, now = Date.now()) {
 	const rnd = rng(seed);
 	const decay = (k) => (S.asked[k] ? 1 - Math.exp(-(now - S.asked[k]) / DAY / TAU) : 1);
@@ -134,7 +117,7 @@ export function dailyQuiz(S, seed, now = Date.now()) {
 		}
 	}
 	const a = pick(words, 8, rnd);
-	const b = pick(conjPool(S, now, undefined, undefined, decay), QUIZ_LEN - a.length, rnd);
+	const b = pick(pack.drill.pool().map((c) => ({ ...c, wt: c.wt * decay(c.key) })), QUIZ_LEN - a.length, rnd);
 	const all = [...a, ...b];
 	for (let i = all.length - 1; i > 0; i--) {
 		const j = Math.floor(rnd() * (i + 1));
@@ -166,7 +149,7 @@ export function cleanSteps(steps) {
 				const options = [...new Set([answer, ...(Array.isArray(x.options) ? x.options.map((o) => s(o, 200)) : [])])].filter(Boolean).slice(0, 4);
 				return options.length > 1 ? { kind: 'choice', prompt: s(x.prompt), answer, options, explain: s(x.explain) } : null;
 			}
-			if (x.kind === 'type') return { kind: 'type', prompt: s(x.prompt), answer, speak: answer, explain: s(x.explain) };
+			if (x.kind === 'type') return { kind: 'type', prompt: s(x.prompt), answer, speak: answer, explain: s(x.explain), accept: Array.isArray(x.accept) ? x.accept.slice(0, 3).map((a) => s(a, 200)).filter(Boolean) : undefined };
 			return null;
 		})
 		.filter(Boolean);

@@ -4,6 +4,7 @@
 	import { UNITS } from '../../lib/content.js';
 	import { S } from '../../lib/store.svelte.js';
 	import { ai } from '../../lib/fx.js';
+	import { t } from '../../lib/lang.js';
 
 	let topic = $state('');
 	let lvl = $state('B1');
@@ -27,7 +28,7 @@
 </script>
 
 <header class="head">
-	<h1>Aprender</h1>
+	<h1>{t.learnTitle}</h1>
 	<span class="dim small">{Object.keys(S.done).length} done</span>
 </header>
 
@@ -50,9 +51,9 @@
 	{/each}
 
 	<section class="card stack">
-		<p class="eyebrow">Lição sob medida</p>
+		<p class="eyebrow">{t.custom}</p>
 		<h2>Any topic, any level</h2>
-		<input type="text" bind:value={topic} placeholder="e.g. ordering at a boteco, por vs para" maxlength="200" />
+		<input type="text" bind:value={topic} placeholder="e.g. ordering food, a grammar point you keep missing" maxlength="200" />
 		<div class="chips">
 			{#each ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'] as l}<button class="chip" class:on={lvl === l} onclick={() => (lvl = l)}>{l}</button>{/each}
 		</div>
@@ -62,7 +63,7 @@
 
 	{#if custom.length}
 		<section class="stack" style="gap:10px">
-			<p class="eyebrow">Suas lições</p>
+			<p class="eyebrow">{t.yours}</p>
 			{#each custom as [id, l]}
 				<div class="row">
 					<a class="item grow" class:done={id in S.done} href="/lesson?id={id}">

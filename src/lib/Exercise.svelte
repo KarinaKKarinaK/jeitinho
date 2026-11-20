@@ -5,6 +5,7 @@
 	import { speak, ding, ai, record, hear } from './fx.js';
 	import { check, sayScore } from './quiz.js';
 	import { S } from './store.svelte.js';
+	import { pack, meta, t } from './lang.js';
 
 	let { steps, retry = false, back = '/', onanswer = () => {}, onfinish = () => 0 } = $props();
 
@@ -111,9 +112,9 @@
 {#if xp !== null}
 	<section class="fin" in:scale={{ start: 0.9, duration: 350 }}>
 		<div class="ring"><span>{right}</span><small>/ {total}</small></div>
-		<h1>{verdict ? verdict : right === total ? 'Perfeito!' : right / total >= 0.7 ? 'Mandou bem!' : 'Quase lá'}</h1>
+		<h1>{verdict ? verdict : right === total ? t.perfect : right / total >= 0.7 ? t.good : t.almost}</h1>
 		<p class="eyebrow">+{xp} XP</p>
-		<a class="btn primary wide" href={back}>Continuar</a>
+		<a class="btn primary wide" href={back}>{t.next}</a>
 	</section>
 {:else}
 	<header class="top">
@@ -125,12 +126,12 @@
 	{#key i}
 		<main in:fly={{ x: 28, duration: 240 }}>
 			{#if q.kind === 'info'}
-				<p class="eyebrow">Aprenda</p>
+				<p class="eyebrow">{t.learn}</p>
 				<h1>{q.title}</h1>
 				{#if q.html}<div class="body">{@html q.body}</div>{:else}<div class="body">{q.body}</div>{/if}
-				{#if q.say}<button class="btn sm" onclick={() => speak(q.say, S.rate)}><Icon name="sound" size={18} /> Ouvir</button>{/if}
+				{#if q.say}<button class="btn sm" onclick={() => speak(q.say, S.rate)}><Icon name="sound" size={18} /> {t.hear}</button>{/if}
 			{:else}
-				<p class="eyebrow">{q.again ? 'De novo' : q.label || (q.kind === 'choice' ? 'Choose' : q.kind === 'listen' ? 'Listen and type' : q.kind === 'say' ? 'Say it out loud' : q.kind === 'write' ? 'Write in Portuguese' : 'Type in Portuguese')}</p>
+				<p class="eyebrow">{q.again ? t.again : q.label || (q.kind === 'choice' ? 'Choose' : q.kind === 'listen' ? 'Listen and type' : q.kind === 'say' ? 'Say it out loud' : q.kind === 'write' ? 'Write in Portuguese' : t.typeLabel)}</p>
 				{#if q.kind === 'listen'}
 					<button class="play" onclick={() => speak(q.speak, S.rate)} aria-label="Play audio"><Icon name="sound" size={38} /></button>
 					<p class="dim">{q.prompt} <button class="chip" onclick={() => speak(q.speak, 0.6)}>slow</button></p>
@@ -146,18 +147,18 @@
 						{/each}
 					</div>
 				{:else if q.kind === 'say'}
-					<button class="btn sm" onclick={() => speak(q.speak, S.rate)}><Icon name="sound" size={18} /> Ouvir</button>
-					{#if stop}<p class="rec"><i></i> Gravando...</p>{/if}
+					<button class="btn sm" onclick={() => speak(q.speak, S.rate)}><Icon name="sound" size={18} /> {t.hear}</button>
+					{#if stop}<p class="rec"><i></i> {t.recording}</p>{/if}
 					{#if res?.marks}<p class="marks">{#each res.marks as m}<span class:miss={!m.ok}>{m.w}</span>{' '}{/each}</p>{/if}
 				{:else if q.kind === 'write'}
-					<textarea bind:this={input} bind:value={val} lang="pt-BR" rows="5" placeholder="Escreve aqui..." readonly={!!res || busy} autocapitalize="sentences" spellcheck="false"></textarea>
+					<textarea bind:this={input} bind:value={val} lang={meta.locale} rows="5" placeholder={t.write} readonly={!!res || busy} autocapitalize="sentences" spellcheck="false"></textarea>
 					<div class="keys">
-						{#each 'áâãàçéêíóôõú' as ch}<button onclick={() => type(ch)} disabled={!!res} tabindex="-1">{ch}</button>{/each}
+						{#each pack.keys || '' as ch}<button onclick={() => type(ch)} disabled={!!res} tabindex="-1">{ch}</button>{/each}
 					</div>
 				{:else}
-					<input bind:this={input} bind:value={val} type="text" lang="pt-BR" placeholder="Em português..." readonly={!!res} autocapitalize="off" autocomplete="off" autocorrect="off" spellcheck="false" enterkeyhint="done" />
+					<input bind:this={input} bind:value={val} type="text" lang={meta.locale} placeholder={t.placeholder} readonly={!!res} autocapitalize="off" autocomplete="off" autocorrect="off" spellcheck="false" enterkeyhint="done" />
 					<div class="keys">
-						{#each 'áâãàçéêíóôõú' as ch}<button onclick={() => type(ch)} disabled={!!res} tabindex="-1">{ch}</button>{/each}
+						{#each pack.keys || '' as ch}<button onclick={() => type(ch)} disabled={!!res} tabindex="-1">{ch}</button>{/each}
 					</div>
 				{/if}
 			{/if}
@@ -168,7 +169,7 @@
 		{#if res}
 			<div class="fb" class:ok={res.ok} class:shake={!res.ok} in:fly={{ y: 30, duration: 220 }} role="status">
 				<div class="row">
-					<b class="grow">{res.skipped ? 'Pulada' : q.kind === 'write' ? (res.ok ? 'Boa! Versão polida:' : 'Versão corrigida:') : res.ok ? 'Isso!' : 'Resposta certa:'}</b>
+					<b class="grow">{res.skipped ? t.skipped : q.kind === 'write' ? (res.ok ? t.polished : t.fixed) : res.ok ? t.right : t.answer}</b>
 					{#if !res.skipped && (q.speak || q.kind !== 'choice')}<button class="icon-btn sm" onclick={() => speak(q.speak || q.answer, S.rate)} aria-label="Hear it"><Icon name="sound" size={18} /></button>{/if}
 				</div>
 				{#if !res.ok || (q.kind === 'write' && !res.skipped)}<p class="ans">{q.answer}</p>{/if}
@@ -176,7 +177,7 @@
 				{#if q.explain}{#if q.html}<p class="ex">{@html q.explain}</p>{:else}<p class="ex">{q.explain}</p>{/if}{/if}
 			</div>
 		{/if}
-		<button class="btn primary wide" disabled={!ready} onclick={submit}>{#if busy}<span class="spin"></span>{:else if res || q.kind === 'info'}Continuar{:else if q.kind === 'say'}<Icon name="mic" size={18} /> {stop ? 'Parar e conferir' : 'Gravar'}{:else}Verificar{/if}</button>
+		<button class="btn primary wide" disabled={!ready} onclick={submit}>{#if busy}<span class="spin"></span>{:else if res || q.kind === 'info'}{t.next}{:else if q.kind === 'say'}<Icon name="mic" size={18} /> {stop ? t.stop : t.rec}{:else}{t.check}{/if}</button>
 	</footer>
 {/if}
 

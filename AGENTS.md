@@ -2,9 +2,10 @@
 
 Mobile-first web app for learning Brazilian Portuguese (with Belo Horizonte dialect). SvelteKit 3 + Svelte 5 runes, plain JavaScript, deployed on Vercel.
 
-- Install: `npm install`. Dev: `npm run dev`. Build: `npm run build`. Test: `npm test` (Node test runner, `src/lib/logic.test.js`).
+- Install: `npm install`. Dev: `npm run dev`. Build: `npm run build`. Test: `npm test` (Node test runner).
 - Pages are client-only (`ssr = false`, prerendered). All user state is one object in localStorage (`src/lib/store.svelte.js`), mirrored to Supabase when signed in (`src/lib/cloud.svelte.js`, table in `supabase/schema.sql`).
-- `src/lib/conj.js` conjugator, `src/lib/quiz.js` answer check + SRS + daily quiz, `src/lib/content.js` course and seed words, `src/lib/roadmap.js` stages and checkpoint tests, `src/lib/Exercise.svelte` question runner.
+- Languages are packs in `src/lib/langs/<code>.js` (course, starter words, placement test, drills, roadmap stages, interface text). `src/lib/lang.js` loads the active one; `src/lib/langs/kit.js` has the shared helpers; `src/lib/packs.test.js` is the contract every pack must pass. To add a language: write the pack, register it in `lang.js`, add it to `langs/meta.js` and to the `AI` map in `src/routes/api/ai/+server.js`.
+- Each language keeps its own state (localStorage key and database row per language). `src/lib/quiz.js` answer check + SRS + daily quiz, `src/lib/roadmap.js` stages and checkpoint tests, `src/lib/Exercise.svelte` question runner, `src/lib/conj.js` Portuguese conjugator.
 - Server code: `src/routes/api/ai` (ops: import, chat, lesson, grade), `api/tts` (ElevenLabs voice), `api/stt` (Deepgram speech to text), `api/config` (public settings and which keys exist), `api/reminder` (calendar file), `src/lib/server/safefetch.js`. Offline cache: `src/service-worker.js`.
 - Rules:
   - Only free OpenRouter models. Keep the `isFree` filter in the AI route.

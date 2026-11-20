@@ -4,6 +4,7 @@
 	import { current, ready, buildTest, passed } from '../../lib/roadmap.js';
 	import { today } from '../../lib/fx.js';
 	import { cloud } from '../../lib/cloud.svelte.js';
+	import { t } from '../../lib/lang.js';
 
 	const plain = $state.snapshot(S);
 	const stage = current(plain);
@@ -19,7 +20,7 @@
 		if (ok) S.badges[stage.id] = today();
 		const xp = ok ? 100 : right;
 		addXP(xp);
-		return { xp, title: ok ? `${stage.id} conquistado!` : `Precisa de ${Math.ceil(stage.pass * total)}. Tenta de novo!` };
+		return { xp, title: ok ? `${stage.id} ${t.won}` : t.need(Math.ceil(stage.pass * total)) };
 	}
 </script>
 

@@ -1,6 +1,7 @@
 import { S, rev, watch, replace, reset } from './store.svelte.js';
 import { decide } from './sync.js';
 import { caps } from './fx.js';
+import { lang } from './lang.js';
 
 // status: off (not configured) | out (signed out) | syncing | synced | error
 export const cloud = $state({ ready: false, status: 'off', user: null, error: '', recovery: false, at: 0, ai: false, tts: false, stt: false });
@@ -53,7 +54,7 @@ export async function pull() {
 	if (!sb || !cloud.user) return;
 	const uid = cloud.user.id;
 	cloud.status = 'syncing';
-	const { data, error } = await sb.from('progress').select('data, rev').eq('user_id', uid).maybeSingle();
+	const { data, error } = await sb.from('progress').select('data, rev').eq('user_id', uid).eq('lang', lang).maybeSingle(); // one row per language
 	if (error) return fail(error);
 	const what = decide({ uid, localUid: S.uid, localRev: rev(), remote: !!data, remoteRev: data?.rev || 0 });
 	if (what === 'pull') {
@@ -72,7 +73,7 @@ export async function push() {
 	cloud.status = 'syncing';
 	const { pass, ...data } = $state.snapshot(S); // the passcode stays on the device
 	data.uid = cloud.user.id;
-	const { error } = await sb.from('progress').upsert({ user_id: cloud.user.id, data, rev: rev() || Date.now(), updated_at: new Date().toISOString() });
+	const { error } = await sb.from('progress').upsert({ user_id: cloud.user.id, lang, data, rev: rev() || Date.now(), updated_at: new Date().toISOString() });
 	if (error) return fail(error);
 	cloud.status = 'synced';
 	cloud.at = Date.now();
