@@ -11,3 +11,4 @@ export const LANGS = {
 	ja: { short: 'JP', name: 'Japanese', label: '日本語', locale: 'ja-JP', stt: 'ja', chars: true },
 	es: { short: 'ES', name: 'Spanish', label: 'Español', locale: 'es-ES', stt: 'es' }
 };
+Object.setPrototypeOf(LANGS, null); // so a lookup like LANGS['constructor'] finds nothing

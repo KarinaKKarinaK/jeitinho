@@ -612,7 +612,7 @@ export default {
 	ui: {
 		right: '对了！', perfect: '太棒了！', good: '不错！', almost: '加油！', welcome: '欢迎',
 		hello: ['早上好', '下午好', '晚上好'],
-		placeholder: '汉字 or pinyin...', write: '用中文写... (characters or pinyin)',
+		placeholder: '汉字 or pinyin (ni3 hao3 works)...', write: '用中文写... (characters or pinyin)',
 		typeLabel: 'Type it in Chinese (characters or pinyin)', sayLabel: 'Say it in Chinese (characters or pinyin)',
 		near: 'Right, but check the tone marks.',
 		drill: 'Drills', drillSub: 'Tones, measure words, particles',

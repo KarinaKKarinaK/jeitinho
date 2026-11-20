@@ -36,6 +36,7 @@
 	--ok: #a6e88f;
 	--bad: #ff8f8f;
 	--r: 28px;
+	--t1: #e5636a; --t2: #d99a2b; --t3: #3fae7c; --t4: #6c8fe8; /* Mandarin tones 1 to 4 */
 	--font: 'Outfit', ui-rounded, system-ui, sans-serif;
 	--mono: ui-monospace, 'SF Mono', Menlo, monospace;
 }

@@ -4,6 +4,7 @@
 	import Icon from '../../lib/Icon.svelte';
 	import Star from '../../lib/Star.svelte';
 	import Conj from '../../lib/Conj.svelte';
+	import Tones from '../../lib/Tones.svelte';
 	import { S, addXP, addWords, newCollection, dropCollection, toggleIn, removeWord, forget } from '../../lib/store.svelte.js';
 	import { grade, norm, longEnough, parseWordList, wordKey } from '../../lib/quiz.js';
 	import { speak, today, ai } from '../../lib/fx.js';
@@ -134,7 +135,7 @@
 					{#if flip}
 						<div class="back" in:fly={{ y: 10, duration: 200 }}>
 							<div class="row"><h1 class="grow" lang={meta.locale}>{card.pt}</h1><Star word={card} size={24} /></div>
-							{#if card.say}<p class="say">{card.say}</p>{/if}
+							{#if card.say}<p class="say"><Tones text={card.say} /></p>{/if}
 							{#if card.ex}<p>{card.ex}</p><p class="dim small">{card.exEn}</p>{/if}
 							{#if card.note}<p class="small" style="color:var(--amber)">{card.note}</p>{/if}
 						</div>
@@ -217,7 +218,7 @@
 			<div class="card word">
 				<div class="row">
 					<button class="row grow open" onclick={() => (open = open === w.id ? null : w.id)}>
-						<span class="grow"><b lang={meta.locale}>{w.pt}</b>{#if meta.chars && w.say}<em>{w.say}</em>{/if}<small>{w.en}</small></span>
+						<span class="grow"><b lang={meta.locale}>{w.pt}</b>{#if meta.chars && w.say}<em><Tones text={w.say} /></em>{/if}<small>{w.en}</small></span>
 						{#if w.pos}<span class="pos">{w.pos}</span>{/if}
 						<span class="lvl" title="Review interval in days">{w.ivl ? w.ivl + 'd' : 'new'}</span>
 					</button>

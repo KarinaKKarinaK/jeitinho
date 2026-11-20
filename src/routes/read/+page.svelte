@@ -4,6 +4,7 @@
 	import { fly } from 'svelte/transition';
 	import Icon from '../../lib/Icon.svelte';
 	import Star from '../../lib/Star.svelte';
+	import Tones from '../../lib/Tones.svelte';
 	import { S, addWords, addXP, forget } from '../../lib/store.svelte.js';
 	import { ai, speak, today } from '../../lib/fx.js';
 	import { wordKey, splitSentences as sentences } from '../../lib/quiz.js';
@@ -27,6 +28,10 @@
 	const parasEn = $derived(text?.en ? text.en.split(/\n\s*\n/) : []);
 
 	let showEn = $state(false);
+	// Chinese and Japanese: the reading (pinyin, kana) above each word. Remembered on this device.
+	const RUBY = 'jeitinho:ruby';
+	let ruby = $state((() => { try { return localStorage.getItem(RUBY) !== '0'; } catch { return true; } })());
+	const setRuby = (on) => { ruby = on; try { localStorage.setItem(RUBY, on ? '1' : '0'); } catch { /* no storage */ } };
 	let tip = $state(null); // { x, y, key, word, info, loading }
 	let pinned = $state(null); // the word card kept open after a tap
 	let err = $state('');
@@ -52,6 +57,23 @@
 		return pre?.dict?.[w.toLowerCase()] || null;
 	}
 	const lookup = (k, w) => find(glossOf(k), w) || known(w);
+	// the reading shown above a word: only from an entry for exactly this word, never a longer phrase it is part of
+	// each character's own reading, learned from words whose reading has one syllable per character
+	const charSay = $derived.by(() => {
+		const map = {};
+		for (const e of [...Object.values(pre?.dict || {}), ...S.words]) {
+			const cs = [...(e.pt || '')], ss = (e.say || '').split(' · ')[0].trim().split(/\s+/);
+			if (cs.length === ss.length) cs.forEach((c, i) => (map[c] ??= ss[i]));
+		}
+		return map;
+	});
+	const reading = (k, w) => {
+		const g = glossOf(k)?.words;
+		const e = [g?.[w.toLowerCase()], known(w)].find((x) => x?.say && [...(x.w || x.pt || '')].length === [...w].length);
+		if (e) return e.say;
+		const each = [...w].map((c) => charSay[c]); // otherwise character by character, if every one is known
+		return lang === 'zh' && each.every(Boolean) ? each.join(' ') : '';
+	};
 
 	function load(k, sentence) {
 		if (glossOf(k)) return Promise.resolve(glossOf(k));
@@ -135,6 +157,7 @@
 	<header class="head">
 		<a class="icon-btn" href="/read" aria-label="Back"><Icon name="back" /></a>
 		<div class="chips">
+			{#if meta.chars}<button class="chip" class:on={ruby} onclick={() => setRuby(!ruby)}>{lang === 'zh' ? 'Pinyin' : 'Readings'}</button>{/if}
 			{#if parasEn.length}<button class="chip" class:on={showEn} onclick={() => (showEn = !showEn)}>English</button>{/if}
 			{#if text.own}<button class="chip" onclick={remove}><Icon name="trash" size={14} /> Remove</button>{/if}
 		</div>
@@ -152,7 +175,7 @@
 						{@const k = pi + ':' + si}
 						{#each words(s) as p}{#if p.w}<button class="w" class:known={have(p.t)} class:lit={tip?.key === k + p.t || pinned?.key === k + p.t}
 							onpointerenter={(e) => e.pointerType === 'mouse' && hover(e, k, s, p.t)} onpointerleave={leave}
-							onclick={(e) => { tip = null; show(e, k, s, p.t, true); }}>{p.t}</button>{:else}{p.t}{/if}{/each}
+							onclick={(e) => { tip = null; show(e, k, s, p.t, true); }}>{#if meta.chars && ruby && reading(k, p.t)}<ruby>{p.t}<rt><Tones text={reading(k, p.t)} /></rt></ruby>{:else}{p.t}{/if}</button>{:else}{p.t}{/if}{/each}
 					{/each}
 					<button class="say" onclick={() => speak(sents.join(' '))} aria-label="Hear this paragraph"><Icon name="sound" size={15} /></button>
 				</p>
@@ -165,14 +188,14 @@
 
 	{#if tip}
 		<div class="tip" style:left="{tip.x}px" style:top="{tip.y}px" role="tooltip">
-			{#if tip.info}<b>{tip.info.en}</b>{#if tip.info.pos}<i>{tip.info.pos}</i>{/if}{#if tip.info.say}<em>{tip.info.say}</em>{/if}{:else}<span>click to look it up</span>{/if}
+			{#if tip.info}<b>{tip.info.en}</b>{#if tip.info.pos}<i>{tip.info.pos}</i>{/if}{#if tip.info.say}<em><Tones text={tip.info.say} /></em>{/if}{:else}<span>click to look it up</span>{/if}
 		</div>
 	{/if}
 
 	{#if pinned}
 		<div class="sheet card" in:fly={{ y: 30, duration: 200 }} role="dialog" aria-label="Word meaning">
 			<div class="row">
-				<span class="grow"><b lang={meta.locale}>{pinned.info?.pt || pinned.word}</b>{#if pinned.info?.say}<em>{pinned.info.say}</em>{/if}</span>
+				<span class="grow"><b lang={meta.locale}>{pinned.info?.pt || pinned.word}</b>{#if pinned.info?.say}<em><Tones text={pinned.info.say} /></em>{/if}</span>
 				{#if pinned.info}<Star word={asWord(pinned)} src={text.title} />{/if}
 				<button class="icon-btn sm" onclick={() => speak(pinned.info?.pt || pinned.word)} aria-label="Hear it"><Icon name="sound" size={16} /></button>
 				<button class="icon-btn sm" onclick={() => (pinned = null)} aria-label="Close"><Icon name="x" size={16} /></button>
@@ -201,6 +224,8 @@
 	.para { display: grid; gap: 6px; }
 	.en { font-size: 15px !important; line-height: 1.55 !important; color: var(--dim); }
 	.w { background: none; border: 0; padding: 0; margin: 0; color: inherit; font: inherit; cursor: pointer; border-radius: 6px; transition: background 0.12s; }
+	rt { font: 400 12px var(--mono); letter-spacing: 0; user-select: none; padding: 0 3px 2px; }
+	.para p:has(ruby) { line-height: 2.7; }
 	.w:hover, .w.lit { background: var(--glass2); }
 	.w.known { text-decoration: underline; text-decoration-color: var(--rose); text-underline-offset: 5px; }
 	.link { background: none; border: 0; padding: 0; color: var(--rose); font: 400 13px var(--font); text-align: left; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }

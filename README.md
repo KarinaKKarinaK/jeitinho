@@ -32,6 +32,8 @@ No install and no account needed: open the link and start. Sign in only if you w
 
 <p align="center"><img src="docs/desktop.png" width="720" alt="Desktop layout"></p>
 
+<p align="center"><img src="docs/reading-zh.png" width="720" alt="Reading a Mandarin text with pinyin coloured by tone"></p>
+
 ## Features
 
 | | |
@@ -40,6 +42,7 @@ No install and no account needed: open the link and start. Sign in only if you w
 | **Chapters** | Lessons are grouped into chapters. Finish a chapter, pass its quiz, and the next one opens. |
 | **Reading** | Eight graded texts per language plus your own. Point at any word for its meaning and part of speech, click to save it. Meanings for the built-in texts are prepared ahead (`npm run gloss`), so reading them uses no AI. |
 | **Grammar** | Every explanation from the course as a searchable reference, and a conjugation table for any verb (usage patterns for Mandarin). |
+| **Made for Mandarin** | Pinyin above every word in reading texts, coloured by tone, with one tap to hide it. Tones can be typed as numbers (`ni3 hao3`). |
 | **Five languages** | Each has its own course of 20 or more lessons, drills, placement test and roadmap. Switch on the home screen; progress is kept separately per language under one account. |
 | **Placement test** | New learners take a short test that climbs a level at a time and stops when it gets too hard. |
 | **Drills** | The hard part of each language: verb tenses (Portuguese, Spanish), tones and measure words (Mandarin), cases and aspect (Polish), particles and verb forms (Japanese). |

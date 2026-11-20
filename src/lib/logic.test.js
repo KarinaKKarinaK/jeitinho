@@ -294,3 +294,12 @@ test('roadmap: milestones gate the test, badges move you on', () => {
 	assert.deepEqual(STAGES.map((s) => s.id).filter((id) => id.startsWith('B2')), ['B2.1', 'B2.2', 'B2.3']);
 	for (const s of STAGES) for (const id of s.lessons) assert.ok(milestones({ ...S, done: {} }, s), id);
 });
+
+test('pinyin: tones typed as numbers, and which tone a syllable has', async () => {
+	const { numbered, toneOf } = await import('./tone.js');
+	assert.equal(numbered('ni3 hao3'), 'nǐ hǎo');
+	assert.equal(numbered('ni3hao3'), 'nǐhǎo');
+	assert.equal(numbered('nv3 lu:4 gou3 gui4 xue2 ma5'), 'nǚ lǜ gǒu guì xué ma');
+	assert.equal(numbered('你好'), '你好');
+	assert.deepEqual(['mā', 'má', 'mǎ', 'mà', 'ma'].map(toneOf), [1, 2, 3, 4, 0]);
+});

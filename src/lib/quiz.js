@@ -1,5 +1,6 @@
 import { DAY } from './fx.js';
-import { pack, meta, t } from './lang.js';
+import { pack, meta, t, lang } from './lang.js';
+import { numbered } from './tone.js';
 
 // ---------- answer checking ----------
 const PUNCT = /[.,!?¿¡;:"“”()。，！？、；：「」『』（）…·]/g;
@@ -14,6 +15,7 @@ const bare = (s) => norm(s).normalize('NFD').replace(/(?<=\p{Script=Latin})\p{M}
 export const wordKey = (s) => norm(s).replace(pack.articles || /^$/, '');
 
 export function check(val, q) {
+	if (lang === 'zh') val = numbered(val); // tones typed as numbers: ni3 hao3
 	const ok = [q.answer, ...(q.accept || [])].flatMap((a) => a.split('/')).map((a) => a.trim());
 	if (ok.some((a) => norm(a) === norm(val))) return { ok: true };
 	if (ok.some((a) => bare(a) === bare(val))) return { ok: true, note: t.near };
