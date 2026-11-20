@@ -120,6 +120,8 @@ export function replace(data, r) {
 // Remember that something was deleted, so sync and app updates do not bring it back.
 export function forget(idOrKey) {
 	S.gone[idOrKey] = Date.now();
+	const keys = Object.keys(S.gone);
+	if (keys.length > 800) for (const k of keys.sort((x, y) => S.gone[x] - S.gone[y]).slice(0, keys.length - 800)) delete S.gone[k]; // keep the newest 800
 }
 export function removeWord(w) {
 	forget(wordKey(w.pt));
