@@ -5,7 +5,7 @@
 	import { S } from '../../lib/store.svelte.js';
 	import { ai } from '../../lib/fx.js';
 	import { t } from '../../lib/lang.js';
-	import Path from '../../lib/Path.svelte';
+	import { chapterOpen, chapterPassed, chapterReady } from '../../lib/roadmap.js';
 
 	let topic = $state('');
 	let lvl = $state('B1');
@@ -33,8 +33,42 @@
 	<a class="btn sm" href="/grammar"><Icon name="book" size={16} /> Grammar</a>
 </header>
 
-<div class="stack rise">
-	<Path />
+<div class="stack rise cols">
+	{#each UNITS as u, i}
+		{@const open = chapterOpen(S, i)}
+		{@const passed = chapterPassed(S, i)}
+		<section class="stack chapter" class:locked={!open} style="gap:10px">
+			<div>
+				<p class="eyebrow">Chapter {i + 1}{passed ? ' · passed' : open ? '' : ' · locked'}</p>
+				<h3 style="margin-top:6px">{u.title}</h3>
+				<p class="dim small">{open ? u.sub : `Pass the chapter ${i} quiz to open this.`}</p>
+			</div>
+			{#each u.lessons as l}
+				{#if open}
+					<a class="item" class:done={l.id in S.done} href="/lesson?id={l.id}">
+						<span class="dot"><Icon name={l.id in S.done ? 'check' : 'book'} /></span>
+						<span class="grow"><b>{l.title}</b><small>{l.sub}</small></span>
+						<small>{l.steps.length}</small>
+						<Icon name="chev" size={18} />
+					</a>
+				{:else}
+					<div class="item" aria-disabled="true">
+						<span class="dot"><Icon name="lock" size={18} /></span>
+						<span class="grow"><b>{l.title}</b><small>{l.sub}</small></span>
+					</div>
+				{/if}
+			{/each}
+			{#if open && !passed}
+				{#if chapterReady(S, i)}
+					<a class="btn primary" href="/chapter?i={i}">Take the chapter {i + 1} quiz</a>
+				{:else}
+					<p class="dim small">Finish these lessons, then pass a 10-question quiz to open chapter {i + 2 > UNITS.length ? i + 1 : i + 2}.</p>
+				{/if}
+			{:else if passed}
+				<a class="btn sm" style="align-self:flex-start" href="/chapter?i={i}">Retake the quiz</a>
+			{/if}
+		</section>
+	{/each}
 
 	<section class="card stack">
 		<p class="eyebrow">{t.custom}</p>

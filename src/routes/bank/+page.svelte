@@ -5,7 +5,7 @@
 	import Star from '../../lib/Star.svelte';
 	import Conj from '../../lib/Conj.svelte';
 	import { S, addXP, addWords, newCollection, dropCollection, toggleIn } from '../../lib/store.svelte.js';
-	import { grade, norm, longEnough } from '../../lib/quiz.js';
+	import { grade, norm, longEnough, parseWordList, wordKey } from '../../lib/quiz.js';
 	import { speak, today, ai } from '../../lib/fx.js';
 	import { POS } from '../../lib/langs/meta.js';
 	import { t, meta } from '../../lib/lang.js';
@@ -75,6 +75,36 @@
 			if (!w.pos && r.pos) w.pos = r.pos;
 		}).catch(() => {});
 	}
+	// import a word list: a file (Anki text export, CSV) or rows pasted from a spreadsheet
+	let pasted = $state('');
+	let found = $state(null); // { name, list, fresh }
+	let importing = $state(false);
+	function preview(text, name) {
+		const have = new Set(S.words.map((w) => wordKey(w.pt)));
+		const list = parseWordList(text).map((w) => ({ ...w, pos: POS.includes(w.pos) ? w.pos : '' }));
+		found = { name, list, fresh: list.filter((w) => !have.has(wordKey(w.pt))).length };
+	}
+	async function pickFile(e) {
+		const f = e.target.files[0];
+		e.target.value = '';
+		if (!f) return;
+		if (/\.(apkg|colpkg|xlsx?|numbers)$/i.test(f.name)) return void (err = /apkg|colpkg/i.test(f.name) ? 'That is an Anki package. In Anki choose File, Export, "Notes in Plain Text (.txt)" and import that file.' : 'Spreadsheet files cannot be read directly. Save it as CSV, or copy the rows and paste them below.');
+		err = '';
+		preview(await f.text(), f.name.replace(/\.[^.]+$/, ''));
+	}
+	function bringIn(asCollection) {
+		const name = found.name || 'Imported';
+		const keys = new Set(found.list.map((w) => wordKey(w.pt)));
+		const n = addWords(found.list, name);
+		if (asCollection) {
+			const id = newCollection(name);
+			for (const w of S.words) if (keys.has(wordKey(w.pt))) toggleIn(w, id);
+			scope = id;
+		}
+		found = { ...found, done: n };
+		pasted = '';
+	}
+
 	function anki() {
 		// tab-separated file that Anki imports directly: front, back, example
 		const tsv = S.words.map((w) => [w.pt, [w.en, w.say, w.pos, w.note].filter(Boolean).join(' · '), `${w.ex} ${w.exEn}`.trim()].map((c) => c.replace(/[\t\n]/g, ' ')).join('\t')).join('\n');
@@ -234,6 +264,33 @@
 				<button class="btn sm" onclick={anki}>Export for Anki</button>
 			</div>
 			{#if meta.chars}<p class="dim small">Type the characters. The reading is added for you.</p>{/if}
+		</div>
+
+		<div class="card stack">
+			<p class="eyebrow">Import a word list</p>
+			<p class="dim small">From Anki (File, Export, "Notes in Plain Text"), a CSV file, or rows copied from Excel or Google Sheets. Columns: word, meaning, then optionally example and its translation. A header row is understood.</p>
+			<div class="chips">
+				<label class="btn sm"><Icon name="page" size={16} /> Choose a file<input type="file" accept=".txt,.csv,.tsv,text/plain,text/csv" hidden onchange={pickFile} /></label>
+				<button class="btn sm" onclick={() => (importing = !importing)}>Paste rows</button>
+			</div>
+			{#if importing}
+				<textarea bind:value={pasted} rows="4" placeholder="Paste rows here, one word per line"></textarea>
+				<button class="btn sm" style="align-self:flex-start" disabled={!pasted.trim()} onclick={() => preview(pasted, 'Pasted words')}>Read these rows</button>
+			{/if}
+			{#if found}
+				{#if found.done !== undefined}
+					<p style="color:var(--ok)">{found.done} {found.done === 1 ? 'word' : 'words'} added. They will show up in your reviews and daily quiz.</p>
+				{:else if !found.list.length}
+					<p class="err">No words found. Each line needs at least a word and its meaning, separated by a tab, comma or semicolon.</p>
+				{:else}
+					<p>Found <b>{found.list.length}</b> {found.list.length === 1 ? 'word' : 'words'}, <b>{found.fresh}</b> new to your bank.</p>
+					<div class="small dim">{#each found.list.slice(0, 3) as w}<p>{w.pt} · {w.en}{w.ex ? ` · ${w.ex}` : ''}</p>{/each}{#if found.list.length > 3}<p>and {found.list.length - 3} more</p>{/if}</div>
+					<div class="chips">
+						<button class="btn sm primary" disabled={!found.fresh} onclick={() => bringIn(true)}>Import into a collection "{found.name}"</button>
+						<button class="btn sm" disabled={!found.fresh} onclick={() => bringIn(false)}>Import without a collection</button>
+					</div>
+				{/if}
+			{/if}
 		</div>
 	</div>
 {/if}

@@ -157,7 +157,7 @@
 	@media (min-width: 900px) { .home > .foot { grid-column: 1 / -1; } }
 	.day.old { display: none; }
 	.me { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
-	.tag { font: 500 11px var(--mono); letter-spacing: 0.04em; padding: 5px 10px; border-radius: 999px; background: linear-gradient(150deg, #e4f060, #e3a3c6); color: #17121c; white-space: nowrap; }
+	.tag { font: 500 11px var(--mono); letter-spacing: 0.04em; padding: 5px 10px; border-radius: 999px; background: linear-gradient(150deg, var(--lime), var(--rose)); color: #17121c; white-space: nowrap; }
 	.tag.new { background: var(--glass2); color: var(--dim); }
 	.streak.lang { font: 500 13px var(--mono); cursor: pointer; color: var(--ink); padding: 0 14px; }
 	.langs .item { width: 100%; color: var(--ink); font: inherit; text-align: left; cursor: pointer; }

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { conj } from './conj.js';
-import { check, dailyQuiz, markAsked, fromKey, grade, cleanSteps, sayScore, songSteps, QUIZ_LEN } from './quiz.js';
+import { check, dailyQuiz, markAsked, fromKey, grade, cleanSteps, sayScore, songSteps, parseWordList, QUIZ_LEN } from './quiz.js';
 import { isPrivate } from './server/safefetch.js';
 import { decide, keepPlacement } from './sync.js';
 import { STAGES, current, milestones, ready, buildTest, passed, place, placementSteps, placementVerdict, retakeAt, forecast, BAND_N, EXTRA, chapterOpen, chapterPassed, chapterReady, chapterQuiz, passChapter, grandfather } from './roadmap.js';
@@ -217,6 +217,18 @@ test('active time: seconds add up to minutes, idle time does not count', async (
 	run(6, true, 'd2'); // next day: the remainder is not carried over
 	assert.deepEqual(carry, { day: 'd2', secs: 30 });
 	assert.equal(total, 3);
+});
+
+test('word list import: Anki text, CSV with a header, pasted spreadsheet rows', () => {
+	const anki = '#separator:tab\n#html:true\ncasa\t<b>house</b>\tA casa é grande.<br>\tThe house is big.\ngato\tcat [sound:x.mp3]\n\nsó palavra\n';
+	assert.deepEqual(parseWordList(anki).map((w) => [w.pt, w.en, w.ex, w.exEn]), [['casa', 'house', 'A casa é grande.', 'The house is big.'], ['gato', 'cat', '', '']]);
+	const csv = 'Meaning,Word,Notes,Reading\n"to eat, to have a meal",食べる,"said ""taberu""",たべる\nwater,水,,みず\n';
+	const c = parseWordList(csv);
+	assert.deepEqual([c[0].pt, c[0].en, c[0].note, c[0].say], ['食べる', 'to eat, to have a meal', 'said "taberu"', 'たべる'], 'header order and quoted commas are respected');
+	assert.equal(c.length, 2);
+	assert.deepEqual(parseWordList('perro;dog\ngato;cat').map((w) => w.pt), ['perro', 'gato'], 'semicolons, as Excel exports in many countries');
+	assert.deepEqual(parseWordList(''), []);
+	assert.deepEqual(parseWordList('just one column\nanother'), []);
 });
 
 test('sync decision after sign-in', () => {

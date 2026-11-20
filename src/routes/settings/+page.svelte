@@ -37,11 +37,34 @@
 	let note = $state('');
 	let err = $state('');
 	let armed = $state(false);
+	// Links that open the reminder straight in a calendar, at the chosen hour, with no file to download.
+	const cal = $derived.by(() => {
+		const [h, m] = p.notifyAt.split(':').map(Number);
+		const start = new Date();
+		start.setHours(h, m, 0, 0);
+		const end = new Date(start.getTime() + 10 * 60000);
+		const stamp = (d) => `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}T${String(d.getHours()).padStart(2, '0')}${String(d.getMinutes()).padStart(2, '0')}00`;
+		const title = 'jeitinho: daily quiz';
+		const link = `${location.origin}/quiz`;
+		return {
+			google: 'https://calendar.google.com/calendar/render?' + new URLSearchParams({ action: 'TEMPLATE', text: title, dates: `${stamp(start)}/${stamp(end)}`, recur: 'RRULE:FREQ=DAILY', details: `Your daily quiz: ${link}`, ctz: Intl.DateTimeFormat().resolvedOptions().timeZone }),
+			// webcal opens the Calendar app's own "subscribe" sheet instead of downloading a file
+			apple: `webcal://${location.host}/api/reminder?t=${p.notifyAt}`,
+			outlook: 'https://outlook.live.com/calendar/0/deeplink/compose?' + new URLSearchParams({ path: '/calendar/action/compose', rru: 'addevent', subject: title, startdt: start.toISOString(), enddt: end.toISOString(), body: `Your daily quiz: ${link}` })
+		};
+	});
 	const canPush = typeof Notification !== 'undefined' && 'serviceWorker' in navigator && 'PushManager' in window;
 	const wait = retakeAt(S);
 	// one short sample sentence per language; every voice's copy is fetched when this page opens,
 	// so tapping a voice plays from the browser's cache instead of waiting for the voice service
 	const sample = pack.seed.filter((w) => w.ex && w.ex.length <= 40).sort((a, b) => a.ex.length - b.ex.length)[0]?.ex || pack.seed[0].pt;
+
+	// settings changed on another device arrive through the account: show them
+	onMount(() => {
+		const fresh = () => (p = { ...P, key: undefined });
+		addEventListener('jeitinho:prefs', fresh);
+		return () => removeEventListener('jeitinho:prefs', fresh);
+	});
 
 	onMount(async () => {
 		if (cloud.tts || !cloud.ready) for (const [id] of VOICES) if (id !== 'device') fetch(`/api/tts?l=${lang}&v=${id}&t=${encodeURIComponent(sample.trim())}`).catch(() => {});
@@ -110,7 +133,7 @@
 
 <div class="stack rise">
 	<div>
-		<p class="dim small" style="margin-top:8px">Saved on this device as you change them.</p>
+		<p class="dim small" style="margin-top:8px">{cloud.user ? 'Saved to your account as you change them, so they apply on every device you sign in on. Your own AI key and reminders stay on this device.' : 'Saved on this device as you change them. Sign in to carry them to your other devices.'}</p>
 	</div>
 
 	<section class="card stack">
@@ -177,7 +200,13 @@
 		{:else}
 			<p class="dim small">{cloud.push ? 'This browser does not support notifications. On iPhone, add the app to your home screen and open it from there.' : 'Notifications are not set up on this server.'}</p>
 		{/if}
-		<a class="btn sm" href="/api/reminder?t={p.notifyAt}" data-sveltekit-reload style="align-self:flex-start">Or add a repeating calendar event</a>
+		<p class="dim small">Or put a repeating reminder in your calendar:</p>
+		<div class="chips">
+			<a class="btn sm" href={cal.google} target="_blank" rel="noopener noreferrer">Google Calendar</a>
+			<a class="btn sm" href={cal.apple}>Apple Calendar</a>
+			<a class="btn sm" href={cal.outlook} target="_blank" rel="noopener noreferrer">Outlook</a>
+		</div>
+		<p class="dim small">Google opens a daily event ready to save. Apple subscribes to a small calendar with the daily reminder. Outlook opens the event; choose "Repeat: daily" there before saving.</p>
 	</section>
 
 	<section class="card stack">
@@ -225,7 +254,7 @@
 	.sw { display: flex; align-items: center; gap: 12px; cursor: pointer; color: var(--dim); }
 	.sw input { width: 22px; height: 22px; flex: none; accent-color: var(--rose); }
 	input[type='range'] { accent-color: var(--rose); width: 100%; }
-	select { width: auto; padding: 10px 14px; border-radius: 14px; }
+	select { width: auto; padding: 10px 16px; border-radius: 14px; }
 	.tabs button { height: 34px; padding: 0 14px; font-size: 14px; }
 	.link { background: none; border: 0; padding: 0; color: var(--dim); font: 400 14px var(--font); text-align: left; cursor: pointer; }
 	.danger { color: var(--bad); }

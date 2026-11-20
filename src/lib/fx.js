@@ -19,7 +19,11 @@ export function speak(text, rate = P.rate) {
 	if (caps.tts && voiceOf(lang) !== 'device' && navigator.onLine && text.length <= 300) {
 		globalThis.speechSynthesis?.cancel();
 		player ??= new Audio(); // one shared element: once a tap has unlocked it, iOS lets later plays through
-		player.onerror = () => (caps.tts = false); // quota used up or service down: stay on the phone voice for this session, no repeated waiting
+		// quota used up or service down: stay on the phone voice for this session, and say so once
+		player.onerror = () => {
+			if (caps.tts) notice('The natural voice has reached its monthly limit, so the device voice is used for now.', 'voice');
+			caps.tts = false;
+		};
 		player.src = `/api/tts?l=${lang}&v=${voiceOf(lang)}&t=` + encodeURIComponent(text.trim());
 		player.defaultPlaybackRate = player.playbackRate = Math.max(0.6, Math.min(1.2, rate + 0.1));
 		player.play().catch(() => me === turn && local(text, rate));
@@ -84,18 +88,46 @@ export async function record() {
 export async function hear(blob, pass = '') {
 	const r = await fetch(`/api/stt?l=${lang}`, { method: 'POST', headers: { 'content-type': blob.type || 'audio/mp4', 'x-pass': pass }, body: blob });
 	const d = await r.json().catch(() => ({}));
-	if (!r.ok) throw new Error(d.message || `Request failed (${r.status})`);
+	if (!r.ok) {
+		if (r.status === 502 || r.status === 429) notice('Speech recognition is at its limit or busy right now. Try again in a moment.', 'voice');
+		throw new Error(d.message || `Request failed (${r.status})`);
+	}
 	return d;
 }
 
+// A short message at the top of the screen, for things the user should know but that are not their fault:
+// the free AI is busy, the voice quota ran out, the device is offline. Shown by the layout.
+export function notice(text, kind = 'busy') {
+	if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('jeitinho:notice', { detail: { text, kind } }));
+}
+const OWN = ' Your own key in Settings skips the queue.';
+const explain = (status, message, own) =>
+	status === 429 && /lot of requests/.test(message) ? 'You have sent a lot of AI requests in a few minutes. Give it a short break, then try again.'
+	: status === 429 ? `The free AI models are busy right now. This usually clears within a minute.${own ? '' : OWN}`
+	: status === 502 || status === 504 ? `The AI did not answer in time. It is under heavy use at the moment; try again in a moment.${own ? '' : OWN}`
+	: status === 503 ? 'This feature is not switched on for this server.'
+	: status === 401 ? message
+	: '';
+
 export async function ai(op, body, pass = '') {
-	const r = await fetch('/api/ai', {
-		method: 'POST',
-		// with your own key set in Settings, requests use your key and your model instead of the shared free ones
-		headers: { 'content-type': 'application/json', 'x-pass': pass, ...(P.key && { 'x-user-key': P.key, 'x-user-model': P.model }) },
-		body: JSON.stringify({ op, lang, ...body })
-	});
+	let r;
+	try {
+		r = await fetch('/api/ai', {
+			method: 'POST',
+			// with your own key set in Settings, requests use your key and your model instead of the shared free ones
+			headers: { 'content-type': 'application/json', 'x-pass': pass, ...(P.key && { 'x-user-key': P.key, 'x-user-model': P.model }) },
+			body: JSON.stringify({ op, lang, ...body })
+		});
+	} catch {
+		const text = navigator.onLine ? 'Could not reach the server. Check your connection and try again.' : 'You are offline. Lessons, quizzes and your word bank still work; AI features need a connection.';
+		notice(text, 'offline');
+		throw new Error(text);
+	}
 	const d = await r.json().catch(() => ({}));
-	if (!r.ok) throw new Error(d.message || `Request failed (${r.status})`);
+	if (!r.ok) {
+		const text = explain(r.status, d.message || '', !!P.key);
+		if (text) notice(text);
+		throw new Error(text || d.message || `Request failed (${r.status})`);
+	}
 	return d;
 }

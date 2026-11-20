@@ -2,7 +2,7 @@ import { S, rev, watch, replace, reset } from './store.svelte.js';
 import { decide, keepPlacement } from './sync.js';
 import { STAGE_IDS } from './langs/kit.js';
 import { caps } from './fx.js';
-import { P, savePrefs } from './prefs.js';
+import { P, savePrefs, sharedPrefs, onPrefs } from './prefs.js';
 import { lang } from './lang.js';
 
 // status: off (not configured) | out (signed out) | syncing | synced | error
@@ -142,6 +142,11 @@ function setProfile(next) {
 // after sign-in: take the account's name and picture if this device has none, or an older picture
 async function takeProfile(u) {
 	const m = u.user_metadata || {};
+	// settings: the newer copy wins, device or account
+	if (m.prefs && (m.prefs_at || 0) > (P.prefsAt || 0)) {
+		savePrefs({ ...m.prefs, prefsAt: m.prefs_at }, true);
+		window.dispatchEvent(new CustomEvent('jeitinho:prefs')); // an open Settings page reloads its controls
+	} else if ((P.prefsAt || 0) > (m.prefs_at || 0)) pushPrefs();
 	const name = m.display_name || (P.name ? '' : m.full_name || m.name || '');
 	if (name && name !== P.name && !P.name) setProfile({ name });
 	else if (m.display_name && m.display_name !== P.name && (m.profile_at || 0) > (P.profileAt || 0)) setProfile({ name: m.display_name, profileAt: m.profile_at });
@@ -157,6 +162,13 @@ async function takeProfile(u) {
 		}
 	}
 }
+
+let prefsTimer;
+function pushPrefs() {
+	clearTimeout(prefsTimer);
+	prefsTimer = setTimeout(() => sb && cloud.user && sb.auth.updateUser({ data: { prefs: sharedPrefs(), prefs_at: P.prefsAt || Date.now() } }), 1500);
+}
+onPrefs(pushPrefs);
 
 export async function saveName(name) {
 	const at = Date.now();

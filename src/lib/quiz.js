@@ -139,7 +139,47 @@ export function markAsked(S, q, ok, now = Date.now()) {
 	}
 }
 
+// ---------- import a word list ----------
+// Reads what Anki exports as "Notes in Plain Text", a CSV file, or rows pasted from Excel or Google Sheets.
+// Works out the separator, skips Anki's # header lines, strips HTML, and uses a header row if there is one
+// (front/back, word/meaning, term/definition, example, notes, tags ...). Without a header the columns are:
+// word, meaning, example, example translation.
+export function parseWordList(raw) {
+	const lines = String(raw).replace(/^﻿/, '').split(/\r?\n/).filter((l) => l.trim() && !l.startsWith('#'));
+	if (!lines.length) return [];
+	const sep = ['\t', ';', ','].map((d) => [d, lines.slice(0, 20).reduce((n, l) => n + l.split(d).length - 1, 0)]).sort((a, b) => b[1] - a[1])[0][0];
+	const cells = (line) => {
+		const out = [];
+		let cur = '', quoted = false;
+		for (let i = 0; i < line.length; i++) {
+			const ch = line[i];
+			if (quoted) {
+				if (ch === '"' && line[i + 1] === '"') (cur += '"'), i++;
+				else if (ch === '"') quoted = false;
+				else cur += ch;
+			} else if (ch === '"' && !cur) quoted = true;
+			else if (ch === sep) (out.push(cur), (cur = ''));
+			else cur += ch;
+		}
+		out.push(cur);
+		return out.map((c) => c.replace(/<br\s*\/?>/gi, ' ').replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').replace(/\[sound:[^\]]*\]/g, '').replace(/\s+/g, ' ').trim());
+	};
+	const rows = lines.map(cells);
+	const NAMES = { pt: /^(front|word|term|expression|vocab\w*|target|foreign|pt|palavra|słowo|单词|単語|palabra)$/i, en: /^(back|meaning|definition|translation|english|en|gloss)$/i, ex: /^(example|sentence|ex|context)$/i, exEn: /^(example translation|sentence translation|exen|example english)$/i, say: /^(reading|pinyin|pronunciation|kana|furigana|say)$/i, note: /^(notes?|comment|hint|tags?)$/i, pos: /^(pos|part of speech|type|class)$/i };
+	const head = rows[0].map((c) => Object.keys(NAMES).find((k) => NAMES[k].test(c)));
+	const hasHead = head.includes('pt') || head.includes('en');
+	const map = hasHead ? head : ['pt', 'en', 'ex', 'exEn'];
+	return (hasHead ? rows.slice(1) : rows)
+		.map((r) => Object.fromEntries(map.map((k, i) => [k, r[i] || '']).filter(([k]) => k)))
+		.filter((w) => w.pt && w.en)
+		.map((w) => ({ pt: w.pt.slice(0, 80), en: w.en.slice(0, 160), ex: (w.ex || '').slice(0, 300), exEn: (w.exEn || '').slice(0, 300), say: (w.say || '').slice(0, 120), note: (w.note || '').slice(0, 300), pos: (w.pos || '').toLowerCase() }))
+		.slice(0, 5000);
+}
+
 // ---------- reading ----------
+// Splits a paragraph into sentences. The reader and the build script that prepares word meanings must
+// cut text the same way, so both use this.
+export const splitSentences = (p) => p.match(/[^.!?。！？…]+[.!?。！？…]*["”’」』)]*\s*/g) || [p];
 // A text is long enough for reading practice from about a paragraph: 60 words, or 100 characters in
 // languages written without spaces. Shorter than that it is a phrase to mine for words, not something to read.
 export const READ_MIN = 60;

@@ -1,13 +1,14 @@
 <script>
 	import { page } from '$app/state';
+	import { onMount } from 'svelte';
 	import { fly } from 'svelte/transition';
 	import Icon from '../../lib/Icon.svelte';
 	import Star from '../../lib/Star.svelte';
 	import { S, addWords, addXP } from '../../lib/store.svelte.js';
 	import { TEXTS } from '../../lib/content.js';
 	import { ai, speak, today } from '../../lib/fx.js';
-	import { wordKey } from '../../lib/quiz.js';
-	import { meta } from '../../lib/lang.js';
+	import { wordKey, splitSentences as sentences } from '../../lib/quiz.js';
+	import { meta, lang } from '../../lib/lang.js';
 
 	// Reading practice: the course's graded texts plus your own. Point at a word (or tap it on a phone)
 	// to see what it means here and its part of speech; tap to keep it.
@@ -17,7 +18,6 @@
 
 	const seg = typeof Intl.Segmenter === 'function' ? new Intl.Segmenter(meta.locale, { granularity: 'word' }) : null;
 	const words = (s) => (seg ? [...seg.segment(s)].map((p) => ({ t: p.segment, w: p.isWordLike })) : s.split(/(\s+)/).map((t) => ({ t, w: /\S/.test(t) })));
-	const sentences = (p) => p.match(/[^.!?。！？…]+[.!?。！？…]*["”’」』)]*\s*/g) || [p];
 	const paras = $derived(text ? text.text.split(/\n\s*\n/).map((p) => sentences(p.trim())) : []);
 	const parasEn = $derived(text?.en ? text.en.split(/\n\s*\n/) : []);
 
@@ -28,8 +28,26 @@
 	let timer;
 	const pending = new Map(); // sentence key -> promise, so one sentence is only asked for once
 
-	// meanings are fetched a sentence at a time and remembered, so the second word of a sentence is instant
-	const glossOf = (k) => S.gloss[id]?.[k];
+	// Where a meaning comes from, cheapest first:
+	// 1. prepared in advance for the built-in texts (a file shipped with the app, no AI at all)
+	// 2. your own word bank, and a dictionary of the words those prepared texts contain
+	// 3. the AI, one sentence at a time, only when you click a word nothing else knows; the answer is remembered
+	let pre = $state(null);
+	onMount(async () => {
+		pre = await fetch(`/gloss/${lang}.json`).then((r) => (r.ok ? r.json() : null)).catch(() => null);
+	});
+	const glossOf = (k) => S.gloss[id]?.[k] || pre?.texts?.[id]?.[k];
+	const find = (g, w) => g?.words[w.toLowerCase()] || Object.values(g?.words || {}).find((x) => wordKey(x.w) === wordKey(w) || wordKey(x.pt) === wordKey(w)) ||
+		// the model may group several words into one expression: the word you pointed at is inside it
+		Object.values(g?.words || {}).find((x) => (meta.chars ? x.w.includes(w) : x.w.toLowerCase().split(/\s+/).includes(w.toLowerCase())));
+	// a general meaning, not tied to this sentence
+	function known(w) {
+		const mine = S.words.find((x) => wordKey(x.pt) === wordKey(w));
+		if (mine) return { pt: mine.pt, en: mine.en, pos: mine.pos, say: mine.say };
+		return pre?.dict?.[w.toLowerCase()] || null;
+	}
+	const lookup = (k, w) => find(glossOf(k), w) || known(w);
+
 	function load(k, sentence) {
 		if (glossOf(k)) return Promise.resolve(glossOf(k));
 		if (!pending.has(k))
@@ -40,25 +58,23 @@
 			}).finally(() => pending.delete(k)));
 		return pending.get(k);
 	}
-	const find = (g, w) => g?.words[w.toLowerCase()] || Object.values(g?.words || {}).find((x) => wordKey(x.w) === wordKey(w) || wordKey(x.pt) === wordKey(w)) ||
-		// the model may group several words into one expression: the word you pointed at is inside it
-		Object.values(g?.words || {}).find((x) => (meta.chars ? x.w.includes(w) : x.w.toLowerCase().split(/\s+/).includes(w.toLowerCase())));
 
-	async function show(e, k, sentence, w, pin) {
+	// pointing never calls the AI; clicking does, and only when the word is not already known
+	async function show(e, k, sentence, w, pin, force = false) {
 		clearTimeout(timer);
 		const r = e.currentTarget.getBoundingClientRect();
-		const at = { x: Math.min(Math.max(r.left + r.width / 2, 150), innerWidth - 150), y: r.top, key: k + w, word: w, loading: !find(glossOf(k), w), info: find(glossOf(k), w) };
-		if (pin) pinned = { ...at, sentence };
-		else tip = at;
+		const info = lookup(k, w);
+		const at = { x: Math.min(Math.max(r.left + r.width / 2, 150), innerWidth - 150), y: r.top, key: k + w, k, word: w, info, loading: false, exact: !!find(glossOf(k), w), en: glossOf(k)?.en };
+		if (!pin) return void (tip = at);
+		pinned = { ...at, sentence, loading: (!info || force) && !at.exact };
 		err = '';
+		if (!pinned.loading) return;
 		try {
 			const g = await load(k, sentence);
-			const info = find(g, w) || null;
-			if (pin && pinned?.key === at.key) pinned = { ...pinned, loading: false, info, en: g.en };
-			else if (tip?.key === at.key) tip = { ...tip, loading: false, info };
+			if (pinned?.key === at.key) pinned = { ...pinned, loading: false, info: find(g, w) || info, exact: true, en: g.en };
 		} catch (x) {
-			if (pin) err = x.message;
-			tip = null;
+			err = x.message;
+			if (pinned?.key === at.key) pinned = { ...pinned, loading: false };
 		}
 	}
 	const hover = (e, k, s, w) => { clearTimeout(timer); const ev = { currentTarget: e.currentTarget }; timer = setTimeout(() => show(ev, k, s, w, false), 220); };
@@ -139,7 +155,7 @@
 
 	{#if tip}
 		<div class="tip" style:left="{tip.x}px" style:top="{tip.y}px" role="tooltip">
-			{#if tip.loading}<span class="spin"></span>{:else if tip.info}<b>{tip.info.en}</b>{#if tip.info.pos}<i>{tip.info.pos}</i>{/if}{#if tip.info.say}<em>{tip.info.say}</em>{/if}{:else}<span class="dim">click to look it up</span>{/if}
+			{#if tip.info}<b>{tip.info.en}</b>{#if tip.info.pos}<i>{tip.info.pos}</i>{/if}{#if tip.info.say}<em>{tip.info.say}</em>{/if}{:else}<span>click to look it up</span>{/if}
 		</div>
 	{/if}
 
@@ -156,6 +172,7 @@
 			{:else if pinned.info}
 				<p>{pinned.info.en}{#if pinned.info.pos} <span class="pos">{pinned.info.pos}</span>{/if}</p>
 				{#if pinned.en}<p class="dim small">{pinned.en}</p>{/if}
+				{#if !pinned.exact}<button class="link" onclick={(e) => show({ currentTarget: document.querySelector('.w.lit') || e.currentTarget }, pinned.k, pinned.sentence, pinned.word, true, true)}>This is the general meaning. Explain it in this sentence</button>{/if}
 				{#if have(pinned.info.pt || pinned.word)}
 					<p class="small" style="color:var(--ok)">In your word bank.</p>
 				{:else}
@@ -176,6 +193,7 @@
 	.w { background: none; border: 0; padding: 0; margin: 0; color: inherit; font: inherit; cursor: pointer; border-radius: 6px; transition: background 0.12s; }
 	.w:hover, .w.lit { background: var(--glass2); }
 	.w.known { text-decoration: underline; text-decoration-color: var(--rose); text-underline-offset: 5px; }
+	.link { background: none; border: 0; padding: 0; color: var(--rose); font: 400 13px var(--font); text-align: left; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
 	.say { background: none; border: 0; color: var(--faint); cursor: pointer; padding: 0 0 0 6px; vertical-align: middle; }
 	.tip { position: fixed; z-index: 30; transform: translate(-50%, calc(-100% - 8px)); max-width: 280px; padding: 8px 12px; border-radius: 14px; background: var(--solid); color: var(--on-solid); font-size: 14px; pointer-events: none; display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; box-shadow: 0 10px 30px -10px var(--shadow); }
 	.tip b { font-weight: 500; }

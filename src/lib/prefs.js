@@ -75,13 +75,26 @@ export function applyTheme() {
 	if (typeof document === 'undefined') return;
 	const light = P.theme === 'light' || (P.theme === 'auto' && matchMedia('(prefers-color-scheme: light)').matches);
 	document.documentElement.dataset.theme = light ? 'light' : 'dark';
-	document.querySelector('meta[name="theme-color"]')?.setAttribute('content', light ? '#f6f1e7' : '#0c0a0f');
+	document.querySelector('meta[name="theme-color"]')?.setAttribute('content', light ? '#f6f1e7' : '#0a0b12');
 }
 
-export function savePrefs(next) {
+// Settings that follow you to every device you sign in on. Left out on purpose: your API key (never leaves
+// the device), your picture (synced separately) and anything tied to one browser.
+const SHARED = ['theme', 'voice', 'voiceSet', 'rate', 'autoplay', 'sfx', 'quizLen', 'quizAudio', 'quizDrills', 'goalMin', 'notifyAt', 'hidden', 'model'];
+export const sharedPrefs = () => Object.fromEntries(SHARED.map((k) => [k, P[k]]));
+let onSave = null;
+export const onPrefs = (fn) => (onSave = fn); // the account layer listens here
+
+// remote = true when the change came from the account, so it is not sent straight back
+export function savePrefs(next, remote = false) {
 	if (next) {
 		const { key: _never, ...rest } = next;
+		const before = JSON.stringify(sharedPrefs());
 		Object.assign(P, rest);
+		if (!remote && JSON.stringify(sharedPrefs()) !== before) {
+			P.prefsAt = Date.now();
+			onSave?.();
+		}
 	}
 	try {
 		const { key: _secret, ...plain } = P; // the API key is never written here

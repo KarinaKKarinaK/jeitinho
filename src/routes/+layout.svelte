@@ -27,12 +27,31 @@
 		})
 	);
 
+	// one notice at a time, gone after a few seconds or on tap
+	let note = $state(null);
+	let noteTimer;
+	onMount(() => {
+		const show = (e) => {
+			note = e.detail;
+			clearTimeout(noteTimer);
+			noteTimer = setTimeout(() => (note = null), 9000);
+		};
+		addEventListener('jeitinho:notice', show);
+		return () => removeEventListener('jeitinho:notice', show);
+	});
+
 	const tabs = [['/', 'home', 'Home'], ['/learn', 'book', 'Learn'], ['/read', 'page', 'Reading'], ['/add', 'plus', 'Add material'], ['/bank', 'layers', 'Word bank'], ['/chat', 'chat', 'Chat'], ['/settings', 'gear', 'Settings']];
 	const path = $derived(page.url.pathname.replace(/\/$/, '') || '/');
 	const immersive = $derived(['/lesson', '/quiz', '/drill', '/checkpoint', '/speak', '/welcome', '/chapter'].includes(path));
 </script>
 
 <div class="bg"></div>
+{#if note}
+	<button class="notice {note.kind}" role="status" onclick={() => (note = null)}>
+		<Icon name={note.kind === 'offline' ? 'x' : note.kind === 'voice' ? 'sound' : 'bolt'} size={18} />
+		<span>{note.text}</span>
+	</button>
+{/if}
 <div class="app" class:immersive>
 	{@render children()}
 </div>
@@ -46,6 +65,14 @@
 {/if}
 
 <style>
+	.notice {
+		position: fixed; z-index: 40; top: calc(env(safe-area-inset-top) + 12px); left: 50%; transform: translateX(-50%); width: min(520px, calc(100% - 28px));
+		display: flex; gap: 12px; align-items: flex-start; text-align: left; padding: 14px 16px; border-radius: 20px; border: 1px solid color-mix(in srgb, var(--amber) 50%, transparent);
+		background: color-mix(in srgb, var(--amber) 14%, var(--bg)); color: var(--ink); font: 400 14px/1.4 var(--font); cursor: pointer;
+		box-shadow: 0 16px 40px -14px var(--shadow); animation: drop 0.3s var(--spring);
+	}
+	.notice :global(svg) { flex: none; color: var(--amber); margin-top: 1px; }
+	@keyframes drop { from { transform: translate(-50%, -20px); opacity: 0; } }
 	nav {
 		position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom) + 14px); transform: translateX(-50%); z-index: 10;
 		display: flex; gap: 2px; padding: 6px; border-radius: 999px; border: 1px solid var(--line);

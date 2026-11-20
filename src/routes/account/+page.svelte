@@ -200,7 +200,7 @@
 	.danger { color: var(--bad); }
 	.prog b { display: block; font-weight: 500; }
 	.prog .small b { display: inline; }
-	.lvl { width: 54px; height: 54px; flex: none; border-radius: 50%; display: grid; place-items: center; font: 500 13px var(--mono); color: #17121c; background: linear-gradient(150deg, #e4f060, #e3a3c6); }
+	.lvl { width: 54px; height: 54px; flex: none; border-radius: 50%; display: grid; place-items: center; font: 500 13px var(--mono); color: #17121c; background: linear-gradient(150deg, var(--lime), var(--rose)); }
 	.u { text-decoration: underline; text-underline-offset: 3px; }
 	.profile b { font-weight: 500; color: var(--ink); display: inline; }
 	.profile input[type='text'] { padding: 12px 16px; border-radius: 16px; }
