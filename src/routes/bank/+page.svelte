@@ -190,7 +190,7 @@
 				</div>
 				{#if open === w.id}
 					<div class="stack" style="gap:10px;margin-top:12px" in:fly={{ y: -6, duration: 160 }}>
-						{#if w.say}<p class="say">{w.say}</p>{/if}
+						{#if w.say && !meta.chars}<p class="say">{w.say}</p>{/if}
 						{#if w.ex}<div><p lang={meta.locale}>{w.ex}</p>{#if w.exSay}<p class="say">{w.exSay}</p>{/if}<p class="dim small">{w.exEn}</p></div>{/if}
 						<div class="chips">
 							<button class="btn sm" onclick={() => speak(w.ex || w.pt)}><Icon name="sound" size={16} /> {t.hear}</button>
