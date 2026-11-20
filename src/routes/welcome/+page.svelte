@@ -3,7 +3,7 @@
 	import Exercise from '../../lib/Exercise.svelte';
 	import { S, addXP } from '../../lib/store.svelte.js';
 	import { PLACEMENT } from '../../lib/content.js';
-	import { place, placementSteps, placementVerdict, retakeAt, RETAKE_DAYS } from '../../lib/roadmap.js';
+	import { place, placementSteps, placementVerdict, retakeAt, levelName, RETAKE_DAYS } from '../../lib/roadmap.js';
 	import { cloud } from '../../lib/cloud.svelte.js';
 	import { today } from '../../lib/fx.js';
 	import { lang, meta, t, AVAILABLE, switchLang } from '../../lib/lang.js';
@@ -63,9 +63,10 @@
 {:else}
 	<div class="intro stack rise">
 		<div class="badge">{stage.id}</div>
-		<p class="eyebrow">Your starting point</p>
+		<p class="eyebrow">Your starting point{stage.exam ? ` · ${levelName(stage)}` : ''}</p>
 		<h1>{stage.title}</h1>
 		<p class="dim">{passed ? `You passed level ${PLACEMENT[passed - 1].band}, so the earlier badges are yours and their lessons are marked done. You can still open them.` : 'You start at the beginning. That is the fastest way to get the sounds right.'}</p>
+		{#if stage.exam}<p class="small">On the official scale this stage is <b>{stage.exam}</b>.</p>{/if}
 		<p class="dim small">Next goal: {stage.can}.</p>
 		<a class="btn primary wide" href="/">{t.start}</a>
 		{#if cloud.status === 'out'}<a class="btn wide" href="/account">Save this to an account</a><p class="dim small">Your level is kept on this device, and it moves into your account when you sign up or sign in.</p>{/if}

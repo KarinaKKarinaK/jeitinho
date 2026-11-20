@@ -1,7 +1,7 @@
 <script>
 	import Exercise from '../../lib/Exercise.svelte';
 	import { S, addXP } from '../../lib/store.svelte.js';
-	import { current, ready, buildTest, passed } from '../../lib/roadmap.js';
+	import { current, ready, buildTest, passed, levelName } from '../../lib/roadmap.js';
 	import { today } from '../../lib/fx.js';
 	import { cloud } from '../../lib/cloud.svelte.js';
 	import { t } from '../../lib/lang.js';
@@ -20,7 +20,7 @@
 		if (ok) S.badges[stage.id] = today();
 		const xp = ok ? 100 : right;
 		addXP(xp);
-		return { xp, title: ok ? `${stage.id} ${t.won}` : t.need(Math.ceil(stage.pass * total)) };
+		return { xp, title: ok ? `${levelName(stage)} ${t.won}` : t.need(Math.ceil(stage.pass * total)) };
 	}
 </script>
 

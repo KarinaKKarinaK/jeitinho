@@ -1,7 +1,7 @@
 <script>
 	import Icon from '../../lib/Icon.svelte';
 	import { S } from '../../lib/store.svelte.js';
-	import { STAGES, current, milestones, ready } from '../../lib/roadmap.js';
+	import { STAGES, current, milestones, ready, levelName } from '../../lib/roadmap.js';
 	import { t } from '../../lib/lang.js';
 
 	const now = $derived(current(S));
@@ -29,7 +29,7 @@
 			<li class:got class:here class:locked={!got && !here}>
 				<div class="badge {s.band}" aria-hidden="true">{#if got}<Icon name="check" size={20} />{:else}{s.id}{/if}</div>
 				<div class="body">
-					<p class="lvl">{s.id}{#if got} · earned {got}{/if}</p>
+					<p class="lvl">{levelName(s)}{#if got} · earned {got}{/if}</p>
 					<h3>{s.title}</h3>
 					<p class="dim small">{s.can}</p>
 

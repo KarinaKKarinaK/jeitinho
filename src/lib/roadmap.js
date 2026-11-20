@@ -13,12 +13,17 @@ export const STAGES = pack.stages.map(([id, title, can, lessons, tenses], i) => 
 	const band = id[0];
 	return {
 		id, title, can, lessons, tenses, band,
+		// the official exam level this stage matches, where the exam uses its own scale (HSK for Mandarin, JLPT for Japanese)
+		exam: (can.match(/\(((?:beyond )?(?:HSK|JLPT)[^)]*)\)/) || [])[1] || '',
 		mastered: NUMS[i][0],
 		quizzes: NUMS[i][1],
 		n: { A: 14, B: 20, C: 24 }[band], // questions in the checkpoint test
 		pass: { A: 0.8, B: 0.85, C: 0.9 }[band]
 	};
 });
+
+// "B1.1" or, where there is an official exam scale, "B1.1 · HSK 3"
+export const levelName = (s) => (s ? (s.exam ? `${s.id} · ${s.exam}` : s.id) : '');
 
 export const MASTERED_DAYS = 7; // a word counts as mastered once its review gap reaches a week
 export const masteredCount = (S) => S.words.filter((w) => w.ivl >= MASTERED_DAYS).length;

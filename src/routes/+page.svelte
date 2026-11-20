@@ -9,7 +9,7 @@
 	import { P } from '../lib/prefs.js';
 	import { cloud } from '../lib/cloud.svelte.js';
 	import { lang, meta, t, AVAILABLE, switchLang } from '../lib/lang.js';
-	import { current, earned, milestones } from '../lib/roadmap.js';
+	import { current, earned, milestones, levelName } from '../lib/roadmap.js';
 
 	// brand new here: offer the placement test once
 	if (!S.onboarded && S.xp === 0 && !Object.keys(S.done).length) goto('/welcome', { replaceState: true });
@@ -112,7 +112,7 @@
 	<a class="card xp" href="/roadmap">
 		<div class="row">
 			<span class="lvl">{earned(S)?.id || '0'}</span>
-			<span class="grow"><b>{stage ? `Next badge: ${stage.id}` : 'Every badge earned'}</b><small class="dim">{stage ? `${ms.filter((m) => m.ok).length} of ${ms.length} milestones · ${S.xp} XP` : `${S.xp} XP`}</small></span>
+			<span class="grow"><b>{stage ? `Next badge: ${levelName(stage)}` : 'Every badge earned'}</b><small class="dim">{stage ? `${ms.filter((m) => m.ok).length} of ${ms.length} milestones · ${S.xp} XP` : `${S.xp} XP`}</small></span>
 			<Icon name="chev" size={18} />
 		</div>
 		<div class="bar"><i style:width="{stage ? (ms.reduce((a, m) => a + m.have / m.need, 0) / ms.length) * 100 : 100}%"></i></div>

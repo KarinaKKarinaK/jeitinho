@@ -2,7 +2,7 @@
 	import Icon from '../../lib/Icon.svelte';
 	import Heatmap from '../../lib/Heatmap.svelte';
 	import { S } from '../../lib/store.svelte.js';
-	import { current, earned, forecast, masteredCount } from '../../lib/roadmap.js';
+	import { current, earned, forecast, masteredCount, levelName } from '../../lib/roadmap.js';
 	import { meta } from '../../lib/lang.js';
 	import { cloud, oauth, signIn, signUp, forgot, setPassword, signOut, pull, wipe, saveName, saveAvatar, changeEmail } from '../../lib/cloud.svelte.js';
 
@@ -100,7 +100,7 @@
 			<p class="eyebrow">{meta.name}</p>
 			<div class="row">
 				<span class="lvl">{badge?.id || '0'}</span>
-				<span class="grow"><b>{badge ? `Level ${badge.id}: ${badge.title}` : 'No badge yet'}</b><small class="dim">{stage ? `Working toward ${stage.id}` : 'Every badge earned'} · {S.xp} XP · {masteredCount(S)} words mastered</small></span>
+				<span class="grow"><b>{badge ? `Level ${levelName(badge)}: ${badge.title}` : 'No badge yet'}</b><small class="dim">{stage ? `Working toward ${levelName(stage)}` : 'Every badge earned'} · {S.xp} XP · {masteredCount(S)} words mastered</small></span>
 			</div>
 			{#if stage && fc}
 				<p class="small">

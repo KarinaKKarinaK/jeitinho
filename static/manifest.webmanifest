@@ -1,7 +1,7 @@
 {
   "name": "jeitinho",
   "short_name": "jeitinho",
-  "description": "Learn Brazilian Portuguese the mineiro way.",
+  "description": "Find your way into a new language.",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",
