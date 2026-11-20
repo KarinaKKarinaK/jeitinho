@@ -14,10 +14,10 @@ export const config = { maxDuration: 60 };
 // Cost guard: only free OpenRouter models can ever be called, whatever the env says.
 const isFree = (id) => id.endsWith(':free') || id === 'openrouter/free';
 const models = () =>
-	(env.OPENROUTER_MODELS || 'nvidia/nemotron-3.5-super-vl:free,baidu/ernie-5.5-flash-preview:free,google/gemma-4-31b-it:free,openrouter/free')
+	(env.OPENROUTER_MODELS || 'nvidia/nemotron-3.5-super-vl:free,nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free,particle-ai/particle-1:free,baidu/ernie-5.5-flash-preview:free')
 		.split(',').map((s) => s.trim()).filter(isFree).slice(0, 4);
 
-// Free models are unpredictable: one is rate limited, one thinks for a minute, one answers in ten seconds.
+// Free models are unpredictable: one is rate limited, one is slow, one answers in six seconds.
 // So ask them all at once and take the first answer that is valid JSON. They are free, so the extra calls cost nothing.
 async function llm(messages, max = 2500) {
 	const mine = own.getStore();
@@ -28,14 +28,19 @@ async function llm(messages, max = 2500) {
 	if (!list.length) error(500, 'OPENROUTER_MODELS has no free model in it.');
 	const stop = new AbortController();
 	const status = [];
-	const ask = async (model) => {
-		const r = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+	// Measured on real song lyrics: with thinking switched off these models answer in about 6 seconds and the
+	// JSON is just as good; with it on they take 30 to 60 and often spend the whole budget before answering.
+	// A few models refuse to switch it off (HTTP 400): those get one more try with thinking set to low.
+	const send = (model, reasoning) =>
+		fetch('https://openrouter.ai/api/v1/chat/completions', {
 			method: 'POST',
 			headers: { authorization: `Bearer ${key}`, 'content-type': 'application/json' },
-			// thinking counts against max_tokens: keep it short and leave headroom
-			body: JSON.stringify({ model, messages, max_tokens: max + 2000, temperature: 0.4, reasoning: { effort: 'low', exclude: true } }),
+			body: JSON.stringify({ model, messages, max_tokens: max + (reasoning.enabled === false ? 300 : 2500), temperature: 0.4, reasoning }),
 			signal: AbortSignal.any([stop.signal, AbortSignal.timeout(52000)])
 		});
+	const ask = async (model) => {
+		let r = await send(model, { enabled: false });
+		if (r.status === 400) r = await send(model, { effort: 'low', exclude: true });
 		status.push(r.status);
 		if (!r.ok) throw new Error(String(r.status));
 		const d = await r.json();
@@ -129,10 +134,12 @@ async function song(id, g) {
 			{ role: 'user', content: `Song: "${title}" by ${artist}. Lyrics:\n${numbered}\n\nReturn ONLY JSON: {"summary":"2 sentences in English on what the song is about",${wordsOf(g)},"notes":["up to 4 notes on grammar, slang or pronunciation heard in this song"],"steps":[6 to 8 quiz steps about this song's vocabulary and grammar]}\nUp to 12 words. ${stepsOf(g)}` }
 		], 3200)
 	]);
-	if (les.status === 'rejected' && tr.status === 'rejected') throw les.reason;
 	const out = les.status === 'fulfilled' ? les.value : {};
 	const en = tr.status === 'fulfilled' && Array.isArray(tr.value.lines) ? tr.value.lines : [];
-	const warn = tr.status === 'rejected' ? 'The translation did not come through this time. Import the song again to get it.' : les.status === 'rejected' ? 'The lesson did not come through this time. Import the song again to get it.' : '';
+	// lyrics alone are enough for a lesson (the app builds one from the lines), so nothing here is fatal
+	const warn = tr.status === 'rejected' && les.status === 'rejected' ? 'The AI models were busy, so you got the lyrics and a listening lesson. Import the song again later for the translation and word list.'
+		: tr.status === 'rejected' ? 'The translation did not come through this time. Import the song again to get it.'
+		: les.status === 'rejected' ? 'The word list did not come through this time. Tap words in the lyrics to add your own.' : '';
 	return { type: 'song', warn, title: `${title} · ${artist}`, summary: s(out.summary, 500), lyrics: lines.map((pt, i) => ({ pt, en: s(en[i]) })), words: words(out.words), notes: notes(out.notes), steps: cleanSteps(out.steps) };
 }
 
@@ -215,6 +222,20 @@ async function lessonOp(b) {
 	return { title: s(out.title, 120) || 'Custom lesson', steps };
 }
 
+// Explains one word the learner tapped in a song or text, in the context of its line.
+async function defineOp(b) {
+	const g = cfg(b);
+	const word = s(b.word, 60).trim();
+	const line = s(b.line, 300);
+	if (!word) error(400, 'Which word?');
+	const out = await llm([
+		{ role: 'system', content: who(g) },
+		{ role: 'user', content: `The learner tapped the word """${word}""" in this line: """${line}""". Explain that word as it is used here. If it is part of a fixed expression in the line, give the whole expression.\nReturn ONLY JSON: {"pt":"the word or expression in ${g.name}, dictionary form${g.form}","en":"short English meaning in this context","say":"${g.say}","note":"one short English note on usage, or empty string"}` }
+	], 400);
+	const pt = s(out.pt, 80) || word;
+	return { pt, en: s(out.en, 160), say: s(out.say, 120), note: s(out.note, 300), ex: line, exEn: s(b.lineEn, 300) };
+}
+
 // Grades a short piece of writing for the checkpoint tests.
 async function gradeOp(b) {
 	const g = cfg(b);
@@ -238,7 +259,7 @@ export async function POST({ request }) {
 	// the passcode guards the shared free quota; with your own key you are not using it
 	if (!mine && env.APP_PASSCODE && request.headers.get('x-pass') !== env.APP_PASSCODE) error(401, 'Wrong passcode. Set it in Settings.');
 	const b = await request.json().catch(() => error(400, 'Bad request'));
-	const op = { import: importOp, chat: chatOp, lesson: lessonOp, grade: gradeOp }[b?.op];
+	const op = { import: importOp, chat: chatOp, lesson: lessonOp, grade: gradeOp, define: defineOp }[b?.op];
 	if (!op) error(400, 'Unknown op');
 	return json(await own.run(mine, () => op(b)));
 }

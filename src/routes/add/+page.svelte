@@ -1,5 +1,6 @@
 <script>
 	import { fly } from 'svelte/transition';
+	import { goto } from '$app/navigation';
 	import Icon from '../../lib/Icon.svelte';
 	import { S, addWords } from '../../lib/store.svelte.js';
 	import { ai, speak, today } from '../../lib/fx.js';
@@ -33,8 +34,10 @@
 			const r = await ai('import', body, S.pass);
 			const id = Date.now().toString(36);
 			const img = body.kind === 'photo' ? await savePhoto(id, body.image).catch(() => '') : '';
-			S.materials.unshift({ id, img, date: today(), type: r.type, title: r.title, url: r.url || '', summary: r.summary, notes: r.notes, text: r.text || '', lyrics: r.lyrics });
+			S.materials.unshift({ id, img, date: today(), type: r.type, title: r.title, url: r.url || '', summary: r.summary, notes: r.notes, text: r.text || '', lyrics: r.lyrics, words: r.lyrics ? r.words : undefined });
 			if (r.steps?.length) S.custom['m-' + id] = { title: r.title, steps: r.steps };
+			// a song opens its own page: lyrics to tap through, words to keep, then the quiz
+			if (r.lyrics?.length) return void (await goto(`/song?id=${id}`));
 			res = { ...r, id, img };
 			text = '';
 		} catch (e) {
@@ -109,7 +112,7 @@
 
 	<div class="card stack" style="gap:10px">
 		<p class="eyebrow">What works</p>
-		<p class="small dim"><b>Spotify track link</b>: finds the lyrics, translates them line by line and builds a lesson.</p>
+		<p class="small dim"><b>Spotify track link</b>: finds the lyrics and translates them line by line. Tap words to keep them, then take a quiz on the song.</p>
 		<p class="small dim"><b>Article link or pasted text</b>: pulls out the words worth learning.</p>
 		<p class="small dim"><b>Camera button</b>: photo of your lesson notes, transcribed into your bank.</p>
 		<p class="small dim">Everything is kept under {t.bank}, Saved.</p>

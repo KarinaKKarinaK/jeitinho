@@ -139,6 +139,33 @@ export function markAsked(S, q, ok, now = Date.now()) {
 	}
 }
 
+// ---------- song lessons ----------
+// A song always gets a lesson, whatever the AI managed to return. It is built from three sources:
+// the lyric lines (meaning, fill the gap, listen and type), the words you saved from the song, and
+// any quiz steps the model wrote. Works with lyrics alone.
+export function songSteps(lyrics = [], words = [], extra = [], rnd = Math.random) {
+	const mix = (a) => a.map((v) => [rnd(), v]).sort((x, y) => x[0] - y[0]).map((x) => x[1]);
+	const count = (l) => (meta.chars ? [...norm(l)].length : norm(l).split(' ').length);
+	const uniq = [...new Map(lyrics.filter((l) => l?.pt).map((l) => [norm(l.pt), l])).values()];
+	const mid = mix(uniq.filter((l) => count(l.pt) >= (meta.chars ? 4 : 3) && count(l.pt) <= (meta.chars ? 14 : 9)));
+	const withEn = mid.filter((l) => l.en);
+	const steps = [];
+	// what does this line mean? (needs at least four translated lines to make the options)
+	for (const l of withEn.slice(0, 3)) {
+		const wrong = mix(withEn.filter((o) => o.en !== l.en)).slice(0, 3).map((o) => o.en);
+		if (wrong.length === 3) steps.push({ kind: 'choice', label: 'What does this line mean?', prompt: l.pt, answer: l.en, options: [l.en, ...wrong], speak: l.pt, audio: true });
+	}
+	// your saved words: say it, and find it in its line
+	for (const w of mix(words).slice(0, 4)) {
+		steps.push({ kind: 'type', label: t.sayLabel, prompt: w.en, answer: w.pt, accept: meta.chars && w.say ? w.say.split(' · ') : undefined, speak: w.pt, explain: w.ex ? `${w.ex}${w.exEn ? '  (' + w.exEn + ')' : ''}` : '' });
+		const line = uniq.find((l) => l.pt.toLowerCase().includes(w.pt.toLowerCase()) && norm(l.pt) !== norm(w.pt));
+		if (line) steps.push({ kind: 'type', label: 'Fill the gap from the song', prompt: line.pt.replace(new RegExp(esc(w.pt), 'i'), '_____'), sub: line.en || w.en, answer: w.pt, speak: line.pt, explain: `${w.pt} = ${w.en}` });
+	}
+	// listen and type a short line
+	for (const l of mix(mid.filter((l) => count(l.pt) <= (meta.chars ? 10 : 6))).slice(0, 3)) steps.push({ kind: 'listen', label: 'Listen and type the line', prompt: 'Type what you hear', speak: l.pt, answer: l.pt, explain: l.en || '' });
+	return mix([...steps, ...cleanSteps(extra).filter((x) => x.kind !== 'info')]).slice(0, 14);
+}
+
 // ---------- sanitise LLM-made lesson steps (plain text only, never html) ----------
 export function cleanSteps(steps) {
 	const s = (v, n = 600) => (typeof v === 'string' ? v.slice(0, n) : '');

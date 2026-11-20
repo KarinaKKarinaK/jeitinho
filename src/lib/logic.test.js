@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { conj } from './conj.js';
-import { check, dailyQuiz, markAsked, fromKey, grade, cleanSteps, sayScore, QUIZ_LEN } from './quiz.js';
+import { check, dailyQuiz, markAsked, fromKey, grade, cleanSteps, sayScore, songSteps, QUIZ_LEN } from './quiz.js';
 import { isPrivate } from './server/safefetch.js';
 import { decide, keepPlacement } from './sync.js';
 import { STAGES, current, milestones, ready, buildTest, passed, place, placementSteps, placementVerdict, retakeAt, forecast, BAND_N, EXTRA } from './roadmap.js';
@@ -156,6 +156,20 @@ test('quiz settings: no audio questions, no drills, other lengths', () => {
 	assert.equal(plain.length, 7);
 	assert.ok(plain.every((k) => !k.startsWith('conj:')));
 	assert.equal(dailyQuiz(S, 's3', undefined, { quizLen: 15 }).length, 15);
+});
+
+test('a song always yields a lesson, even from lyrics alone', () => {
+	const pt = ['É pau, é pedra, é o fim do caminho', 'É um resto de toco', 'São as águas de março fechando o verão', 'É a promessa de vida no teu coração', 'É a vida, é o sol'];
+	const bare = songSteps(pt.map((l) => ({ pt: l, en: '' })));
+	assert.ok(bare.length >= 2 && bare.every((q) => q.kind === 'listen'), 'no translation: listening questions');
+	const en = ['It is wood, it is stone, the end of the road', 'It is the rest of a stump', 'The waters of March closing the summer', 'The promise of life in your heart', 'It is life, it is the sun'];
+	const lyr = pt.map((l, i) => ({ pt: l, en: en[i] }));
+	const full = songSteps(lyr, [{ pt: 'promessa', en: 'promise', ex: '', src: 'x' }], [{ kind: 'type', prompt: 'p', answer: 'a' }, { kind: 'info', title: 't', body: 'b' }]);
+	assert.ok(full.some((q) => q.kind === 'choice' && q.options.length === 4 && q.options.includes(q.answer)));
+	assert.ok(full.some((q) => q.label === 'Fill the gap from the song' && q.answer === 'promessa' && q.prompt.includes('_____')));
+	assert.ok(full.some((q) => q.answer === 'a'), 'model questions are mixed in');
+	assert.ok(full.every((q) => q.kind !== 'info') && full.length <= 14);
+	assert.deepEqual(songSteps([]), []);
 });
 
 test('sync decision after sign-in', () => {

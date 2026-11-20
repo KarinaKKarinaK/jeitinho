@@ -25,7 +25,8 @@
 | **Drills** | The hard part of each language: verb tenses (Portuguese, Spanish), tones and measure words (Mandarin), cases and aspect (Polish), particles and verb forms (Japanese). |
 | **Real speech** | Regional and spoken language, not only the textbook: mineirês from Belo Horizonte, the Beijing r, Kansai-ben, vosotros and vos. |
 | **Word bank** | Spaced repetition, with export to Anki. |
-| **Import** | A Spotify song, an article, a YouTube link, pasted text or a photo of your notes becomes flashcards. Songs get line by line translation and a lesson. |
+| **Songs** | Paste a Spotify link: lyrics with line by line translation, tap any word to see what it means and keep it, then a quiz built from the song. |
+| **Import** | An article, a YouTube link, pasted text or a photo of your notes becomes flashcards. |
 | **Speaking** | Say a sentence, see which words were understood. Voice mode in the chat. |
 | **Chat** | Bia, a mineira from BH, replies in spoken Portuguese and corrects each message. |
 | **Roadmap** | 14 checkpoints from A1.1 to C2.2. Milestones, then a test, then a badge. B and C tests add listening, speaking and graded writing. |

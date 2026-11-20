@@ -93,7 +93,7 @@
 					{/if}
 					{#if m.text}<p class="small dim" style="white-space:pre-wrap">{m.text}</p>{/if}
 					<div class="chips">
-						{#if S.custom['m-' + m.id]}<a class="btn sm primary" href="/lesson?id=m-{m.id}">Start lesson</a>{/if}
+						{#if m.lyrics?.length}<a class="btn sm primary" href="/song?id={m.id}">Open song</a>{:else if S.custom['m-' + m.id]}<a class="btn sm primary" href="/lesson?id=m-{m.id}">Start lesson</a>{/if}
 						{#if m.url}<a class="btn sm" href={m.url} target="_blank" rel="noopener noreferrer">Open link</a>{/if}
 						<button class="btn sm" onclick={() => { if (m.img) dropPhoto(m.img); S.materials.splice(i, 1); }}>Delete</button>
 					</div>
