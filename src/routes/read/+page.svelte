@@ -4,7 +4,7 @@
 	import { fly } from 'svelte/transition';
 	import Icon from '../../lib/Icon.svelte';
 	import Star from '../../lib/Star.svelte';
-	import { S, addWords, addXP } from '../../lib/store.svelte.js';
+	import { S, addWords, addXP, forget } from '../../lib/store.svelte.js';
 	import { ai, speak, today } from '../../lib/fx.js';
 	import { wordKey, splitSentences as sentences } from '../../lib/quiz.js';
 	import { meta, lang, loadTexts } from '../../lib/lang.js';
@@ -55,13 +55,15 @@
 
 	function load(k, sentence) {
 		if (glossOf(k)) return Promise.resolve(glossOf(k));
-		if (!pending.has(k))
-			pending.set(k, ai('gloss', { text: sentence }, S.pass).then((r) => {
+		const text = id; // the answer belongs to the text that asked, even if you have moved on by the time it arrives
+		const pk = text + '|' + k;
+		if (!pending.has(pk))
+			pending.set(pk, ai('gloss', { text: sentence }, S.pass).then((r) => {
 				const map = Object.fromEntries(r.words.map((w) => [w.w.toLowerCase(), w]));
-				(S.gloss[id] ??= {})[k] = { en: r.en, words: map };
-				return S.gloss[id][k];
-			}).finally(() => pending.delete(k)));
-		return pending.get(k);
+				(S.gloss[text] ??= {})[k] = { en: r.en, words: map };
+				return S.gloss[text][k];
+			}).finally(() => pending.delete(pk)));
+		return pending.get(pk);
 	}
 
 	// pointing never calls the AI; clicking does, and only when the word is not already known
@@ -92,6 +94,7 @@
 		S.read[id] = today();
 	}
 	function remove() {
+		forget(id);
 		S.texts = S.texts.filter((x) => x.id !== id);
 		delete S.gloss[id];
 		history.back();

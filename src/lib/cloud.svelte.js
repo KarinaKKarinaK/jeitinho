@@ -1,5 +1,6 @@
 import { S, rev, watch, replace, reset } from './store.svelte.js';
-import { decide, keepPlacement } from './sync.js';
+import { decide, merge, slim } from './sync.js';
+import { wordKey } from './quiz.js';
 import { STAGE_IDS } from './langs/kit.js';
 import { caps } from './fx.js';
 import { P, savePrefs, sharedPrefs, onPrefs } from './prefs.js';
@@ -59,36 +60,64 @@ function fail(e) {
 	cloud.error = e.message || 'Sync failed';
 }
 
-export async function pull() {
+// base = the revision this device and the account last agreed on, per language
+const BASE = `jeitinho:base:${lang}`;
+const base = () => {
+	try {
+		return +localStorage.getItem(BASE) || 0;
+	} catch {
+		return 0;
+	}
+};
+const agree = (r) => {
+	try {
+		localStorage.setItem(BASE, r);
+	} catch {
+		/* no storage */
+	}
+	cloud.status = 'synced';
+	cloud.error = '';
+	cloud.at = Date.now();
+};
+
+// One routine for every case: looks at the account's copy and at this device's, then pushes, pulls or merges.
+// It never uploads over a copy it has not seen, so a device that was offline or left open cannot wipe newer progress.
+let running = null;
+export const pull = () => (running ??= sync().finally(() => (running = null)));
+export const push = pull;
+
+async function sync() {
 	if (!sb || !cloud.user) return;
 	const uid = cloud.user.id;
 	cloud.status = 'syncing';
 	const { data, error } = await sb.from('progress').select('data, rev').eq('user_id', uid).eq('lang', lang).maybeSingle(); // one row per language
 	if (error) return fail(error);
-	const what = decide({ uid, localUid: S.uid, localRev: rev(), remote: !!data, remoteRev: data?.rev || 0 });
+	const what = decide({ uid, localUid: S.uid, localRev: rev(), remote: !!data, remoteRev: data?.rev || 0, base: base() });
+	if (what === 'same') return agree(data.rev);
 	if (what === 'pull') {
-		const merged = keepPlacement({ ...data.data, uid }, $state.snapshot(S), STAGE_IDS);
-		replace(merged, data.rev);
-		cloud.status = 'synced';
-		cloud.at = Date.now();
-		// a placement result earned signed out was added to the account data: save that back
-		if (Object.keys(merged.badges || {}).length !== Object.keys(data.data.badges || {}).length) await push();
-		return;
+		replace({ ...data.data, uid }, data.rev);
+		return agree(data.rev);
 	}
+	if (what === 'merge') replace(merge($state.snapshot(S), { ...data.data, uid }, (w) => wordKey(w.pt), STAGE_IDS), Date.now());
 	if (what === 'fresh') reset();
 	S.uid = uid;
-	await push();
+	await upload();
 }
 
-export async function push() {
-	if (!sb || !cloud.user) return;
-	cloud.status = 'syncing';
-	const { pass, ...data } = $state.snapshot(S); // the passcode stays on the device
-	data.uid = cloud.user.id;
-	const { error } = await sb.from('progress').upsert({ user_id: cloud.user.id, lang, data, rev: rev() || Date.now(), updated_at: new Date().toISOString() });
+async function upload() {
+	const { pass, ...all } = $state.snapshot(S); // the passcode stays on the device
+	all.uid = cloud.user.id;
+	const data = slim(all);
+	if (!data) {
+		cloud.status = 'error';
+		cloud.error = 'Your saved data for this language is too large to sync. Remove some long texts or imported word lists, then press Sync now.';
+		return;
+	}
+	const r = rev() || Date.now();
+	const { error } = await sb.from('progress').upsert({ user_id: cloud.user.id, lang, data, rev: r, updated_at: new Date().toISOString() });
 	if (error) return fail(error);
-	cloud.status = 'synced';
-	cloud.at = Date.now();
+	// if saving S.uid just now changed the local revision, the next round uploads it
+	agree(r);
 }
 
 // Photos of lesson notes live in a private bucket, one folder per user. Signed out, the photo is not kept.

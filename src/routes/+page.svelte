@@ -5,7 +5,7 @@
 	import { S, streak, level } from '../lib/store.svelte.js';
 	import { LESSON_LIST, CHAPTER_OF, UNITS } from '../lib/content.js';
 	import { chapterOpen } from '../lib/roadmap.js';
-	import { today, DAY } from '../lib/fx.js';
+	import { today } from '../lib/fx.js';
 	import { P } from '../lib/prefs.js';
 	import { STAGE_IDS } from '../lib/langs/kit.js';
 	import { cloud, saveName } from '../lib/cloud.svelte.js';
@@ -25,8 +25,9 @@
 	const QUIZ_LEN = P.quizLen;
 	const now = Date.now();
 	// two weeks of rings; phones show the last seven, wide screens show all fourteen
+	const start = new Date();
 	const week = Array.from({ length: 14 }, (_, k) => {
-		const d = new Date(now - (13 - k) * DAY);
+		const d = new Date(start.getFullYear(), start.getMonth(), start.getDate() - (13 - k));
 		return { key: today(d), label: k === 13 ? t.today : t.days[d.getDay()], date: d.getDate(), now: k === 13, old: k < 7 };
 	});
 	const hour = new Date().getHours();
@@ -113,7 +114,7 @@
 		<p class="eyebrow">{t.quiz}</p>
 		<h1>{QUIZ_LEN} {t.quizA}<br />{t.quizB}</h1>
 		<div class="row">
-			<span class="grow">{quiz?.done ? `${t.done} · ${quiz.score}/${QUIZ_LEN}` : 'A fresh mix from your word bank and drills'}</span>
+			<span class="grow">{quiz?.done ? `${t.done} · ${quiz.score}/${quiz.keys?.length || QUIZ_LEN}` : 'A fresh mix from your word bank and drills'}</span>
 			<span class="pill">{quiz?.done ? t.extra : quiz ? t.next : t.start} <Icon name="chev" size={16} /></span>
 		</div>
 	</a>

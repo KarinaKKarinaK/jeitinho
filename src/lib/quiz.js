@@ -9,7 +9,9 @@ export const norm = (s) => {
 };
 // bare = forgiving form: no accents or tone marks on Latin letters (kana marks are kept), no leading article
 const bare = (s) => norm(s).normalize('NFD').replace(/(?<=\p{Script=Latin})\p{M}+/gu, '').normalize('NFC').replace(pack.articles || /^$/, '');
-export const wordKey = bare;
+// Identity of a word in the bank: accents matter (avó and avô, país and pais are different words),
+// a leading article does not.
+export const wordKey = (s) => norm(s).replace(pack.articles || /^$/, '');
 
 export function check(val, q) {
 	const ok = [q.answer, ...(q.accept || [])].flatMap((a) => a.split('/')).map((a) => a.trim());
@@ -147,7 +149,8 @@ export function markAsked(S, q, ok, now = Date.now()) {
 export function parseWordList(raw) {
 	const lines = String(raw).replace(/^﻿/, '').split(/\r?\n/).filter((l) => l.trim() && !l.startsWith('#'));
 	if (!lines.length) return [];
-	const sep = ['\t', ';', ','].map((d) => [d, lines.slice(0, 20).reduce((n, l) => n + l.split(d).length - 1, 0)]).sort((a, b) => b[1] - a[1])[0][0];
+	// a tab on every line means tab-separated, whatever commas the meanings contain; otherwise the most common of ; and ,
+	const sep = lines.every((l) => l.includes('\t')) ? '\t' : [';', ',', '\t'].map((d) => [d, lines.slice(0, 20).reduce((n, l) => n + l.split(d).length - 1, 0)]).sort((a, b) => b[1] - a[1])[0][0];
 	const cells = (line) => {
 		const out = [];
 		let cur = '', quoted = false;
@@ -167,7 +170,7 @@ export function parseWordList(raw) {
 	const rows = lines.map(cells);
 	const NAMES = { pt: /^(front|word|term|expression|vocab\w*|target|foreign|pt|palavra|słowo|单词|単語|palabra)$/i, en: /^(back|meaning|definition|translation|english|en|gloss)$/i, ex: /^(example|sentence|ex|context)$/i, exEn: /^(example translation|sentence translation|exen|example english)$/i, say: /^(reading|pinyin|pronunciation|kana|furigana|say)$/i, note: /^(notes?|comment|hint|tags?)$/i, pos: /^(pos|part of speech|type|class)$/i };
 	const head = rows[0].map((c) => Object.keys(NAMES).find((k) => NAMES[k].test(c)));
-	const hasHead = head.includes('pt') || head.includes('en');
+	const hasHead = head.includes('pt') && head.includes('en'); // both names, so a list that merely starts with the word "word" is not taken for a header
 	const map = hasHead ? head : ['pt', 'en', 'ex', 'exEn'];
 	return (hasHead ? rows.slice(1) : rows)
 		.map((r) => Object.fromEntries(map.map((k, i) => [k, r[i] || '']).filter(([k]) => k)))

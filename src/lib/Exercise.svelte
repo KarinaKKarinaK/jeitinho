@@ -116,7 +116,7 @@
 	});
 </script>
 
-<svelte:window onkeydown={(e) => e.key === 'Enter' && !e.target.closest?.('button, a, textarea') && submit()} />
+<svelte:window onkeydown={(e) => e.key === 'Enter' && !e.isComposing && e.keyCode !== 229 && !e.target.closest?.('button, a, textarea') && submit()} />
 
 {#if xp !== null}
 	<section class="fin" in:scale={{ start: 0.9, duration: 350 }}>

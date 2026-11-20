@@ -110,9 +110,11 @@ export const retakeAt = (S, now = Date.now()) => (S.placedAt && now - S.placedAt
 // A rough estimate: about 6 minutes a lesson, 5 a daily quiz, 1.5 a word, 8 for the test. It also respects the
 // calendar: one daily quiz per day, and a word needs about 11 days of spaced reviews to count as mastered.
 export function forecast(S, stage, now = Date.now()) {
+	const from = new Date(now);
+	const pad = (n) => String(n).padStart(2, '0');
 	const day = (d) => {
-		const x = new Date(now - d * 864e5);
-		return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`;
+		const x = new Date(from.getFullYear(), from.getMonth(), from.getDate() - d);
+		return `${x.getFullYear()}-${pad(x.getMonth() + 1)}-${pad(x.getDate())}`;
 	};
 	const avg = [0, 1, 2, 3].reduce((n, d) => n + (S.mins?.[day(d)] || 0), 0) / 4;
 	const left = Object.fromEntries(milestones(S, stage).map((m) => [m.href.split('?')[0], m.need - m.have]));
@@ -130,7 +132,9 @@ export function place(S, bands, date) {
 	// chapters made up entirely of lessons you tested out of are passed too
 	S.chapters ??= {};
 	UNITS.forEach((u, c) => u.lessons.every((l) => l.id in S.done) && (S.chapters[ckey(c)] ??= date));
-	S.placed = i ? STAGES[i - 1].id : null;
+	// only ever raise the starting point: a worse retake must not make later stages ask for more
+	const was = STAGES.findIndex((s) => s.id === S.placed);
+	if (i - 1 > was) S.placed = STAGES[i - 1].id;
 	S.onboarded = true;
 	return current(S) || STAGES.at(-1); // a retake never moves you down
 }

@@ -4,7 +4,7 @@
 	import Icon from '../../lib/Icon.svelte';
 	import Star from '../../lib/Star.svelte';
 	import Conj from '../../lib/Conj.svelte';
-	import { S, addXP, addWords, newCollection, dropCollection, toggleIn } from '../../lib/store.svelte.js';
+	import { S, addXP, addWords, newCollection, dropCollection, toggleIn, removeWord, forget } from '../../lib/store.svelte.js';
 	import { grade, norm, longEnough, parseWordList, wordKey } from '../../lib/quiz.js';
 	import { speak, today, ai } from '../../lib/fx.js';
 	import { POS } from '../../lib/langs/meta.js';
@@ -175,7 +175,7 @@
 							{:else}<button class="btn sm" onclick={() => S.texts.unshift({ id: 'u-' + m.id, title: m.title, text: m.text.slice(0, 8000), date: m.date })}>Add to reading practice</button>{/if}
 						{/if}
 						{#if m.url}<a class="btn sm" href={m.url} target="_blank" rel="noopener noreferrer">Open link</a>{/if}
-						<button class="btn sm" onclick={() => { if (m.img) dropPhoto(m.img); S.materials.splice(i, 1); }}>Delete</button>
+						<button class="btn sm" onclick={() => { if (m.img) dropPhoto(m.img); forget(m.id); S.materials.splice(i, 1); }}>Delete</button>
 					</div>
 				</div>
 			</details>
@@ -245,7 +245,7 @@
 						{:else}
 							<p class="small dim">Make a collection with the button above to file this word in it.</p>
 						{/if}
-						<button class="btn sm" style="align-self:flex-start" onclick={() => S.words.splice(S.words.indexOf(w), 1)}><Icon name="trash" size={16} /> Remove</button>
+						<button class="btn sm" style="align-self:flex-start" onclick={() => removeWord(w)}><Icon name="trash" size={16} /> Remove</button>
 					</div>
 				{/if}
 			</div>

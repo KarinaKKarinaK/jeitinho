@@ -26,4 +26,8 @@
 	}
 </script>
 
-<Exercise {steps} back="/" onanswer={(q, ok) => markAsked(S, q, ok)} onfinish={finish} />
+{#if steps.length}
+	<Exercise {steps} back="/" onanswer={(q, ok) => markAsked(S, q, ok)} onfinish={finish} />
+{:else}
+	<div class="stack"><h2>Nothing to quiz yet</h2><p class="dim">Your word bank is empty and drills are switched off. Add some words, or turn drills back on in Settings.</p><a class="btn" href="/bank">Open the word bank</a></div>
+{/if}

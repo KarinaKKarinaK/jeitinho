@@ -1,5 +1,6 @@
 <script>
 	import { goto } from '$app/navigation';
+	import { page } from '$app/state';
 	import Exercise from '../../lib/Exercise.svelte';
 	import { S, addXP } from '../../lib/store.svelte.js';
 	import { PLACEMENT } from '../../lib/content.js';
@@ -10,7 +11,7 @@
 
 	// -2 front door (log in or start), -1 test intro, 0..n-1 testing, n result.
 	// Someone already onboarded who comes back for a retake goes straight to the test intro.
-	let band = $state(S.onboarded || cloud.user ? -1 : -2);
+	let band = $state(S.onboarded || cloud.user || page.url.searchParams.has('go') ? -1 : -2);
 	// if the account's progress arrives while the front door is showing, there is nothing to ask: go to the app
 	$effect(() => {
 		if (band === -2 && S.onboarded) goto('/', { replaceState: true });
@@ -77,7 +78,7 @@
 		<p class="eyebrow">{t.welcome}</p>
 		<h1>{cloud.name ? `${cloud.name}, where` : 'Where'} should<br />you start?</h1>
 		<div class="chips" role="group" aria-label="Language to learn">
-			{#each AVAILABLE as l}<button class="chip" class:on={l.code === lang} onclick={() => l.code !== lang && switchLang(l.code, '/welcome')}>{l.label}</button>{/each}
+			{#each AVAILABLE as l}<button class="chip" class:on={l.code === lang} onclick={() => l.code !== lang && switchLang(l.code, '/welcome?go')}>{l.label}</button>{/each}
 		</div>
 		<p class="dim">A test finds your level in {meta.name}. Six questions per level, two slips allowed, and one weak level still gets you a try at the next. It takes 2 to 8 minutes.</p>
 		{#if wait}

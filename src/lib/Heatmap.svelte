@@ -4,7 +4,7 @@
 	// Every square is the same size. It shows as many weeks as fit the width, up to about ten months.
 	// Colour strength follows the minutes.
 	import { S } from './store.svelte.js';
-	import { today, DAY } from './fx.js';
+	import { today } from './fx.js';
 
 	let width = $state(0);
 	const CELL = 15, GAP = 4, LABELS = 30;
@@ -13,7 +13,7 @@
 	const cols = $derived(
 		Array.from({ length: weeks }, (_, c) =>
 			Array.from({ length: 7 }, (_, r) => {
-				const d = new Date(end.getTime() - ((weeks - 1 - c) * 7 + end.getDay() - r) * DAY);
+				const d = new Date(end.getFullYear(), end.getMonth(), end.getDate() - ((weeks - 1 - c) * 7 + end.getDay() - r)); // calendar days, so clock changes do not repeat or skip a date
 				return { key: today(d), d, future: d > end, label: d.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' }) };
 			})
 		)

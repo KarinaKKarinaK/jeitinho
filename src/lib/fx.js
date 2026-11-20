@@ -9,6 +9,10 @@ export const today = (d = new Date()) =>
 // Which optional services the server has keys for. Filled in by cloud.svelte.js at startup.
 export const caps = { ai: false, tts: false, stt: false, push: '' };
 
+// The date n calendar days before today (or before `from`). Subtracting milliseconds goes wrong on the two
+// days a year when clocks change, so this steps by calendar day.
+export const dayAgo = (n, from = new Date()) => today(new Date(from.getFullYear(), from.getMonth(), from.getDate() - n));
+
 let voice;
 let player;
 let turn = 0;

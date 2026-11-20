@@ -53,6 +53,8 @@
 			outlook: 'https://outlook.live.com/calendar/0/deeplink/compose?' + new URLSearchParams({ path: '/calendar/action/compose', rru: 'addevent', subject: title, startdt: start.toISOString(), enddt: end.toISOString(), body: `Your daily quiz: ${link}` })
 		};
 	});
+	const GOALS = [5, 10, 15, 30, 45];
+	let customGoal = $state(!GOALS.includes(P.goalMin));
 	const canPush = typeof Notification !== 'undefined' && 'serviceWorker' in navigator && 'PushManager' in window;
 	const wait = retakeAt(S);
 	// one short sample sentence per language; every voice's copy is fetched when this page opens,
@@ -182,8 +184,17 @@
 	<section class="card stack">
 		<h3>Daily goal</h3>
 		<div class="row"><span class="grow dim">Minutes a day</span>
-			<div class="tabs">{#each [5, 10, 15, 30, 45] as n}<button class:on={p.goalMin === n} onclick={() => (p.goalMin = n)}>{n}</button>{/each}</div>
+			<div class="tabs">
+				{#each GOALS as n}<button class:on={p.goalMin === n && !customGoal} onclick={() => { customGoal = false; p.goalMin = n; }}>{n}</button>{/each}
+				<button class:on={customGoal} onclick={() => (customGoal = true)}>Custom</button>
+			</div>
 		</div>
+		{#if customGoal}
+			<label class="row small dim"><span class="grow">Your own goal, in minutes (1 to 240)</span>
+				<input class="num" type="number" min="1" max="240" step="1" inputmode="numeric" value={p.goalMin} aria-label="Minutes a day"
+					oninput={(e) => { const n = Math.round(+e.target.value); if (n >= 1 && n <= 240) p.goalMin = n; }} />
+			</label>
+		{/if}
 		<p class="dim small">The day rings on the home screen fill as you study toward {p.goalMin} minutes. Go past it and a second lap starts.</p>
 	</section>
 
@@ -254,6 +265,7 @@
 	.sw { display: flex; align-items: center; gap: 12px; cursor: pointer; color: var(--dim); }
 	.sw input { width: 22px; height: 22px; flex: none; accent-color: var(--rose); }
 	input[type='range'] { accent-color: var(--rose); width: 100%; }
+	.num { width: 96px; padding: 10px 14px; border-radius: 14px; border: 1px solid var(--line); background: var(--field); color: var(--ink); font: 400 16px var(--font); text-align: center; }
 	select { width: auto; padding: 10px 16px; border-radius: 14px; }
 	.tabs button { height: 34px; padding: 0 14px; font-size: 14px; }
 	.link { background: none; border: 0; padding: 0; color: var(--dim); font: 400 14px var(--font); text-align: left; cursor: pointer; }

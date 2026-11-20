@@ -1,4 +1,4 @@
-import { today, DAY, notice } from './fx.js';
+import { today, dayAgo, notice } from './fx.js';
 import { SEED } from './content.js';
 import { wordKey } from './quiz.js';
 import { lang, pack } from './lang.js';
@@ -17,13 +17,13 @@ export const newWord = (w, src = 'seed') => ({
 	src, added: Date.now(), due: 0, ivl: 0, ease: 2.5, reps: 0
 });
 
-const blank = () => ({ xp: 0, streak: 0, last: null, days: {}, done: {}, words: [], asked: {}, quiz: {}, materials: [], custom: {}, chat: [], pass: '', rate: 0.9, drill: pack.drill.start, uid: null, badges: {}, nquiz: 0, onboarded: false, placed: null, placeSeen: [], placedAt: 0, mins: {}, cols: [], seedN: 0, chapters: null, texts: [], gloss: {}, read: {} });
+const blank = () => ({ xp: 0, streak: 0, last: null, days: {}, done: {}, words: [], asked: {}, quiz: {}, materials: [], custom: {}, chat: [], pass: '', rate: 0.9, drill: pack.drill.start, uid: null, badges: {}, nquiz: 0, onboarded: false, placed: null, placeSeen: [], placedAt: 0, mins: {}, cols: [], seedN: 0, chapters: null, texts: [], gloss: {}, read: {}, gone: {} });
 const seeded = () => ({ ...blank(), words: SEED.map((w) => newWord(w)), seedN: SEED.length, chapters: {} });
 
 function load() {
 	try {
 		const s = JSON.parse(localStorage.getItem(KEY));
-		if (s) return { ...blank(), ...s, pass: s.pass || localStorage.getItem(PASS) || '' };
+		if (s) return { ...blank(), ...s, pass: localStorage.getItem(PASS) ?? s.pass ?? '' }; // one passcode for every language
 		return { ...seeded(), pass: localStorage.getItem(PASS) || '' };
 	} catch {
 		/* first run or private mode */
@@ -33,27 +33,7 @@ function load() {
 
 export const S = $state(load());
 
-
-
-let last = JSON.stringify(S); // so merely opening the app never counts as a change
-
-// The starter list grows between versions (this runs after `last` is taken, so the upgrade is saved and synced). Bring an existing bank up to date once:
-// add starter words it does not have yet (at the end, so your own words stay on top) and fill in missing part of speech tags.
-if (S.seedN !== SEED.length) {
-	const have = new Map(S.words.map((w) => [wordKey(w.pt), w]));
-	for (const w of SEED) {
-		const mine = have.get(wordKey(w.pt));
-		if (!mine) S.words.push(newWord(w));
-		else if (!mine.pos && w.pos) mine.pos = w.pos;
-	}
-	S.seedN = SEED.length;
-}
-// chapters arrived later: people who were already studying keep access to what they had reached
-if (S.chapters == null) S.chapters = grandfather(S);
-let applying = null;
-let onChange = null;
-
-// rev = time of the last real change on this device. Sync compares it with the server copy.
+// rev = time of the last real change on this device. Sync compares it with the account's copy.
 export const rev = () => {
 	try {
 		return +localStorage.getItem(REV) || 0;
@@ -61,33 +41,62 @@ export const rev = () => {
 		return 0;
 	}
 };
-export const watch = (fn) => (onChange = fn);
 
+let last = JSON.stringify(S); // what is on disk; merely opening the app is not a change
+let onChange = null;
+export const watch = (fn) => (onChange = fn);
 let warned = false;
-export function persist() {
-	const s = JSON.stringify(S);
-	if (s === last) return;
-	last = s;
-	const write = (text) => {
+
+// Writes the state with the given revision. Returns false if the browser would not store it.
+function write(r) {
+	const put = (text) => {
 		localStorage.setItem(KEY, text);
 		localStorage.setItem(PASS, S.pass || '');
-		localStorage.setItem(REV, applying ?? Date.now());
+		localStorage.setItem(REV, r);
 	};
+	last = JSON.stringify(S);
 	try {
-		write(s);
+		put(last);
 	} catch {
 		// Storage is full or blocked. Looked-up word meanings are only a cache: drop them and try once more.
 		try {
 			S.gloss = {};
 			last = JSON.stringify(S);
-			write(last);
+			put(last);
 		} catch {
 			if (!warned) notice('Your progress could not be saved on this device: the browser storage is full or blocked. Sign in to keep it in your account, or free up space.', 'offline');
 			warned = true;
+			return false;
 		}
 	}
-	if (applying === null) onChange?.();
-	applying = null;
+	return true;
+}
+
+// Housekeeping when the app updates. It is saved under the revision the state already had, so an old
+// device does not look newer than the account just because it tidied itself up.
+{
+	const before = last;
+	// the starter list grows between versions: add the starter words this bank lacks (at the end, so your own
+	// words stay on top), skipping any you removed, and fill in missing part of speech tags
+	if (S.seedN !== SEED.length) {
+		const have = new Map(S.words.map((w) => [wordKey(w.pt), w]));
+		for (const w of SEED) {
+			const mine = have.get(wordKey(w.pt));
+			if (!mine && !S.gone?.[wordKey(w.pt)]) S.words.push(newWord(w));
+			else if (mine && !mine.pos && w.pos) mine.pos = w.pos;
+		}
+		S.seedN = SEED.length;
+	}
+	// chapters arrived later: people who were already studying keep access to what they had reached
+	if (S.chapters == null) S.chapters = grandfather(S);
+	if (JSON.stringify(S) !== before && typeof localStorage !== 'undefined') write(rev());
+}
+
+// Called whenever the state changes: save it, stamp it as changed now, and let sync know.
+export function persist() {
+	if (JSON.stringify(S) === last) return;
+	write(Date.now());
+	onChange?.();
 }
 
 // Two tabs of the app share one copy: when another tab saves, this one takes that state instead of
@@ -96,19 +105,25 @@ if (typeof window !== 'undefined')
 	window.addEventListener('storage', (e) => {
 		if (e.key !== KEY || !e.newValue || e.newValue === last) return;
 		try {
-			const other = JSON.parse(e.newValue);
-			applying = rev(); // adopt, do not echo
-			last = e.newValue;
-			Object.assign(S, blank(), other);
+			Object.assign(S, blank(), JSON.parse(e.newValue));
+			last = JSON.stringify(S); // already on disk, written by the other tab: nothing to save or announce
 		} catch {
 			/* not our data */
 		}
 	});
 
-// Take the server copy without echoing it straight back.
+// Take a state from the account (or a merge) and save it under the given revision, without announcing a change.
 export function replace(data, r) {
-	applying = r;
 	Object.assign(S, blank(), data, { pass: S.pass });
+	write(r);
+}
+// Remember that something was deleted, so sync and app updates do not bring it back.
+export function forget(idOrKey) {
+	S.gone[idOrKey] = Date.now();
+}
+export function removeWord(w) {
+	forget(wordKey(w.pt));
+	S.words.splice(S.words.indexOf(w), 1);
 }
 export function reset() {
 	Object.assign(S, seeded(), { pass: S.pass });
@@ -117,14 +132,14 @@ export function reset() {
 export function addXP(n) {
 	const d = today();
 	if (S.last !== d) {
-		S.streak = S.last === today(new Date(Date.now() - DAY)) ? S.streak + 1 : 1;
+		S.streak = S.last === dayAgo(1) ? S.streak + 1 : 1;
 		S.last = d;
 	}
 	S.xp += n;
 	S.days[d] = (S.days[d] || 0) + n;
 }
 
-export const streak = () => (S.last === today() || S.last === today(new Date(Date.now() - DAY)) ? S.streak : 0);
+export const streak = () => (S.last === today() || S.last === dayAgo(1) ? S.streak : 0);
 
 export function addWords(list, src) {
 	const have = new Set(S.words.map((w) => wordKey(w.pt)));
@@ -133,6 +148,7 @@ export function addWords(list, src) {
 		const k = w?.pt && wordKey(w.pt);
 		if (!k || !w.en || have.has(k)) continue;
 		have.add(k);
+		delete S.gone[k]; // adding it again brings a removed word back
 		S.words.unshift(newWord({ pt: w.pt, en: w.en, say: w.say || '', ex: w.ex || '', exEn: w.exEn || '', pos: w.pos || '', note: w.note || '', star: !!w.star }, src));
 		n++;
 	}
@@ -154,6 +170,7 @@ export function newCollection(name) {
 	return id;
 }
 export function dropCollection(id) {
+	forget(id);
 	S.cols = S.cols.filter((c) => c.id !== id);
 	for (const w of S.words) if (w.cols?.includes(id)) w.cols = w.cols.filter((c) => c !== id);
 }

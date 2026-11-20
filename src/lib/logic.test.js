@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { conj } from './conj.js';
 import { check, dailyQuiz, markAsked, fromKey, grade, cleanSteps, sayScore, songSteps, parseWordList, QUIZ_LEN } from './quiz.js';
 import { isPrivate } from './server/safefetch.js';
-import { decide, keepPlacement } from './sync.js';
+import { decide, merge, slim } from './sync.js';
 import { STAGES, current, milestones, ready, buildTest, passed, place, placementSteps, placementVerdict, retakeAt, forecast, BAND_N, EXTRA, chapterOpen, chapterPassed, chapterReady, chapterQuiz, passChapter, grandfather } from './roadmap.js';
 import { UNITS } from './content.js';
 import { LESSONS } from './content.js';
@@ -97,6 +97,11 @@ test('placement starts you higher and counts milestones from there', () => {
 	const quiz = milestones(S, current(S)).find((m) => m.label.includes('daily'));
 	assert.equal(quiz.need, 15 - 10, 'B1.1 asks for 15 quizzes, A2.2 already covered 10');
 	assert.equal(place({ ...mkS(), done: {}, badges: {} }, 9, 'd').id, 'C1.2');
+	const R = { ...mkS(), done: {}, badges: {}, nquiz: 0, placed: null };
+	place(R, 3, 'd');
+	const before = milestones(R, current(R)).map((m) => m.need);
+	place(R, 0, 'd');
+	assert.deepEqual(milestones(R, current(R)).map((m) => m.need), before, 'a worse retake does not raise the requirements');
 });
 
 test('placement retakes draw different questions', () => {
@@ -107,20 +112,6 @@ test('placement retakes draw different questions', () => {
 	assert.equal(new Set([...a, ...b]).size, 2 * BAND_N, 'second attempt shares no question with the first');
 	assert.equal(S.placeSeen.length, 2 * BAND_N);
 	for (let i = 0; i < 40; i++) assert.equal(placementSteps(S, 4).length, BAND_N, 'still a full set once the pool is used up');
-});
-
-test('a placement earned signed out survives signing in to an existing account', () => {
-	const ids = STAGES.map((s) => s.id);
-	const remote = { xp: 500, uid: 'u', placed: null, badges: { 'A1.1': 'old' }, done: { 'sons-1': 1 } };
-	const local = { uid: null, onboarded: true, placed: 'A2.2', badges: { 'A1.1': 'new', 'A1.2': 'new', 'A2.1': 'new', 'A2.2': 'new' }, done: { 'perf-1': 0 }, placeSeen: ['q'] };
-	const m = keepPlacement(remote, local, ids);
-	assert.equal(m.xp, 500, 'account data wins');
-	assert.equal(m.placed, 'A2.2');
-	assert.equal(m.badges['A1.1'], 'old', 'an existing badge keeps its date');
-	assert.equal(Object.keys(m.badges).length, 4);
-	assert.ok('perf-1' in m.done && 'sons-1' in m.done);
-	assert.equal(keepPlacement(remote, { ...local, uid: 'someone' }, ids), remote, 'data that already belongs to an account is never merged');
-	assert.equal(keepPlacement({ ...remote, placed: 'B1.2' }, local, ids).placed, 'B1.2', 'the further starting point wins');
 });
 
 test('placement is forgiving: two slips per level, and one weak level gets a second chance', () => {
@@ -199,6 +190,8 @@ test('chapters open one at a time, by passing the quiz of the one before', () =>
 	// every chapter's lessons come before or with the stage that needs them: chapter order follows the roadmap
 	const firstStage = UNITS.map((u) => Math.min(...u.lessons.map((l) => STAGES.findIndex((s) => s.lessons.includes(l.id)))));
 	assert.deepEqual(firstStage, [...firstStage].sort((a, b) => a - b));
+	const lastStage = UNITS.map((u) => Math.max(...u.lessons.map((l) => STAGES.findIndex((s) => s.lessons.includes(l.id)))));
+	for (let i = 0; i < UNITS.length; i++) for (let j = i + 1; j < UNITS.length; j++) assert.ok(lastStage[i] - firstStage[j] <= 1, `chapter ${i + 1} must not hold back chapter ${j + 1}`);
 });
 
 test('active time: seconds add up to minutes, idle time does not count', async () => {
@@ -227,18 +220,61 @@ test('word list import: Anki text, CSV with a header, pasted spreadsheet rows', 
 	assert.deepEqual([c[0].pt, c[0].en, c[0].note, c[0].say], ['食べる', 'to eat, to have a meal', 'said "taberu"', 'たべる'], 'header order and quoted commas are respected');
 	assert.equal(c.length, 2);
 	assert.deepEqual(parseWordList('perro;dog\ngato;cat').map((w) => w.pt), ['perro', 'gato'], 'semicolons, as Excel exports in many countries');
+	assert.deepEqual(parseWordList('casa\thouse, home, dwelling\ncarro\tcar, automobile, vehicle').map((w) => [w.pt, w.en]), [['casa', 'house, home, dwelling'], ['carro', 'car, automobile, vehicle']], 'tabs win over commas inside meanings');
+	assert.deepEqual(parseWordList('word\tpalavra\ncasa\thouse').length, 2, 'a first row that is not a real header is kept');
 	assert.deepEqual(parseWordList(''), []);
 	assert.deepEqual(parseWordList('just one column\nanother'), []);
 });
 
-test('sync decision after sign-in', () => {
+test('sync decision: push, pull or merge, never a blind overwrite', () => {
 	const me = 'u1';
-	assert.equal(decide({ uid: me, localUid: null, localRev: 5, remote: false, remoteRev: 0 }), 'push', 'first sign-in uploads local progress');
-	assert.equal(decide({ uid: me, localUid: me, localRev: 5, remote: true, remoteRev: 9 }), 'pull', 'newer server copy wins');
-	assert.equal(decide({ uid: me, localUid: me, localRev: 9, remote: true, remoteRev: 5 }), 'push', 'newer local copy wins');
-	assert.equal(decide({ uid: me, localUid: 'other', localRev: 99, remote: true, remoteRev: 5 }), 'pull', "never upload another user's data");
-	assert.equal(decide({ uid: me, localUid: 'other', localRev: 99, remote: false, remoteRev: 0 }), 'fresh');
-	assert.equal(decide({ uid: me, localUid: null, localRev: 0, remote: true, remoteRev: 5 }), 'pull', 'new device takes the account data');
+	const d = (o) => decide({ uid: me, localUid: me, localRev: 5, remote: true, remoteRev: 5, base: 5, ...o });
+	assert.equal(d({}), 'same');
+	assert.equal(d({ localRev: 9 }), 'push', 'only this device changed');
+	assert.equal(d({ remoteRev: 9 }), 'pull', 'only the account changed');
+	assert.equal(d({ localRev: 8, remoteRev: 9 }), 'merge', 'both changed');
+	assert.equal(d({ remote: false }), 'push', 'nothing in the account yet');
+	assert.equal(d({ localUid: 'other', localRev: 99 }), 'pull', "another account's data is never uploaded");
+	assert.equal(d({ localUid: 'other', remote: false }), 'fresh');
+	// the cases that used to lose data
+	assert.equal(decide({ uid: me, localUid: null, localRev: Date.now(), remote: true, remoteRev: 1000, base: 0 }), 'merge', 'signing in on a device with some activity must not overwrite the account');
+	assert.equal(decide({ uid: me, localUid: me, localRev: 2000, remote: true, remoteRev: 9000, base: 1000 }), 'merge', 'a stale device with a small local change must not overwrite newer account data');
+	assert.equal(decide({ uid: me, localUid: null, localRev: 0, remote: true, remoteRev: 5, base: 0 }), 'merge', 'a brand new device joins the account data');
+});
+
+test('merge keeps the progress of both sides', () => {
+	const ids = STAGES.map((s) => s.id);
+	const word = (pt, o = {}) => ({ id: pt + Math.random(), pt, en: pt, reps: 0, due: 0, ivl: 0, cols: [], ...o });
+	const account = { uid: 'u', xp: 500, streak: 12, last: '2026-06-10', nquiz: 30, days: { '2026-06-10': 40 }, mins: { '2026-06-10': 20 }, done: { a: 1, b: 0.5 }, badges: { 'A1.1': 'old' }, chapters: { c1: 'x' }, placed: 'A1.1', onboarded: true,
+		words: [word('casa', { reps: 6, ivl: 20, note: 'from the account' }), word('gato', { reps: 2 }), word('removed here')], materials: [{ id: 'm1' }], texts: [{ id: 't1' }], cols: [{ id: 'c' }], quiz: { '2026-06-10': { done: true, score: 9 } }, gone: {} };
+	const device = { uid: null, xp: 20, streak: 1, last: '2026-06-11', nquiz: 1, days: { '2026-06-11': 20 }, mins: { '2026-06-10': 5, '2026-06-11': 9 }, done: { b: 1, c: 1 }, badges: { 'A1.1': 'new', 'A1.2': 'new' }, chapters: { c2: 'y' }, placed: 'A1.2', onboarded: true,
+		words: [word('casa', { star: true }), word('novo', { reps: 1 })], materials: [{ id: 'm2' }], texts: [], cols: [], quiz: { '2026-06-11': { done: false } }, gone: { 'removed here': 5 } };
+	const m = merge(device, account, (w) => w.pt, ids);
+	assert.equal(m.xp, 500, 'the account is not wiped by a nearly empty device');
+	assert.equal(m.nquiz, 30);
+	assert.equal(m.uid, 'u');
+	assert.deepEqual([m.last, m.streak], ['2026-06-11', 1], 'streak follows the side that studied last');
+	assert.deepEqual(m.mins, { '2026-06-10': 20, '2026-06-11': 9 });
+	assert.deepEqual(m.done, { b: 1, c: 1, a: 1 });
+	assert.equal(m.badges['A1.1'], 'old');
+	assert.ok(m.badges['A1.2'] && m.chapters.c1 && m.chapters.c2);
+	assert.equal(m.placed, 'A1.2');
+	const casa = m.words.find((w) => w.pt === 'casa');
+	assert.deepEqual([casa.reps, casa.star, casa.note], [6, true, 'from the account'], 'one entry per word: most studied copy, with the star from the other');
+	assert.deepEqual(m.words.map((w) => w.pt).sort(), ['casa', 'gato', 'novo'], 'a word deleted on one side stays deleted');
+	assert.deepEqual(m.materials.map((x) => x.id).sort(), ['m1', 'm2']);
+	assert.equal(m.quiz['2026-06-10'].score, 9);
+	assert.deepEqual(merge(account, account, (w) => w.pt, ids).words.length, 3 - 0, 'merging a copy with itself changes nothing');
+});
+
+test('a state too big to store is slimmed by dropping caches first', () => {
+	const words = Array.from({ length: 10 }, (_, i) => ({ pt: 'w' + i, conj: { rows: 'x'.repeat(2000) } }));
+	const big = { words, gloss: { t: 'y'.repeat(5000) } };
+	assert.equal(slim(big, 1e6), big);
+	assert.deepEqual(Object.keys(slim(big, 22000).gloss), [], 'lookups go first');
+	assert.ok(slim(big, 22000).words[0].conj);
+	assert.equal(slim(big, 3000).words[0].conj, undefined, 'then conjugation tables');
+	assert.equal(slim(big, 50), null);
 });
 
 test('roadmap: milestones gate the test, badges move you on', () => {

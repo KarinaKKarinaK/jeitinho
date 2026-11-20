@@ -2,7 +2,7 @@
 	import { goto } from '$app/navigation';
 	import Icon from '../../lib/Icon.svelte';
 	import { UNITS } from '../../lib/content.js';
-	import { S } from '../../lib/store.svelte.js';
+	import { S, forget } from '../../lib/store.svelte.js';
 	import { ai } from '../../lib/fx.js';
 	import { t } from '../../lib/lang.js';
 	import { chapterOpen, chapterPassed, chapterReady } from '../../lib/roadmap.js';
@@ -91,7 +91,7 @@
 						<span class="grow"><b>{l.title}</b></span>
 						<Icon name="chev" size={18} />
 					</a>
-					<button class="icon-btn sm" aria-label="Delete lesson" onclick={() => delete S.custom[id]}><Icon name="trash" size={16} /></button>
+					<button class="icon-btn sm" aria-label="Delete lesson" onclick={() => { forget(id); delete S.custom[id]; }}><Icon name="trash" size={16} /></button>
 				</div>
 			{/each}
 		</section>
