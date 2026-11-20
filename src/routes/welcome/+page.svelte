@@ -4,7 +4,7 @@
 	import { S, addXP } from '../../lib/store.svelte.js';
 	import { PLACEMENT } from '../../lib/content.js';
 	import { place, placementSteps, placementVerdict, retakeAt, levelName, RETAKE_DAYS } from '../../lib/roadmap.js';
-	import { cloud } from '../../lib/cloud.svelte.js';
+	import { cloud, saveName } from '../../lib/cloud.svelte.js';
 	import { today } from '../../lib/fx.js';
 	import { lang, meta, t, AVAILABLE, switchLang } from '../../lib/lang.js';
 
@@ -15,6 +15,13 @@
 	$effect(() => {
 		if (band === -2 && S.onboarded) goto('/', { replaceState: true });
 	});
+	// first thing after "Get started": what to call you. Asked once; skipping is fine.
+	let name = $state('');
+	let asked = $state(!!cloud.name);
+	async function keepName() {
+		if (name.trim()) await saveName(name).catch(() => {});
+		asked = true;
+	}
 	let passed = $state(0);
 	let scores = [];
 	const wait = retakeAt(S); // a full retake is allowed every few days
@@ -54,11 +61,21 @@
 		<button class="btn primary wide" onclick={() => (band = -1)}>Get started</button>
 		{#if cloud.status !== 'off'}<a class="btn wide" href="/account?from=welcome">I already have an account</a>{/if}
 	</div>
+{:else if band === -1 && !asked}
+	<form class="intro stack rise" onsubmit={(e) => { e.preventDefault(); keepName(); }}>
+		<p class="eyebrow">{t.welcome}</p>
+		<h1>What should<br />we call you?</h1>
+		<p class="dim">Your first name is enough. It shows in your greeting and you can change it later in Account.</p>
+		<!-- svelte-ignore a11y_autofocus -->
+		<input type="text" bind:value={name} placeholder="Your name" maxlength="40" autocomplete="given-name" autofocus aria-label="Your name" />
+		<button class="btn primary wide" disabled={!name.trim()}>Continue</button>
+		<button type="button" class="btn wide" onclick={() => (asked = true)}>Skip</button>
+	</form>
 {:else if band === -1}
 	<div class="intro stack rise">
 		<img src="/icon.svg" alt="" width="84" height="84" />
 		<p class="eyebrow">{t.welcome}</p>
-		<h1>Where should<br />you start?</h1>
+		<h1>{cloud.name ? `${cloud.name}, where` : 'Where'} should<br />you start?</h1>
 		<div class="chips" role="group" aria-label="Language to learn">
 			{#each AVAILABLE as l}<button class="chip" class:on={l.code === lang} onclick={() => l.code !== lang && switchLang(l.code, '/welcome')}>{l.label}</button>{/each}
 		</div>

@@ -8,7 +8,7 @@
 	import { today, DAY } from '../lib/fx.js';
 	import { P } from '../lib/prefs.js';
 	import { STAGE_IDS } from '../lib/langs/kit.js';
-	import { cloud } from '../lib/cloud.svelte.js';
+	import { cloud, saveName } from '../lib/cloud.svelte.js';
 	import { lang, meta, t, AVAILABLE, switchLang } from '../lib/lang.js';
 	import { current, earned, milestones, levelName } from '../lib/roadmap.js';
 
@@ -32,6 +32,13 @@
 	const hour = new Date().getHours();
 	const hello = t.hello[hour < 12 ? 0 : hour < 18 ? 1 : 2];
 	let picking = $state(false);
+	let myName = $state('');
+	let skipName = $state(false);
+	try {
+		skipName = !!localStorage.getItem('jeitinho:noname');
+	} catch {
+		/* no storage */
+	}
 	// each language's level on this device, read from its own saved progress
 	const levels = AVAILABLE.filter((l) => l.code === lang || !P.hidden.includes(l.code)).map((l) => {
 		let d = null;
@@ -56,8 +63,9 @@
 <div class="stack rise home">
 	<header class="head" style="margin-bottom:4px">
 		<div>
-			<p class="dim small">{hello}{cloud.name ? `, ${cloud.name}` : ''}</p>
-			<h2>{lv.name}</h2>
+			<p class="dim small">{hello}</p>
+			<h2>{cloud.name || lv.name}</h2>
+			{#if cloud.name}<p class="rank">{lv.name}</p>{/if}
 		</div>
 		<div class="row" style="gap:8px">
 			<button class="streak lang" onclick={() => (picking = !picking)} aria-label="Switch language" aria-expanded={picking}>{meta.short}</button>
@@ -65,6 +73,14 @@
 			<a class="icon-btn" class:solid={!!cloud.user} href="/account" aria-label={cloud.user ? 'Account, signed in' : 'Sign in'}>{#if cloud.avatar}<img class="me" src={cloud.avatar} alt="" />{:else}<Icon name="user" size={20} />{/if}</a>
 		</div>
 	</header>
+
+	{#if !cloud.name && !skipName}
+		<form class="card row ask" onsubmit={(e) => { e.preventDefault(); if (myName.trim()) saveName(myName); }}>
+			<input class="grow" type="text" bind:value={myName} placeholder="What should we call you?" maxlength="40" autocomplete="given-name" aria-label="Your name" />
+			<button class="btn sm primary" disabled={!myName.trim()}>Save</button>
+			<button type="button" class="icon-btn sm" aria-label="Not now" onclick={() => { skipName = true; try { localStorage.setItem('jeitinho:noname', '1'); } catch { /* fine */ } }}><Icon name="x" size={16} /></button>
+		</form>
+	{/if}
 
 	{#if picking}
 		<div class="card stack langs" style="gap:8px">
@@ -145,7 +161,7 @@
 	.streak { display: flex; align-items: center; gap: 6px; height: 44px; padding: 0 16px; border-radius: 999px; border: 1px solid var(--line); background: var(--glass); color: var(--dim); font-weight: 500; }
 	@media (min-width: 900px) {
 		.home { display: grid; grid-template-columns: 1.15fr 1fr; gap: 18px; align-items: start; }
-		.home > header, .home > .langs, .home > .week, .home > .heat { grid-column: 1 / -1; }
+		.home > header, .home > .langs, .home > .week, .home > .heat, .home > .ask { grid-column: 1 / -1; }
 		.home > .week { justify-content: space-between; margin-bottom: 6px; }
 		.home > .week > .day.old { display: grid; }
 		.home > .hero { grid-row: span 2; min-height: 100%; }
@@ -159,6 +175,9 @@
 	.me { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
 	.tag { font: 500 11px var(--mono); letter-spacing: 0.04em; padding: 5px 10px; border-radius: 999px; background: linear-gradient(150deg, var(--lime), var(--rose)); color: #17121c; white-space: nowrap; }
 	.tag.new { background: var(--glass2); color: var(--dim); }
+	.ask { padding: 12px 14px; }
+	.ask input { padding: 12px 16px; border-radius: 16px; }
+	.rank { font: 500 11px var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--amber); margin-top: 4px; }
 	.streak.lang { font: 500 13px var(--mono); cursor: pointer; color: var(--ink); padding: 0 14px; }
 	.langs .item { width: 100%; color: var(--ink); font: inherit; text-align: left; cursor: pointer; }
 	.langs .dot { font: 500 12px var(--mono); }
