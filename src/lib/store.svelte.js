@@ -17,7 +17,7 @@ export const newWord = (w, src = 'seed') => ({
 	src, added: Date.now(), due: 0, ivl: 0, ease: 2.5, reps: 0
 });
 
-const blank = () => ({ xp: 0, streak: 0, last: null, days: {}, done: {}, words: [], asked: {}, quiz: {}, materials: [], custom: {}, chat: [], pass: '', rate: 0.9, drill: pack.drill.start, uid: null, badges: {}, nquiz: 0, onboarded: false, placed: null, placeSeen: [], placedAt: 0, mins: {}, cols: [], seedN: 0, chapters: null });
+const blank = () => ({ xp: 0, streak: 0, last: null, days: {}, done: {}, words: [], asked: {}, quiz: {}, materials: [], custom: {}, chat: [], pass: '', rate: 0.9, drill: pack.drill.start, uid: null, badges: {}, nquiz: 0, onboarded: false, placed: null, placeSeen: [], placedAt: 0, mins: {}, cols: [], seedN: 0, chapters: null, texts: [], gloss: {}, read: {} });
 const seeded = () => ({ ...blank(), words: SEED.map((w) => newWord(w)), seedN: SEED.length, chapters: {} });
 
 function load() {

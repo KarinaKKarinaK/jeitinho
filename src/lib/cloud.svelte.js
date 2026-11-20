@@ -6,7 +6,7 @@ import { P, savePrefs } from './prefs.js';
 import { lang } from './lang.js';
 
 // status: off (not configured) | out (signed out) | syncing | synced | error
-export const cloud = $state({ ready: false, status: 'off', user: null, error: '', recovery: false, at: 0, ai: false, tts: false, stt: false, push: '', name: P.name, avatar: P.avatar });
+export const cloud = $state({ ready: false, status: 'off', user: null, error: '', recovery: false, at: 0, ai: false, tts: false, stt: false, push: '', name: P.name, avatar: P.avatar, google: false, github: false });
 
 let sb;
 let timer;
@@ -19,6 +19,8 @@ export async function init() {
 		if (!cfg.url || !cfg.key) return;
 		const { createClient } = await import('@supabase/supabase-js');
 		sb = createClient(cfg.url, cfg.key);
+		// only offer the sign-in buttons that are actually switched on in the project
+		fetch(`${cfg.url}/auth/v1/settings`, { headers: { apikey: cfg.key } }).then((r) => r.json()).then((d) => Object.assign(cloud, { google: !!d.external?.google, github: !!d.external?.github })).catch(() => {});
 		cloud.status = 'out';
 		sb.auth.onAuthStateChange((event, session) => {
 			const u = session?.user;

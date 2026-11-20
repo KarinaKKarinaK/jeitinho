@@ -5,7 +5,7 @@
 	import Star from '../../lib/Star.svelte';
 	import Conj from '../../lib/Conj.svelte';
 	import { S, addXP, addWords, newCollection, dropCollection, toggleIn } from '../../lib/store.svelte.js';
-	import { grade, norm } from '../../lib/quiz.js';
+	import { grade, norm, longEnough } from '../../lib/quiz.js';
 	import { speak, today, ai } from '../../lib/fx.js';
 	import { POS } from '../../lib/langs/meta.js';
 	import { t, meta } from '../../lib/lang.js';
@@ -140,6 +140,10 @@
 					{#if m.text}<p class="small dim" style="white-space:pre-wrap">{m.text}</p>{/if}
 					<div class="chips">
 						{#if m.lyrics?.length}<a class="btn sm primary" href="/song?id={m.id}">Open song</a>{:else if S.custom['m-' + m.id]}<a class="btn sm primary" href="/lesson?id=m-{m.id}">Start lesson</a>{/if}
+						{#if m.text && longEnough(m.text)}
+							{#if S.texts.some((x) => x.id === 'u-' + m.id)}<a class="btn sm" href="/read?id=u-{m.id}">Open in Reading</a>
+							{:else}<button class="btn sm" onclick={() => S.texts.unshift({ id: 'u-' + m.id, title: m.title, text: m.text.slice(0, 8000), date: m.date })}>Add to reading practice</button>{/if}
+						{/if}
 						{#if m.url}<a class="btn sm" href={m.url} target="_blank" rel="noopener noreferrer">Open link</a>{/if}
 						<button class="btn sm" onclick={() => { if (m.img) dropPhoto(m.img); S.materials.splice(i, 1); }}>Delete</button>
 					</div>

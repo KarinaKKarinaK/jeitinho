@@ -154,10 +154,10 @@
 		<h1>Keep your progress</h1>
 		<p class="dim">Sign in and your streak, word bank and saved material follow you to every device. What you have on this device now comes with you.</p>
 
-		<button class="btn primary wide" onclick={() => run(() => oauth('google'))} disabled={busy}>Continue with Google</button>
-		<button class="btn wide" onclick={() => run(() => oauth('github'))} disabled={busy}>Continue with GitHub</button>
+		{#if cloud.google}<button class="btn primary wide" onclick={() => run(() => oauth('google'))} disabled={busy}>Continue with Google</button>{/if}
+		{#if cloud.github}<button class="btn wide" onclick={() => run(() => oauth('github'))} disabled={busy}>Continue with GitHub</button>{/if}
 
-		<div class="or"><span>or with email</span></div>
+		{#if cloud.google || cloud.github}<div class="or"><span>or with email</span></div>{/if}
 
 		<div class="tabs" style="align-self:flex-start">
 			<button class:on={mode === 'in'} onclick={() => (mode = 'in')}>Sign in</button>

@@ -28,7 +28,7 @@
 		return () => clearInterval(timer);
 	});
 
-	const tabs = [['/', 'home', 'Home'], ['/learn', 'book', 'Learn'], ['/add', 'plus', 'Add material'], ['/bank', 'layers', 'Word bank'], ['/chat', 'chat', 'Chat'], ['/settings', 'gear', 'Settings']];
+	const tabs = [['/', 'home', 'Home'], ['/learn', 'book', 'Learn'], ['/read', 'page', 'Reading'], ['/add', 'plus', 'Add material'], ['/bank', 'layers', 'Word bank'], ['/chat', 'chat', 'Chat'], ['/settings', 'gear', 'Settings']];
 	const path = $derived(page.url.pathname.replace(/\/$/, '') || '/');
 	const immersive = $derived(['/lesson', '/quiz', '/drill', '/checkpoint', '/speak', '/welcome', '/chapter'].includes(path));
 </script>
@@ -49,11 +49,11 @@
 <style>
 	nav {
 		position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom) + 14px); transform: translateX(-50%); z-index: 10;
-		display: flex; gap: 4px; padding: 6px; border-radius: 999px; border: 1px solid var(--line);
+		display: flex; gap: 2px; padding: 6px; border-radius: 999px; border: 1px solid var(--line);
 		background: var(--nav); backdrop-filter: blur(24px) saturate(1.4); -webkit-backdrop-filter: blur(24px) saturate(1.4);
 		box-shadow: 0 18px 40px -12px var(--shadow);
 	}
-	a { width: 50px; height: 50px; border-radius: 999px; display: grid; place-items: center; color: var(--dim); transition: background 0.25s, color 0.25s, transform 0.12s; }
+	a { width: 44px; height: 48px; border-radius: 999px; display: grid; place-items: center; color: var(--dim); transition: background 0.25s, color 0.25s, transform 0.12s; }
 	a:active { transform: scale(0.9); }
 	a.on { background: var(--solid); color: var(--on-solid); }
 	a span { display: none; }

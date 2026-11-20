@@ -19,7 +19,9 @@ const models = () =>
 
 // Free models are unpredictable: one is rate limited, one is slow, one answers in six seconds.
 // So ask them all at once and take the first answer that is valid JSON. They are free, so the extra calls cost nothing.
-async function llm(messages, max = 2500) {
+// solo: small, frequent requests (word lookups while reading) ask one model at a time instead of all four,
+// so reading a text does not eat the per-minute allowance of the free models.
+async function llm(messages, max = 2500, solo = false) {
 	const mine = own.getStore();
 	if (!mine && !env.OPENROUTER_API_KEY) error(503, 'AI is not set up yet. Add OPENROUTER_API_KEY in the Vercel project settings.');
 	// the shared key can only ever call free models; your own key calls the model you chose
@@ -47,6 +49,16 @@ async function llm(messages, max = 2500) {
 		return JSON.parse((d.choices?.[0]?.message?.content || '').match(/\{[\s\S]*\}/)[0]); // throws on an empty or broken answer
 	};
 	try {
+		if (solo) {
+			for (const model of list) {
+				try {
+					return await ask(model);
+				} catch {
+					/* next model */
+				}
+			}
+			throw new Error('none');
+		}
 		return await Promise.any(list.map(ask));
 	} catch {
 		if (status.includes(401)) error(502, mine ? 'OpenRouter rejected your key. Check it in Settings.' : 'OpenRouter rejected the key. Check OPENROUTER_API_KEY.');
@@ -199,7 +211,7 @@ async function importOp(b) {
 	}
 	if (text.length < 20) error(400, 'Give me a link, a photo or some text.');
 	const out = await llm([{ role: 'system', content: who(g) }, { role: 'user', content: `${vocab(g)}\n\nMaterial${title ? ` ("${title}")` : ''}:\n"""${text}"""` }]);
-	return { type, url, warn, title: title || s(out.title, 120) || 'Saved text', summary: s(out.summary, 500), text: type === 'text' ? text : '', words: words(out.words), notes: notes(out.notes) };
+	return { type, url, warn, title: title || s(out.title, 120) || 'Saved text', summary: s(out.summary, 500), text, words: words(out.words), notes: notes(out.notes) };
 }
 
 async function chatOp(b) {
@@ -257,6 +269,22 @@ async function conjugateOp(b) {
 	return { verb: s(out.verb, 60) || verb, note: s(out.note, 300), rows };
 }
 
+// Reading practice: meanings for every word of one sentence, in context, plus the sentence in English.
+async function glossOp(b) {
+	const g = cfg(b);
+	const text = s(b.text, 500).trim();
+	if (text.length < 2) error(400, 'Nothing to explain.');
+	const out = await llm([
+		{ role: 'system', content: who(g) },
+		{ role: 'user', content: `Explain every word of this ${g.name} sentence for a learner: "${text}"\nGroup words that form one fixed expression or one verb form. Skip punctuation and proper names.\nReturn ONLY JSON: {"en":"natural English translation of the sentence","words":[{"w":"the word exactly as written in the sentence","pt":"its dictionary form${g.form}","en":"meaning in this sentence, 1 to 4 words","pos":"one of: ${POS.join(', ')}"${g.read ? `,"say":"${g.read}"` : ''}}]}` }
+	], 1400, true);
+	const list = (Array.isArray(out.words) ? out.words : []).slice(0, 80)
+		.map((w) => ({ w: s(w?.w, 60), pt: s(w?.pt, 80), en: s(w?.en, 120), pos: POS.includes(w?.pos) ? w.pos : '', say: s(w?.say, 80) }))
+		.filter((w) => w.w && w.en);
+	if (!list.length) error(502, 'The model did not explain that sentence. Try again.');
+	return { en: s(out.en, 600), words: list };
+}
+
 // Writes a fresh example sentence for a word in the learner's bank.
 async function exampleOp(b) {
 	const g = cfg(b);
@@ -294,7 +322,7 @@ export async function POST({ request }) {
 	// the passcode guards the shared free quota; with your own key you are not using it
 	if (!mine && env.APP_PASSCODE && request.headers.get('x-pass') !== env.APP_PASSCODE) error(401, 'Wrong passcode. Set it in Settings.');
 	const b = await request.json().catch(() => error(400, 'Bad request'));
-	const op = { import: importOp, chat: chatOp, lesson: lessonOp, grade: gradeOp, define: defineOp, example: exampleOp, conjugate: conjugateOp }[b?.op];
+	const op = { import: importOp, chat: chatOp, lesson: lessonOp, grade: gradeOp, define: defineOp, example: exampleOp, conjugate: conjugateOp, gloss: glossOp }[b?.op];
 	if (!op) error(400, 'Unknown op');
 	return json(await own.run(mine, () => op(b)));
 }

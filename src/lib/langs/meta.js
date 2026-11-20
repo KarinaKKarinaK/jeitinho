@@ -1,5 +1,5 @@
 // Part of speech tags a word can carry.
-export const POS = ['noun', 'verb', 'adjective', 'adverb', 'phrase', 'connector', 'interjection', 'particle', 'pronoun', 'number'];
+export const POS = ['noun', 'verb', 'adjective', 'adverb', 'phrase', 'connector', 'preposition', 'interjection', 'particle', 'pronoun', 'number'];
 
 // The languages the app can teach. Shared by the browser and the server, so keep it tiny.
 // short: the badge shown in the app (a familiar two letters, not always the language code).

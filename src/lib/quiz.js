@@ -139,6 +139,13 @@ export function markAsked(S, q, ok, now = Date.now()) {
 	}
 }
 
+// ---------- reading ----------
+// A text is long enough for reading practice from about a paragraph: 60 words, or 100 characters in
+// languages written without spaces. Shorter than that it is a phrase to mine for words, not something to read.
+export const READ_MIN = 60;
+export const READ_MIN_CHARS = 100;
+export const longEnough = (text) => (meta.chars ? [...String(text).replace(/[\s\p{P}]/gu, '')].length >= READ_MIN_CHARS : String(text).trim().split(/\s+/).length >= READ_MIN);
+
 // ---------- song lessons ----------
 // A song always gets a lesson, whatever the AI managed to return. It is built from three sources:
 // the lyric lines (meaning, fill the gap, listen and type), the words you saved from the song, and

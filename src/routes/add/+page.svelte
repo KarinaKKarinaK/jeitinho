@@ -7,6 +7,13 @@
 	import { ai, speak, today } from '../../lib/fx.js';
 	import { t, meta } from '../../lib/lang.js';
 	import { current, earned } from '../../lib/roadmap.js';
+	import { longEnough, READ_MIN, READ_MIN_CHARS } from '../../lib/quiz.js';
+
+	// a text long enough to read becomes a reading-practice text when you ask for it
+	const inReading = (id) => S.texts.some((x) => x.id === 'u-' + id);
+	function toReading(r) {
+		if (!inReading(r.id)) S.texts.unshift({ id: 'u-' + r.id, title: r.title, text: r.text.slice(0, 8000), date: today() });
+	}
 	import { cloud, savePhoto } from '../../lib/cloud.svelte.js';
 
 	let text = $state('');
@@ -84,6 +91,13 @@
 			<h2>{res.title}</h2>
 			{#if res.warn}<p class="small" style="color:var(--amber)">{res.warn}</p>{/if}
 			{#if res.summary}<p class="dim">{res.summary}</p>{/if}
+			{#if res.text && longEnough(res.text)}
+				{#if inReading(res.id)}
+					<a class="btn" href="/read?id=u-{res.id}"><Icon name="page" size={18} /> Open in Reading</a>
+				{:else}
+					<button class="btn primary" onclick={() => toReading(res)}><Icon name="page" size={18} /> Add to reading practice</button>
+				{/if}
+			{/if}
 			{#if res.steps?.length}<a class="btn primary" href="/lesson?id=m-{res.id}"><Icon name="music" size={18} /> Start the song lesson</a>{/if}
 
 			{#if res.words.length}
@@ -120,6 +134,7 @@
 		<p class="small dim"><b>Spotify track link</b>: finds the lyrics and translates them line by line. Tap words to keep them, then take a quiz on the song.</p>
 		<p class="small dim"><b>Article link or pasted text</b>: pulls out the words worth learning.</p>
 		<p class="small dim"><b>Camera button</b>: photo of your lesson notes, transcribed into your bank.</p>
+		<p class="small dim"><b>Longer texts</b> ({meta.chars ? `${READ_MIN_CHARS} characters` : `${READ_MIN} words`} or more) can also go to Reading, where you point at any word for its meaning.</p>
 		<p class="small dim">Everything is kept under {t.bank}, Saved.</p>
 	</div>
 </div>
