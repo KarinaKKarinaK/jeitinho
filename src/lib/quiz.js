@@ -14,6 +14,20 @@ export function check(val, q) {
 	return { ok: false };
 }
 
+// Speaking: which of the expected words did the recogniser hear? Word order is not checked.
+// ponytail: this scores whether you were understood, not each sound. Phoneme-level scoring needs a paid pronunciation API.
+export function sayScore(expected, heard) {
+	// the recogniser writes spoken shortcuts out in full (tô comes back as estou), so compare them as equals
+	const full = (w) => ({ to: 'estou', ta: 'esta', tava: 'estava', pra: 'para', ce: 'voce', ne: 'nao e' })[bare(w)] || bare(w);
+	const pool = heard.flatMap((h) => full(h.w ?? h).split(' '));
+	const marks = norm(expected).split(' ').map((w) => {
+		const i = pool.indexOf(full(w).split(' ')[0]);
+		if (i >= 0) pool.splice(i, 1);
+		return { w, ok: i >= 0 };
+	});
+	return { marks, score: marks.filter((m) => m.ok).length / marks.length };
+}
+
 // ---------- spaced repetition (SM-2, trimmed) ----------
 // q: 0 again, 1 hard, 2 good, 3 easy
 export function grade(w, q, now = Date.now()) {

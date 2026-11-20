@@ -3,10 +3,30 @@ export const DAY = 864e5;
 export const today = (d = new Date()) =>
 	`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
+// Which optional services the server has keys for. Filled in by cloud.svelte.js at startup.
+export const caps = { ai: false, tts: false, stt: false };
+
 let voice;
-// Uses the phone's built-in pt-BR voice: free, offline, no API.
+let player;
+let turn = 0;
+// Natural cloud voice when it is set up and we are online. Otherwise the phone's built-in pt-BR voice: free and offline.
 export function speak(text, rate = 0.9) {
-	if (typeof speechSynthesis === 'undefined' || !text) return;
+	if (!text) return;
+	const me = ++turn;
+	if (caps.tts && navigator.onLine && text.length <= 300) {
+		globalThis.speechSynthesis?.cancel();
+		player ??= new Audio(); // one shared element: once a tap has unlocked it, iOS lets later plays through
+		player.src = '/api/tts?t=' + encodeURIComponent(text.trim());
+		player.defaultPlaybackRate = player.playbackRate = Math.max(0.6, Math.min(1.2, rate + 0.1));
+		player.play().catch(() => me === turn && local(text, rate));
+		return;
+	}
+	local(text, rate);
+}
+
+function local(text, rate) {
+	if (typeof speechSynthesis === 'undefined') return;
+	player?.pause();
 	const u = new SpeechSynthesisUtterance(text);
 	voice ??= speechSynthesis.getVoices().find((v) => v.lang.replace('_', '-') === 'pt-BR');
 	if (voice) u.voice = voice;
@@ -36,6 +56,31 @@ export function ding(ok) {
 	} catch {
 		/* sound is optional */
 	}
+}
+
+// Start recording. Returns a function that stops and gives back the audio.
+export async function record() {
+	const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+	const rec = new MediaRecorder(stream);
+	const chunks = [];
+	rec.ondataavailable = (e) => chunks.push(e.data);
+	rec.start();
+	return () =>
+		new Promise((done) => {
+			rec.onstop = () => {
+				stream.getTracks().forEach((t) => t.stop());
+				done(new Blob(chunks, { type: rec.mimeType || 'audio/mp4' }));
+			};
+			rec.stop();
+		});
+}
+
+// Send a recording to be transcribed: { text, words: [{ w, c }] }
+export async function hear(blob, pass = '') {
+	const r = await fetch('/api/stt', { method: 'POST', headers: { 'content-type': blob.type || 'audio/mp4', 'x-pass': pass }, body: blob });
+	const d = await r.json().catch(() => ({}));
+	if (!r.ok) throw new Error(d.message || `Request failed (${r.status})`);
+	return d;
 }
 
 export async function ai(op, body, pass = '') {

@@ -3,7 +3,8 @@
 	import { fly } from 'svelte/transition';
 	import Icon from '../../lib/Icon.svelte';
 	import { S, addXP } from '../../lib/store.svelte.js';
-	import { ai, speak } from '../../lib/fx.js';
+	import { ai, speak, record, hear } from '../../lib/fx.js';
+	import { cloud } from '../../lib/cloud.svelte.js';
 
 	const scenes = ['Bate-papo livre', 'Pedindo no boteco', 'Na padaria', 'Conhecendo a família', 'Entrevista de emprego'];
 	let scene = $state(scenes[0]);
@@ -12,6 +13,26 @@
 	let err = $state('');
 	let showEn = $state({});
 	let end = $state();
+	let stop = $state(null);
+
+	// voice mode: tap the mic, speak, tap again. What was heard is sent as your message.
+	async function talk() {
+		err = '';
+		try {
+			if (!stop) return void (stop = await record());
+			const done = stop;
+			stop = null;
+			busy = true;
+			msg = (await hear(await done(), S.pass)).text;
+			busy = false;
+			if (msg.trim()) await send();
+			else err = 'Heard nothing. Try again a bit closer to the phone.';
+		} catch (e) {
+			stop = null;
+			busy = false;
+			err = e.name === 'NotAllowedError' ? 'Allow the microphone to use voice mode.' : e.message;
+		}
+	}
 
 	async function send() {
 		const content = msg.trim();
@@ -75,6 +96,7 @@
 
 <form class="send" onsubmit={(e) => { e.preventDefault(); send(); }}>
 	<input type="text" bind:value={msg} lang="pt-BR" placeholder="Escreve em português..." autocomplete="off" maxlength="600" enterkeyhint="send" />
+	{#if cloud.stt}<button type="button" class="icon-btn" class:rec={!!stop} disabled={busy} onclick={talk} aria-label={stop ? 'Stop and send' : 'Speak your message'}><Icon name={stop ? 'check' : 'mic'} size={20} /></button>{/if}
 	<button class="icon-btn solid" disabled={busy || !msg.trim()} aria-label="Send"><Icon name="send" size={20} /></button>
 </form>
 
@@ -90,5 +112,7 @@
 	.fix { font-size: 14px; color: var(--ok); display: flex; gap: 6px; align-items: baseline; text-align: right; }
 	.tip { font-size: 13px; color: var(--dim); text-align: right; }
 	.send { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(env(safe-area-inset-bottom) + 84px); width: min(484px, calc(100% - 36px)); display: flex; gap: 8px; z-index: 5; }
+	.rec { background: var(--bad); color: #17121c; animation: pulse 0.9s ease-in-out infinite; }
+	@keyframes pulse { 50% { box-shadow: 0 0 0 10px rgba(255, 143, 143, 0); } from, to { box-shadow: 0 0 0 0 rgba(255, 143, 143, 0.6); } }
 	.send input { border-radius: 999px; background: rgba(30, 24, 36, 0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
 </style>

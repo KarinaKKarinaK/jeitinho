@@ -3,6 +3,7 @@
 	import Icon from '../../lib/Icon.svelte';
 	import { S, addWords } from '../../lib/store.svelte.js';
 	import { ai, speak, today } from '../../lib/fx.js';
+	import { cloud, savePhoto } from '../../lib/cloud.svelte.js';
 
 	let text = $state('');
 	let busy = $state('');
@@ -13,7 +14,7 @@
 
 	const isUrl = $derived(/^https?:\/\/\S+$/i.test(text.trim()));
 
-	// phone photos are huge: shrink before upload. The image itself is not kept, only the transcription.
+	// phone photos are huge: shrink before upload. Signed in, the photo is kept in your account; signed out, only the transcription.
 	async function shrink(file) {
 		const img = await createImageBitmap(file);
 		const k = Math.min(1, 1400 / Math.max(img.width, img.height));
@@ -30,9 +31,10 @@
 		try {
 			const r = await ai('import', body, S.pass);
 			const id = Date.now().toString(36);
-			S.materials.unshift({ id, date: today(), type: r.type, title: r.title, url: r.url || '', summary: r.summary, notes: r.notes, text: r.text || '', lyrics: r.lyrics });
+			const img = body.kind === 'photo' ? await savePhoto(id, body.image).catch(() => '') : '';
+			S.materials.unshift({ id, img, date: today(), type: r.type, title: r.title, url: r.url || '', summary: r.summary, notes: r.notes, text: r.text || '', lyrics: r.lyrics });
 			if (r.steps?.length) S.custom['m-' + id] = { title: r.title, steps: r.steps };
-			res = { ...r, id };
+			res = { ...r, id, img };
 			text = '';
 		} catch (e) {
 			err = e.message;
@@ -99,6 +101,7 @@
 					<div class="lyrics">{#each res.lyrics as l}<p>{l.pt}<span>{l.en}</span></p>{/each}</div>
 				</details>
 			{/if}
+			{#if res.type === 'photo'}<p class="small dim">{res.img ? 'Photo saved to your account.' : cloud.user ? 'The photo could not be saved, only the transcription.' : 'Sign in to keep the photo itself. Signed out, only the transcription is saved.'}</p>{/if}
 			{#if res.text && res.type === 'photo'}<details><summary class="dim">Transcription</summary><p class="small dim" style="white-space:pre-wrap;margin-top:10px">{res.text}</p></details>{/if}
 		</div>
 	{/if}

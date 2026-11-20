@@ -5,6 +5,7 @@
 	import { S, addXP, addWords } from '../../lib/store.svelte.js';
 	import { grade, norm } from '../../lib/quiz.js';
 	import { speak, today } from '../../lib/fx.js';
+	import { cloud, photoUrl, dropPhoto } from '../../lib/cloud.svelte.js';
 
 	let tab = $state(page.url.searchParams.get('tab') || 'words');
 	let q = $state('');
@@ -83,6 +84,7 @@
 			<details class="card">
 				<summary><span class="eyebrow">{m.type} · {m.date}</span><b>{m.title}</b></summary>
 				<div class="stack" style="margin-top:14px">
+					{#if m.img && cloud.user}{#await photoUrl(m.img) then src}{#if src}<img {src} alt="Your lesson notes" loading="lazy" style="width:100%;border-radius:18px" />{/if}{/await}{/if}
 					{#if m.summary}<p class="dim">{m.summary}</p>{/if}
 					{#each m.notes || [] as n}<p class="small">{n}</p>{/each}
 					{#if m.lyrics}
@@ -92,7 +94,7 @@
 					<div class="chips">
 						{#if S.custom['m-' + m.id]}<a class="btn sm primary" href="/lesson?id=m-{m.id}">Start lesson</a>{/if}
 						{#if m.url}<a class="btn sm" href={m.url} target="_blank" rel="noopener noreferrer">Open link</a>{/if}
-						<button class="btn sm" onclick={() => S.materials.splice(i, 1)}>Delete</button>
+						<button class="btn sm" onclick={() => { if (m.img) dropPhoto(m.img); S.materials.splice(i, 1); }}>Delete</button>
 					</div>
 				</div>
 			</details>

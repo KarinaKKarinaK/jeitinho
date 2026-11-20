@@ -14,3 +14,14 @@ create policy "own row" on public.progress
 	for all to authenticated
 	using ((select auth.uid()) = user_id)
 	with check ((select auth.uid()) = user_id);
+
+-- Photos of lesson notes: a private bucket, one folder per user (notes/<user id>/<file>.jpg).
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('notes', 'notes', false, 2097152, array['image/jpeg'])
+on conflict (id) do nothing;
+
+drop policy if exists "own notes" on storage.objects;
+create policy "own notes" on storage.objects
+	for all to authenticated
+	using (bucket_id = 'notes' and (storage.foldername(name))[1] = (select auth.uid())::text)
+	with check (bucket_id = 'notes' and (storage.foldername(name))[1] = (select auth.uid())::text);

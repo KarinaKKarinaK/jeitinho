@@ -3,10 +3,16 @@
 	import { S, addXP } from '../../lib/store.svelte.js';
 	import { current, ready, buildTest, passed } from '../../lib/roadmap.js';
 	import { today } from '../../lib/fx.js';
+	import { cloud } from '../../lib/cloud.svelte.js';
 
 	const plain = $state.snapshot(S);
 	const stage = current(plain);
-	const steps = stage && ready(plain, stage) ? buildTest(plain, stage) : [];
+	const open = stage && ready(plain, stage);
+	// wait until we know whether writing and speaking tasks can be graded, then build the test once
+	let steps = $state(null);
+	$effect(() => {
+		if (cloud.ready && !steps) steps = open ? buildTest(plain, stage, { ai: cloud.ai, stt: cloud.stt }) : [];
+	});
 
 	function finish({ right, total }) {
 		const ok = passed(stage, right, total);
@@ -17,7 +23,9 @@
 	}
 </script>
 
-{#if steps.length}
+{#if !steps}
+	<span class="spin"></span>
+{:else if steps.length}
 	<Exercise {steps} back="/roadmap" onfinish={finish} />
 {:else}
 	<div class="stack"><h2>Not unlocked yet</h2><p class="dim">Finish the milestones for this stage first.</p><a class="btn" href="/roadmap">Back to the roadmap</a></div>

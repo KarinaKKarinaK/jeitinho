@@ -1,5 +1,5 @@
 import { json, error } from '@sveltejs/kit';
-import { env } from '$env/dynamic/private';
+import * as env from '$app/env/private';
 import { safeFetch } from '../../../lib/server/safefetch.js';
 import { cleanSteps } from '../../../lib/quiz.js';
 
@@ -8,27 +8,39 @@ export const config = { maxDuration: 60 };
 // Cost guard: only free OpenRouter models can ever be called, whatever the env says.
 const isFree = (id) => id.endsWith(':free') || id === 'openrouter/free';
 const models = () =>
-	(env.OPENROUTER_MODELS || 'google/gemma-4-31b-it:free,nvidia/nemotron-3.5-super-vl:free,openrouter/free')
-		.split(',').map((s) => s.trim()).filter(isFree).slice(0, 3);
+	(env.OPENROUTER_MODELS || 'nvidia/nemotron-3.5-super-vl:free,google/gemma-4-31b-it:free,google/gemma-4-26b-a4b-it:free,openrouter/free')
+		.split(',').map((s) => s.trim()).filter(isFree).slice(0, 4);
 
+// Free models get rate limited, and some spend the whole answer thinking. So try them one at a time
+// and move on whenever one fails or sends back something that is not JSON.
 async function llm(messages, max = 2500) {
 	if (!env.OPENROUTER_API_KEY) error(503, 'AI is not set up yet. Add OPENROUTER_API_KEY in the Vercel project settings.');
 	const list = models();
 	if (!list.length) error(500, 'OPENROUTER_MODELS has no free model in it.');
-	const r = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-		method: 'POST',
-		headers: { authorization: `Bearer ${env.OPENROUTER_API_KEY}`, 'content-type': 'application/json' },
-		body: JSON.stringify({ models: list, messages, max_tokens: max, temperature: 0.4 }),
-		signal: AbortSignal.timeout(55000)
-	}).catch(() => error(504, 'The free model took too long. Try again.'));
-	const d = await r.json().catch(() => ({}));
-	if (!r.ok) error(r.status === 429 ? 429 : 502, r.status === 429 ? 'Free model limit reached for now. Try again later.' : d?.error?.message || 'The model failed. Try again.');
-	const m = (d.choices?.[0]?.message?.content || '').match(/\{[\s\S]*\}/);
-	try {
-		return JSON.parse(m[0]);
-	} catch {
-		error(502, 'The model sent something unreadable. Try again.');
+	const deadline = Date.now() + 55000;
+	let limited = false;
+	for (const model of list) {
+		const left = deadline - Date.now();
+		if (left < 4000) break;
+		const r = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+			method: 'POST',
+			headers: { authorization: `Bearer ${env.OPENROUTER_API_KEY}`, 'content-type': 'application/json' },
+			// thinking counts against max_tokens: keep it short and leave headroom
+			body: JSON.stringify({ model, messages, max_tokens: max + 2000, temperature: 0.4, reasoning: { effort: 'low', exclude: true } }),
+			signal: AbortSignal.timeout(left)
+		}).catch(() => null);
+		if (!r) break; // timed out
+		if (r.status === 401) error(502, 'OpenRouter rejected the key. Check OPENROUTER_API_KEY.');
+		if (r.status === 429) limited = true;
+		if (!r.ok) continue;
+		const d = await r.json().catch(() => ({}));
+		try {
+			return JSON.parse((d.choices?.[0]?.message?.content || '').match(/\{[\s\S]*\}/)[0]);
+		} catch {
+			/* empty or broken answer: next model */
+		}
 	}
+	error(limited ? 429 : 502, limited ? 'The free models are busy right now. Try again in a minute.' : 'The free models did not give a usable answer. Try again.');
 }
 
 const s = (v, n = 300) => (typeof v === 'string' ? v.slice(0, n) : '');
@@ -143,11 +155,24 @@ async function lessonOp(b) {
 	return { title: s(out.title, 120) || 'Custom lesson', steps };
 }
 
+// Grades a short piece of writing for the checkpoint tests.
+async function gradeOp(b) {
+	const level = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'].includes(b.level) ? b.level : 'B1';
+	const text = s(b.text, 1200);
+	if (text.trim().split(/\s+/).length < 4) return { score: 0, ok: false, fix: '', note: 'Too short to grade. Write at least a full sentence.' };
+	const out = await llm([
+		{ role: 'system', content: `${WHO} You grade short writing: strict on verb tenses, fair on everything else.` },
+		{ role: 'user', content: `Task given to the learner (CEFR ${level}): """${s(b.task, 300)}"""\nTheir answer: """${text}"""\nScore it 0 to 10 for a learner at ${level}: does it answer the task, are the verb tenses right, is it natural Brazilian Portuguese. Off topic or not in Portuguese scores 0. Small accent slips cost at most 1 point.\nReturn ONLY JSON: {"score":0,"fix":"their answer rewritten in correct, natural Brazilian Portuguese","note":"one or two short English sentences: the main mistake, or what was good"}` }
+	], 700);
+	const score = Math.max(0, Math.min(10, Math.round(+out.score) || 0));
+	return { score, ok: score >= 7, fix: s(out.fix, 1200), note: s(out.note, 400) };
+}
+
 export async function POST({ request }) {
 	// Optional lock so strangers cannot burn your free quota: set APP_PASSCODE in Vercel and type it in the app settings.
 	if (env.APP_PASSCODE && request.headers.get('x-pass') !== env.APP_PASSCODE) error(401, 'Wrong passcode. Set it in Settings on the home screen.');
 	const b = await request.json().catch(() => error(400, 'Bad request'));
-	const op = { import: importOp, chat: chatOp, lesson: lessonOp }[b?.op];
+	const op = { import: importOp, chat: chatOp, lesson: lessonOp, grade: gradeOp }[b?.op];
 	if (!op) error(400, 'Unknown op');
 	return json(await op(b));
 }

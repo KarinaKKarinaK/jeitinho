@@ -1,111 +1,102 @@
+<p align="center"><img src="docs/logo.svg" width="96" alt="jeitinho"></p>
 <h1 align="center">jeitinho</h1>
-
+<p align="center">Brazilian Portuguese from zero to fluent, with a Belo Horizonte accent.<br>An open source app for your phone's home screen. Runs on free tiers only.</p>
 <p align="center">
-Learn Brazilian Portuguese the mineiro way.<br>
-A small, fast, gamified app that lives on your phone's home screen and runs on free AI models.
+<a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-e3a3c6" alt="MIT license"></a>
+<img src="https://img.shields.io/badge/SvelteKit-3-a97fc9" alt="SvelteKit 3">
+<img src="https://img.shields.io/badge/cost-%240-e4f060" alt="Costs nothing to run">
 </p>
 
 <p align="center">
-<img src="docs/home.png" width="230" alt="Home screen with the daily quiz">
-<img src="docs/lesson.png" width="230" alt="A lesson question answered correctly">
-<img src="docs/bank.png" width="230" alt="Flashcard review in the word bank">
+<img src="docs/home.png" width="230" alt="Home screen">
+<img src="docs/lesson.png" width="230" alt="Lesson question">
+<img src="docs/roadmap.png" width="230" alt="Roadmap">
 </p>
 
-*Jeitinho* is the Brazilian knack for finding a way. This app is my way to get from zero to fluent without paying for five subscriptions.
+## Features
 
-## What it does
-
-- **Daily quiz of 11 hard questions.** Built fresh every day from your word bank and verb tenses. A time decay keeps questions you just saw out of the next quizzes, so it never feels like the same quiz twice.
-- **Lessons that explain, then make you produce.** Pronunciation spelled out in English (`leite` = LAY-chee), eu vs você in every past tense, the three subjunctives, and where Spanish habits betray you.
-- **Mineirês.** Two lessons on how people talk in Belo Horizonte: uai, trem, cê, tiquim, arreda, and why "Oncotô?" is a full sentence.
-- **Verb drill.** Pick tenses, get ten quick questions with a time cue (Ontem, Se, Quando). The eu vs você mode asks both forms back to back.
-- **Word bank with spaced repetition.** Works like Anki, and can export a file Anki imports.
-- **Songs.** Paste a Spotify track link. It finds the lyrics, translates them line by line and builds a lesson from the song.
-- **Links and text.** Paste an article or a YouTube link and it pulls out the words worth learning.
-- **Photos of your lesson notes.** The camera button transcribes them and adds the vocabulary to your bank.
-- **Bate-papo.** Chat with Bia, a mineira from BH, who answers in spoken Brazilian Portuguese and corrects your message each turn.
-- **Lessons on demand.** Type any topic, pick a level from A1 to C2, get a lesson.
-- **Roadmap with badges.** Fourteen checkpoints from A1.1 to C2.2. Each has milestones to hit and a test to pass before you earn the badge and move on.
-- **Accounts.** Sign in with Google, GitHub or email and your progress follows you across devices. Signed out, it still works and stays on the device.
-
-<p align="center">
-<img src="docs/learn.png" width="230" alt="Lesson list">
-<img src="docs/drill.png" width="230" alt="Verb drill question">
-<img src="docs/roadmap.png" width="230" alt="Roadmap with milestones and a checkpoint test">
-</p>
-
-## Why it is built this way
-
-The design follows what learning research keeps finding (Dunlosky et al., 2013, is a good summary):
-
-| Finding | In the app |
+| | |
 | --- | --- |
-| Recalling beats rereading | Most questions make you type the Portuguese. Multiple choice is the minority. |
-| Spacing beats cramming | Every word has its own review interval, and quiz questions decay before they can come back. |
-| Mixing topics beats blocks | The daily quiz mixes vocabulary, listening and seven tenses. |
-| Feedback should be instant | Each answer shows the right form, the full conjugation and an example, with audio. |
-| You learn from content you care about | Your songs, your articles and your own class notes become the material. |
-| Errors need a second try | Missed lesson questions come back before the lesson ends. |
+| **Daily quiz** | 11 hard questions from your word bank and seven tenses. A time decay keeps recent questions out. |
+| **Course** | 22 lessons, A1 to C1: pronunciation spelled out in English, eu vs você in every tense, three subjunctives, personal infinitive, connectors, idioms, register. |
+| **Mineirês** | How people talk in Belo Horizonte: uai, trem, cê, arreda, "Oncotô?". |
+| **Word bank** | Spaced repetition, with export to Anki. |
+| **Import** | A Spotify song, an article, a YouTube link, pasted text or a photo of your notes becomes flashcards. Songs get line by line translation and a lesson. |
+| **Speaking** | Say a sentence, see which words were understood. Voice mode in the chat. |
+| **Chat** | Bia, a mineira from BH, replies in spoken Portuguese and corrects each message. |
+| **Roadmap** | 14 checkpoints from A1.1 to C2.2. Milestones, then a test, then a badge. B and C tests add listening, speaking and graded writing. |
+| **Accounts** | Google, GitHub or email. Progress syncs across devices. Works signed out too. |
+| **Offline** | Lessons, quiz, drill and word bank work with no connection. |
 
-## Run it
+## Quick start
 
 ```bash
 npm install
-cp .env.example .env   # add your OpenRouter key
+cp .env.example .env
 npm run dev
-npm test               # conjugator, quiz spacing, answer checking, URL safety
+npm test
 ```
 
-Lessons, the quiz, the drill and the word bank work with no key at all. The key only powers importing, chat and custom lessons.
+Lessons, quiz, drill and word bank need no keys.
 
-## Deploy your own
+## Deploy
 
-1. Get a free key at [openrouter.ai/keys](https://openrouter.ai/keys). Set its credit limit to $0.
-2. Import this repo in Vercel and add `OPENROUTER_API_KEY` as an environment variable.
-3. Optional: add `APP_PASSCODE` so strangers who find your URL cannot use up your free quota. Type the same passcode under Settings in the app.
-4. On iPhone: open the site in Safari, tap Share, then **Add to Home Screen**.
+1. Import the repo in [Vercel](https://vercel.com/new).
+2. Add the environment variables you want from the table below.
+3. On iPhone: open the site in Safari, Share, **Add to Home Screen**.
 
-### Accounts and the database (optional)
+| Variable | Unlocks | Where to get it |
+| --- | --- | --- |
+| `OPENROUTER_API_KEY` | Import, chat, custom lessons, graded writing | [openrouter.ai/keys](https://openrouter.ai/keys), credit limit $0 |
+| `ELEVENLABS_API_KEY` | Natural voice. Without it, the phone's voice is used. | [elevenlabs.io](https://elevenlabs.io), free plan |
+| `DEEPGRAM_API_KEY` | Speaking practice, voice chat | [console.deepgram.com](https://console.deepgram.com), free credit |
+| `SUPABASE_URL`, `SUPABASE_ANON_KEY` | Accounts, sync, saved photos | Vercel, Storage, add Supabase (free plan) |
+| `APP_PASSCODE` | Locks AI and speech behind a passcode | You choose it |
 
-Without this the app still works and keeps progress on the device.
+### Accounts
 
-1. In Vercel, open the project, go to Storage, and add **Supabase** (free plan). That sets `SUPABASE_URL` and `SUPABASE_ANON_KEY` for you. Redeploy.
-2. In the Supabase SQL editor, run [`supabase/schema.sql`](supabase/schema.sql). It creates one table with row level security, so each user can only read and write their own row.
-3. In Supabase, under Authentication, URL Configuration, set the Site URL to your deployed URL and add `https://your-url/account` to the redirect URLs.
-4. Email sign-in works now. For Google and GitHub, create an OAuth app with each, use the callback URL Supabase shows you, and paste the client ID and secret under Authentication, Providers.
+1. Add Supabase from the Vercel Storage tab and redeploy.
+2. Run [`supabase/schema.sql`](supabase/schema.sql) in the Supabase SQL editor.
+3. In Supabase, Authentication, URL Configuration: set the Site URL to your URL and add `https://your-url/account` as a redirect.
+4. For Google and GitHub, create an OAuth app with each and paste the client ID and secret under Authentication, Providers.
 
-Sync is simple on purpose: the whole state is one JSON row, and the newest copy wins.
+## Cost
 
-### It cannot cost money
+It cannot bill you.
 
-The server only ever calls models whose ID ends in `:free` (or the `openrouter/free` router). Anything else in `OPENROUTER_MODELS` is dropped in code, see `src/routes/api/ai/+server.js`. A $0 credit limit on the key is the second lock.
+- The server only calls OpenRouter models whose ID ends in `:free`. Anything else is dropped in code (`src/routes/api/ai/+server.js`).
+- ElevenLabs and Deepgram run on free plans with no card on file. When the quota ends the app falls back to the phone's voice, and speaking practice pauses.
+- Each spoken phrase is cached for a year, so it uses quota once.
 
-## How it is made
+## How it works
 
-- **SvelteKit**, prerendered. The whole app is about 60 kB of gzipped JavaScript, so it opens fast on a phone.
-- **Local first.** Progress lives in your browser's local storage and the app works signed out. With Supabase connected, the same state is mirrored to one Postgres row per user. Settings has export and import for backups.
-- **Voice** is the pt-BR voice built into your phone, so audio is free and instant.
-- **Lyrics** come from [LRCLIB](https://lrclib.net).
+- **SvelteKit**, prerendered, with a service worker. About 60 kB of JavaScript.
+- **Local first.** State is one object in local storage, mirrored to one Postgres row per user when signed in. Newest copy wins.
+- **Learning design** follows Dunlosky et al. (2013): recall over rereading, spaced review, mixed topics, instant feedback, and a second try on every miss.
 
 ```
-src/lib/conj.js       verb conjugator (7 tenses, regular rules plus an irregular table)
-src/lib/quiz.js       answer checking, spaced repetition, daily quiz selection
-src/lib/content.js    the hand-written course and starter word bank
-src/lib/roadmap.js    stages, milestones and checkpoint tests
-src/lib/cloud.svelte.js   sign-in and sync (Supabase)
-src/lib/Exercise.svelte   the question runner used by lessons, quiz, drill and tests
-src/routes/api/ai     the only server code: import, chat, lesson
+src/lib/content.js        course and starter words
+src/lib/conj.js           verb conjugator
+src/lib/quiz.js           answer checking, spaced repetition, daily quiz
+src/lib/roadmap.js        stages, milestones, checkpoint tests
+src/lib/cloud.svelte.js   sign-in, sync, photos
+src/lib/Exercise.svelte   question runner
+src/routes/api            ai, tts, stt, config, reminder
+src/service-worker.js     offline cache
 ```
 
-## Honest limits
+## Limits
 
-- The hand-written course is a strong start, not the full road to C2. The daily quiz, your own material, the chat and custom lessons carry you past it.
-- Free models are rate limited and sometimes slow. Try again if one times out.
-- YouTube often hides captions from servers. When that happens the app says so and you can paste the transcript.
-- It does not listen to your pronunciation yet.
-- The roadmap badges are this app's own checkpoints modeled on CEFR. They are not an official certificate, and the tests cover verbs and vocabulary, not speaking or writing.
-- Sync is newest-copy-wins. If you use two devices offline at the same time, the older changes lose.
+- Speaking is scored by whether each word was understood, not sound by sound.
+- The daily reminder is a repeating calendar event, not a push notification.
+- YouTube often hides captions from servers. Paste the transcript when that happens.
+- Badges are this app's own checkpoints modeled on CEFR, not a certificate.
+- Sync is newest copy wins. Two devices edited offline at once lose the older changes.
 
 ## Contributing
 
-Lessons live in plain JavaScript in `src/lib/content.js`. If you are a native speaker and something sounds off, especially the mineirês, please open an issue or a PR.
+Lessons are plain JavaScript in `src/lib/content.js`. Corrections from native speakers, mineiros above all, are welcome as issues or pull requests.
+
+## License
+
+[MIT](LICENSE)

@@ -13,7 +13,7 @@ export const newWord = (w, src = 'seed') => ({
 	src, added: Date.now(), due: 0, ivl: 0, ease: 2.5, reps: 0
 });
 
-const blank = () => ({ xp: 0, streak: 0, last: null, days: {}, done: {}, words: [], asked: {}, quiz: {}, materials: [], custom: {}, chat: [], pass: '', rate: 0.9, drill: ['perf'], uid: null, badges: {}, nquiz: 0 });
+const blank = () => ({ xp: 0, streak: 0, last: null, days: {}, done: {}, words: [], asked: {}, quiz: {}, materials: [], custom: {}, chat: [], pass: '', rate: 0.9, drill: ['perf'], uid: null, badges: {}, nquiz: 0, onboarded: false, placed: null });
 const seeded = () => ({ ...blank(), words: SEED.map((w) => newWord(w)) });
 
 function load() {

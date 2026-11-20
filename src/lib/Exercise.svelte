@@ -2,15 +2,17 @@
 	import { fly, scale } from 'svelte/transition';
 	import { untrack } from 'svelte';
 	import Icon from './Icon.svelte';
-	import { speak, ding } from './fx.js';
-	import { check } from './quiz.js';
+	import { speak, ding, ai, record, hear } from './fx.js';
+	import { check, sayScore } from './quiz.js';
 	import { S } from './store.svelte.js';
 
 	let { steps, retry = false, back = '/', onanswer = () => {}, onfinish = () => 0 } = $props();
 
 	const shuffle = (a) => a.map((v) => [Math.random(), v]).sort((x, y) => x[0] - y[0]).map((x) => x[1]);
 	const init = untrack(() => steps.map((s) => ({ ...s, opts: s.options ? shuffle(s.options) : null })));
-	const total = init.filter((s) => s.kind !== 'info').length;
+	let total = $state(init.filter((s) => s.kind !== 'info').length);
+	let busy = $state(false);
+	let stop = $state(null); // set while the microphone is recording
 
 	let queue = $state(init);
 	let i = $state(0);
@@ -22,12 +24,53 @@
 	let verdict = $state('');
 	let input = $state();
 	const q = $derived(queue[i]);
-	const ready = $derived(res || q.kind === 'info' || (q.kind === 'choice' ? picked !== null : val.trim()));
+	const ready = $derived(!busy && (res || q.kind === 'info' || q.kind === 'say' || (q.kind === 'choice' ? picked !== null : val.trim())));
 
-	function submit() {
+	async function judge() {
+		if (q.kind === 'choice') return { ok: picked === q.answer };
+		if (q.kind === 'write') {
+			const r = await ai('grade', { task: q.prompt, text: val, level: q.level }, S.pass);
+			q.answer = r.fix || val;
+			return { ok: r.ok, note: `${r.score}/10. ${r.note}` };
+		}
+		if (q.kind === 'say') {
+			const h = await hear(await stop(), S.pass);
+			const sc = sayScore(q.answer, h.words);
+			return { ok: sc.score >= 0.7, marks: sc.marks, note: h.text ? `Heard: ${h.text}` : 'Heard nothing. Hold the phone closer.' };
+		}
+		return check(val, q);
+	}
+
+	// a task that cannot be graded (offline, no microphone, model busy) is dropped from the score
+	function skip(why) {
+		total--;
+		res = { ok: true, skipped: true, note: `${why} This one does not count.` };
+	}
+
+	async function submit() {
 		if (!ready) return;
 		if (res || q.kind === 'info') return next();
-		const r = q.kind === 'choice' ? { ok: picked === q.answer } : check(val, q);
+		if (q.kind === 'say' && !stop) {
+			busy = true;
+			try {
+				stop = await record();
+			} catch {
+				skip('No microphone access.');
+			}
+			busy = false;
+			return;
+		}
+		busy = true;
+		let r;
+		try {
+			r = await judge();
+		} catch (e) {
+			busy = false;
+			stop = null;
+			return skip(e.message || 'Could not grade that.');
+		}
+		busy = false;
+		stop = null;
 		res = r;
 		ding(r.ok);
 		if (!q.again) {
@@ -45,6 +88,7 @@
 		picked = null;
 		if (i + 1 >= queue.length) {
 			const r = onfinish({ right, total }) ?? 0;
+			if (r === false) return; // the parent takes over (placement test moves to the next band)
 			verdict = r.title || '';
 			xp = r.xp ?? r;
 		}
@@ -57,12 +101,12 @@
 	}
 
 	$effect(() => {
-		if (xp === null && q.kind === 'listen') speak(q.speak, S.rate);
+		if (xp === null && !res && q.kind === 'listen') speak(q.speak, S.rate);
 		input?.focus();
 	});
 </script>
 
-<svelte:window onkeydown={(e) => e.key === 'Enter' && !e.target.closest?.('button, a') && submit()} />
+<svelte:window onkeydown={(e) => e.key === 'Enter' && !e.target.closest?.('button, a, textarea') && submit()} />
 
 {#if xp !== null}
 	<section class="fin" in:scale={{ start: 0.9, duration: 350 }}>
@@ -86,7 +130,7 @@
 				{#if q.html}<div class="body">{@html q.body}</div>{:else}<div class="body">{q.body}</div>{/if}
 				{#if q.say}<button class="btn sm" onclick={() => speak(q.say, S.rate)}><Icon name="sound" size={18} /> Ouvir</button>{/if}
 			{:else}
-				<p class="eyebrow">{q.again ? 'De novo' : q.label || (q.kind === 'choice' ? 'Choose' : q.kind === 'listen' ? 'Listen and type' : 'Type in Portuguese')}</p>
+				<p class="eyebrow">{q.again ? 'De novo' : q.label || (q.kind === 'choice' ? 'Choose' : q.kind === 'listen' ? 'Listen and type' : q.kind === 'say' ? 'Say it out loud' : q.kind === 'write' ? 'Write in Portuguese' : 'Type in Portuguese')}</p>
 				{#if q.kind === 'listen'}
 					<button class="play" onclick={() => speak(q.speak, S.rate)} aria-label="Play audio"><Icon name="sound" size={38} /></button>
 					<p class="dim">{q.prompt} <button class="chip" onclick={() => speak(q.speak, 0.6)}>slow</button></p>
@@ -101,6 +145,15 @@
 							<button class="opt" class:on={picked === o} class:good={res && o === q.answer} class:bad={res && picked === o && o !== q.answer} disabled={!!res} onclick={() => (picked = o)}>{o}</button>
 						{/each}
 					</div>
+				{:else if q.kind === 'say'}
+					<button class="btn sm" onclick={() => speak(q.speak, S.rate)}><Icon name="sound" size={18} /> Ouvir</button>
+					{#if stop}<p class="rec"><i></i> Gravando...</p>{/if}
+					{#if res?.marks}<p class="marks">{#each res.marks as m}<span class:miss={!m.ok}>{m.w}</span>{' '}{/each}</p>{/if}
+				{:else if q.kind === 'write'}
+					<textarea bind:this={input} bind:value={val} lang="pt-BR" rows="5" placeholder="Escreve aqui..." readonly={!!res || busy} autocapitalize="sentences" spellcheck="false"></textarea>
+					<div class="keys">
+						{#each 'áâãàçéêíóôõú' as ch}<button onclick={() => type(ch)} disabled={!!res} tabindex="-1">{ch}</button>{/each}
+					</div>
 				{:else}
 					<input bind:this={input} bind:value={val} type="text" lang="pt-BR" placeholder="Em português..." readonly={!!res} autocapitalize="off" autocomplete="off" autocorrect="off" spellcheck="false" enterkeyhint="done" />
 					<div class="keys">
@@ -113,17 +166,17 @@
 
 	<footer>
 		{#if res}
-			<div class="fb" class:ok={res.ok} in:fly={{ y: 30, duration: 220 }} role="status">
+			<div class="fb" class:ok={res.ok} class:shake={!res.ok} in:fly={{ y: 30, duration: 220 }} role="status">
 				<div class="row">
-					<b class="grow">{res.ok ? 'Isso!' : 'Resposta certa:'}</b>
-					{#if q.speak || q.kind !== 'choice'}<button class="icon-btn sm" onclick={() => speak(q.speak || q.answer, S.rate)} aria-label="Hear it"><Icon name="sound" size={18} /></button>{/if}
+					<b class="grow">{res.skipped ? 'Pulada' : q.kind === 'write' ? (res.ok ? 'Boa! Versão polida:' : 'Versão corrigida:') : res.ok ? 'Isso!' : 'Resposta certa:'}</b>
+					{#if !res.skipped && (q.speak || q.kind !== 'choice')}<button class="icon-btn sm" onclick={() => speak(q.speak || q.answer, S.rate)} aria-label="Hear it"><Icon name="sound" size={18} /></button>{/if}
 				</div>
-				{#if !res.ok}<p class="ans">{q.answer}</p>{/if}
+				{#if !res.ok || (q.kind === 'write' && !res.skipped)}<p class="ans">{q.answer}</p>{/if}
 				{#if res.note}<p class="small">{res.note}</p>{/if}
 				{#if q.explain}{#if q.html}<p class="ex">{@html q.explain}</p>{:else}<p class="ex">{q.explain}</p>{/if}{/if}
 			</div>
 		{/if}
-		<button class="btn primary wide" disabled={!ready} onclick={submit}>{res || q.kind === 'info' ? 'Continuar' : 'Verificar'}</button>
+		<button class="btn primary wide" disabled={!ready} onclick={submit}>{#if busy}<span class="spin"></span>{:else if res || q.kind === 'info'}Continuar{:else if q.kind === 'say'}<Icon name="mic" size={18} /> {stop ? 'Parar e conferir' : 'Gravar'}{:else}Verificar{/if}</button>
 	</footer>
 {/if}
 
@@ -155,6 +208,19 @@
 	.ans { font-size: 22px; }
 	.ex { font-size: 14px; color: var(--dim); white-space: pre-line; line-height: 1.6; }
 	.ex :global(b) { color: var(--ink); font-weight: 500; }
+	.ans { animation: pop-in 0.28s cubic-bezier(0.3, 1.5, 0.5, 1); }
+	.fb.ok { animation: glow 0.5s ease-out; }
+	.fb.shake { animation: shake 0.28s ease-out; }
+	@keyframes glow { from { box-shadow: 0 0 0 0 rgba(166, 232, 143, 0.55); } to { box-shadow: 0 0 0 18px rgba(166, 232, 143, 0); } }
+	@keyframes shake { 25% { transform: translateX(-5px); } 60% { transform: translateX(4px); } }
+	@keyframes pop-in { from { transform: scale(0.92); opacity: 0; } }
+	.opt.good { animation: pop-in 0.25s cubic-bezier(0.3, 1.6, 0.5, 1); }
+	.rec { display: flex; align-items: center; gap: 10px; color: var(--bad); }
+	.rec i { width: 12px; height: 12px; border-radius: 50%; background: var(--bad); animation: pulse 0.9s ease-in-out infinite; }
+	@keyframes pulse { 50% { transform: scale(1.7); opacity: 0.4; } }
+	.marks { font-size: 22px; line-height: 1.5; color: var(--ok); }
+	.marks .miss { color: var(--bad); text-decoration: underline wavy; text-underline-offset: 5px; }
+	textarea { font-size: 18px; }
 	.fin { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; text-align: center; }
 	.ring { width: 170px; height: 170px; border-radius: 50%; display: grid; place-content: center; background: radial-gradient(closest-side, var(--bg) 82%, transparent 84%), conic-gradient(var(--lime), var(--rose), var(--mauve), var(--lime)); animation: pop 0.7s cubic-bezier(0.3, 1.6, 0.5, 1); box-shadow: 0 0 80px -10px rgba(227, 163, 198, 0.55); }
 	.ring span { font-size: 64px; font-weight: 300; line-height: 1; }

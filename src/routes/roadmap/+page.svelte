@@ -49,7 +49,7 @@
 							{:else}
 								<button class="btn wide" disabled>Test unlocks after the milestones</button>
 							{/if}
-							<p class="dim small">{s.n} questions, {Math.round(s.pass * 100)}% to pass. Verbs in {s.tenses.length} {s.tenses.length === 1 ? 'tense' : 'tenses'} plus words from your own bank.</p>
+							<p class="dim small">{s.n} questions or more, {Math.round(s.pass * 100)}% to pass. Verbs in {s.tenses.length} {s.tenses.length === 1 ? 'tense' : 'tenses'} plus words from your own bank{s.band === 'A' ? '' : ', then full sentences to hear, say and write'}.</p>
 						</div>
 					{/if}
 				</div>
