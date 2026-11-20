@@ -43,6 +43,7 @@
 
 	<section class="card stack">
 		<h3>What we do not do</h3>
+		<p class="dim">To stop abuse of the free AI and voice quotas, the server counts requests per visitor. It keeps a scrambled fingerprint of the network address, not the address itself, for a few minutes.</p>
 		<p class="dim">No advertising, no analytics, no tracking cookies, no sale or sharing of your data. The only things stored in your browser are your progress and your sign-in session.</p>
 	</section>
 

@@ -62,7 +62,7 @@ export async function POST({ request, getClientAddress }) {
 		);
 		return json({ hour, sent, gone });
 	}
-	if (limited('push', getClientAddress(), 10)) error(429, 'Too many requests.');
+	if (await limited('push', getClientAddress(), 10)) error(429, 'Too many requests.');
 	const b = await request.json().catch(() => ({}));
 	const endpoint = endpointOf(b.endpoint);
 	const hour = Number(b.hour);

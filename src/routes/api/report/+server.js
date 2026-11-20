@@ -9,7 +9,7 @@ import { LANGS } from '../../../lib/langs/meta.js';
 const s = (v, n) => (typeof v === 'string' ? v.slice(0, n) : '');
 
 export async function POST({ request, getClientAddress }) {
-	if (limited('report', getClientAddress(), 20)) error(429, 'Too many reports. Thank you, that is enough for now.');
+	if (await limited('report', getClientAddress(), 20)) error(429, 'Too many reports. Thank you, that is enough for now.');
 	const b = await request.json().catch(() => ({}));
 	const lang = LANGS[b.lang] ? b.lang : 'pt';
 	if (b.kind === 'error') {

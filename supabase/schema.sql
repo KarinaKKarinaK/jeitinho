@@ -61,3 +61,25 @@ alter table public.progress drop constraint if exists progress_lang_check;
 alter table public.progress add constraint progress_lang_check check (lang in ('pt', 'zh', 'pl', 'ja', 'es'));
 alter table public.progress drop constraint if exists progress_data_check;
 alter table public.progress add constraint progress_data_check check (octet_length(data::text) < 1500000);
+
+-- Rate limits shared by every server instance. key = what is limited plus a salted hash of the visitor's
+-- address (never the address itself); rows are only meaningful until `expires` and are cleared daily.
+create table if not exists public.limits (
+	key text primary key,
+	n integer not null,
+	expires timestamptz not null
+);
+alter table public.limits enable row level security;
+
+-- Adds to a counter and returns the new total, starting over when the window has passed. One atomic statement.
+create or replace function public.hit(k text, add integer, window_s integer) returns integer
+language sql security definer set search_path = public as $$
+	insert into public.limits as l (key, n, expires) values (k, add, now() + make_interval(secs => window_s))
+	on conflict (key) do update
+		set n = case when l.expires < now() then excluded.n else l.n + excluded.n end,
+		    expires = case when l.expires < now() then excluded.expires else l.expires end
+	returning n;
+$$;
+revoke all on function public.hit(text, integer, integer) from public, anon, authenticated;
+-- Housekeeping (run once, needs the pg_cron extension):
+--   select cron.schedule('jeitinho-limits-cleanup', '17 3 * * *', $$ delete from public.limits where expires < now() $$);

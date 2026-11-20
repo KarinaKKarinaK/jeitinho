@@ -334,11 +334,11 @@ export async function POST({ request, getClientAddress }) {
 	// Everyone is limited, own key or not: a made-up key must not be a way around the limit, and importing
 	// a link makes this server fetch a page, so that gets a tighter limit of its own.
 	const ip = getClientAddress();
-	if (limited(mine ? 'ai-own' : 'ai', ip, mine ? 120 : 40)) error(429, 'That is a lot of requests in a short time. Take a short break and try again.');
+	if (await limited(mine ? 'ai-own' : 'ai', ip, mine ? 120 : 40)) error(429, 'That is a lot of requests in a short time. Take a short break and try again.');
 	// the passcode guards the shared free quota; with your own key you are not using it
 	if (!mine && env.APP_PASSCODE && request.headers.get('x-pass') !== env.APP_PASSCODE) error(401, 'Wrong passcode. Set it in Settings.');
 	const b = await request.json().catch(() => error(400, 'Bad request'));
-	if (b?.op === 'import' && limited('import', ip, 12)) error(429, 'That is a lot of requests in a short time: imports are limited to a dozen every few minutes.');
+	if (b?.op === 'import' && await limited('import', ip, 12)) error(429, 'That is a lot of requests in a short time: imports are limited to a dozen every few minutes.');
 	const op = { import: importOp, chat: chatOp, lesson: lessonOp, grade: gradeOp, define: defineOp, example: exampleOp, conjugate: conjugateOp, gloss: glossOp }[b?.op];
 	if (!op) error(400, 'Unknown op');
 	return json(await own.run(mine, () => op(b)));
