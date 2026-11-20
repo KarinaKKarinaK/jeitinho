@@ -16,7 +16,10 @@
 
 	function finish({ right }) {
 		const xp = extra ? right * 2 : 30 + right * 3;
-		if (!extra) Object.assign(S.quiz[day], { done: true, score: right });
+		if (!extra) {
+			Object.assign(S.quiz[day], { done: true, score: right });
+			S.nquiz++;
+		}
 		addXP(xp);
 		return xp;
 	}

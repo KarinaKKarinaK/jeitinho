@@ -4,6 +4,8 @@
 	import { LESSON_LIST } from '../lib/content.js';
 	import { today, DAY } from '../lib/fx.js';
 	import { QUIZ_LEN } from '../lib/quiz.js';
+	import { cloud } from '../lib/cloud.svelte.js';
+	import { current, earned, milestones } from '../lib/roadmap.js';
 
 	const GOAL = 60; // XP that fills a day ring
 	const now = Date.now();
@@ -17,6 +19,8 @@
 	const next = $derived(LESSON_LIST.find((l) => !(l.id in S.done)));
 	const due = $derived(S.words.filter((w) => w.reps > 0 && w.due <= now).length);
 	const lv = $derived(level());
+	const stage = $derived(current(S));
+	const ms = $derived(stage ? milestones(S, stage) : []);
 
 	function exportData() {
 		const a = document.createElement('a');
@@ -41,7 +45,10 @@
 			<p class="dim small">{hello}</p>
 			<h2>{lv.name}</h2>
 		</div>
-		<div class="streak" class:lit={streak() > 0}><Icon name="flame" size={18} /> {streak()}</div>
+		<div class="row" style="gap:8px">
+			<div class="streak" class:lit={streak() > 0}><Icon name="flame" size={18} /> {streak()}</div>
+			<a class="icon-btn" class:solid={!!cloud.user} href="/account" aria-label={cloud.user ? 'Account, signed in' : 'Sign in'}><Icon name="user" size={20} /></a>
+		</div>
 	</header>
 
 	<div class="week">
@@ -77,10 +84,14 @@
 		<a class="card" href="/chat"><Icon name="chat" /><h3>Bate-papo</h3><p class="dim small">Chat with Bia from BH</p></a>
 	</div>
 
-	<div class="card xp">
-		<div class="row"><span class="grow">{S.xp} XP</span><span class="dim small">{lv.next ? `${lv.next - S.xp} to next level` : 'Top level'}</span></div>
-		<div class="bar"><i style:width="{lv.pct * 100}%"></i></div>
-	</div>
+	<a class="card xp" href="/roadmap">
+		<div class="row">
+			<span class="lvl">{earned(S)?.id || '0'}</span>
+			<span class="grow"><b>{stage ? `Next badge: ${stage.id}` : 'Every badge earned'}</b><small class="dim">{stage ? `${ms.filter((m) => m.ok).length} of ${ms.length} milestones · ${S.xp} XP` : `${S.xp} XP`}</small></span>
+			<Icon name="chev" size={18} />
+		</div>
+		<div class="bar"><i style:width="{stage ? (ms.reduce((a, m) => a + m.have / m.need, 0) / ms.length) * 100 : 100}%"></i></div>
+	</a>
 
 	<details class="card">
 		<summary>Settings</summary>
@@ -91,7 +102,7 @@
 				<button class="btn sm" onclick={exportData}>Export backup</button>
 				<label class="btn sm">Import backup<input type="file" accept="application/json" hidden onchange={importData} /></label>
 			</div>
-			<p class="small dim">Your progress lives only on this device. Export a backup now and then.</p>
+			<p class="small dim">{cloud.user ? `Signed in as ${cloud.user.email}. Progress syncs to your account.` : 'Your progress lives only on this device.'} <a href="/account" style="text-decoration:underline">{cloud.user ? 'Account' : 'Sign in to save it'}</a></p>
 		</div>
 	</details>
 </div>
@@ -112,7 +123,9 @@
 	.tiles .card { display: grid; gap: 4px; transition: transform 0.12s; }
 	.tiles .card:active { transform: scale(0.97); }
 	.tiles h3 { margin-top: 14px; }
-	.xp { display: grid; gap: 12px; }
+	.xp { display: grid; gap: 14px; }
+	.xp b { display: block; font-weight: 500; }
+	.lvl { width: 46px; height: 46px; flex: none; border-radius: 50%; display: grid; place-items: center; font: 500 12px var(--mono); color: #17121c; background: linear-gradient(150deg, var(--lime), var(--rose)); }
 	.bar { height: 8px; border-radius: 9px; background: var(--glass2); overflow: hidden; }
 	.bar i { display: block; height: 100%; border-radius: 9px; background: linear-gradient(90deg, var(--mauve), var(--rose)); }
 	summary { cursor: pointer; color: var(--dim); }

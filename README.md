@@ -25,11 +25,13 @@ A small, fast, gamified app that lives on your phone's home screen and runs on f
 - **Photos of your lesson notes.** The camera button transcribes them and adds the vocabulary to your bank.
 - **Bate-papo.** Chat with Bia, a mineira from BH, who answers in spoken Brazilian Portuguese and corrects your message each turn.
 - **Lessons on demand.** Type any topic, pick a level from A1 to C2, get a lesson.
+- **Roadmap with badges.** Fourteen checkpoints from A1.1 to C2.2. Each has milestones to hit and a test to pass before you earn the badge and move on.
+- **Accounts.** Sign in with Google, GitHub or email and your progress follows you across devices. Signed out, it still works and stays on the device.
 
 <p align="center">
 <img src="docs/learn.png" width="230" alt="Lesson list">
 <img src="docs/drill.png" width="230" alt="Verb drill question">
-<img src="docs/add.png" width="230" alt="Add material screen">
+<img src="docs/roadmap.png" width="230" alt="Roadmap with milestones and a checkpoint test">
 </p>
 
 ## Why it is built this way
@@ -63,6 +65,17 @@ Lessons, the quiz, the drill and the word bank work with no key at all. The key 
 3. Optional: add `APP_PASSCODE` so strangers who find your URL cannot use up your free quota. Type the same passcode under Settings in the app.
 4. On iPhone: open the site in Safari, tap Share, then **Add to Home Screen**.
 
+### Accounts and the database (optional)
+
+Without this the app still works and keeps progress on the device.
+
+1. In Vercel, open the project, go to Storage, and add **Supabase** (free plan). That sets `SUPABASE_URL` and `SUPABASE_ANON_KEY` for you. Redeploy.
+2. In the Supabase SQL editor, run [`supabase/schema.sql`](supabase/schema.sql). It creates one table with row level security, so each user can only read and write their own row.
+3. In Supabase, under Authentication, URL Configuration, set the Site URL to your deployed URL and add `https://your-url/account` to the redirect URLs.
+4. Email sign-in works now. For Google and GitHub, create an OAuth app with each, use the callback URL Supabase shows you, and paste the client ID and secret under Authentication, Providers.
+
+Sync is simple on purpose: the whole state is one JSON row, and the newest copy wins.
+
 ### It cannot cost money
 
 The server only ever calls models whose ID ends in `:free` (or the `openrouter/free` router). Anything else in `OPENROUTER_MODELS` is dropped in code, see `src/routes/api/ai/+server.js`. A $0 credit limit on the key is the second lock.
@@ -70,7 +83,7 @@ The server only ever calls models whose ID ends in `:free` (or the `openrouter/f
 ## How it is made
 
 - **SvelteKit**, prerendered. The whole app is about 60 kB of gzipped JavaScript, so it opens fast on a phone.
-- **No database, no accounts.** Progress lives in your browser's local storage. Settings has export and import for backups.
+- **Local first.** Progress lives in your browser's local storage and the app works signed out. With Supabase connected, the same state is mirrored to one Postgres row per user. Settings has export and import for backups.
 - **Voice** is the pt-BR voice built into your phone, so audio is free and instant.
 - **Lyrics** come from [LRCLIB](https://lrclib.net).
 
@@ -78,7 +91,9 @@ The server only ever calls models whose ID ends in `:free` (or the `openrouter/f
 src/lib/conj.js       verb conjugator (7 tenses, regular rules plus an irregular table)
 src/lib/quiz.js       answer checking, spaced repetition, daily quiz selection
 src/lib/content.js    the hand-written course and starter word bank
-src/lib/Exercise.svelte   the question runner used by lessons, quiz and drill
+src/lib/roadmap.js    stages, milestones and checkpoint tests
+src/lib/cloud.svelte.js   sign-in and sync (Supabase)
+src/lib/Exercise.svelte   the question runner used by lessons, quiz, drill and tests
 src/routes/api/ai     the only server code: import, chat, lesson
 ```
 
@@ -88,7 +103,8 @@ src/routes/api/ai     the only server code: import, chat, lesson
 - Free models are rate limited and sometimes slow. Try again if one times out.
 - YouTube often hides captions from servers. When that happens the app says so and you can paste the transcript.
 - It does not listen to your pronunciation yet.
-- Progress does not sync between devices.
+- The roadmap badges are this app's own checkpoints modeled on CEFR. They are not an official certificate, and the tests cover verbs and vocabulary, not speaking or writing.
+- Sync is newest-copy-wins. If you use two devices offline at the same time, the older changes lose.
 
 ## Contributing
 

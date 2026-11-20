@@ -2,14 +2,16 @@
 	import '../app.css';
 	import { page } from '$app/state';
 	import { persist } from '../lib/store.svelte.js';
+	import { init } from '../lib/cloud.svelte.js';
 	import Icon from '../lib/Icon.svelte';
 
 	let { children } = $props();
 	$effect(persist);
+	init();
 
 	const tabs = [['/', 'home', 'Home'], ['/learn', 'book', 'Learn'], ['/add', 'plus', 'Add material'], ['/bank', 'layers', 'Word bank'], ['/chat', 'chat', 'Chat']];
 	const path = $derived(page.url.pathname.replace(/\/$/, '') || '/');
-	const immersive = $derived(['/lesson', '/quiz', '/drill'].includes(path));
+	const immersive = $derived(['/lesson', '/quiz', '/drill', '/checkpoint'].includes(path));
 </script>
 
 <div class="bg"></div>

@@ -2,8 +2,10 @@ import { today, DAY } from './fx.js';
 import { SEED } from './content.js';
 import { wordKey } from './quiz.js';
 
-// ponytail: everything lives in localStorage on this device. Use Export in settings to back up; add a database when sync across devices matters.
+// State lives in localStorage so the app works offline and signed out.
+// When signed in, cloud.svelte.js mirrors the same object to the database.
 const KEY = 'jeitinho:v1';
+const REV = KEY + ':rev';
 
 export const newWord = (w, src = 'seed') => ({
 	say: '', ex: '', exEn: '', ...w,
@@ -11,26 +13,56 @@ export const newWord = (w, src = 'seed') => ({
 	src, added: Date.now(), due: 0, ivl: 0, ease: 2.5, reps: 0
 });
 
+const blank = () => ({ xp: 0, streak: 0, last: null, days: {}, done: {}, words: [], asked: {}, quiz: {}, materials: [], custom: {}, chat: [], pass: '', rate: 0.9, drill: ['perf'], uid: null, badges: {}, nquiz: 0 });
+const seeded = () => ({ ...blank(), words: SEED.map((w) => newWord(w)) });
+
 function load() {
-	const base = { xp: 0, streak: 0, last: null, days: {}, done: {}, words: [], asked: {}, quiz: {}, materials: [], custom: {}, chat: [], pass: '', rate: 0.9, drill: ['perf'] };
 	try {
 		const s = JSON.parse(localStorage.getItem(KEY));
-		if (s) return { ...base, ...s };
+		if (s) return { ...blank(), ...s };
 	} catch {
 		/* first run or private mode */
 	}
-	base.words = SEED.map((w) => newWord(w));
-	return base;
+	return seeded();
 }
 
 export const S = $state(load());
 
-export function persist() {
+let last = JSON.stringify(S); // so merely opening the app never counts as a change
+let applying = null;
+let onChange = null;
+
+// rev = time of the last real change on this device. Sync compares it with the server copy.
+export const rev = () => {
 	try {
-		localStorage.setItem(KEY, JSON.stringify(S));
+		return +localStorage.getItem(REV) || 0;
+	} catch {
+		return 0;
+	}
+};
+export const watch = (fn) => (onChange = fn);
+
+export function persist() {
+	const s = JSON.stringify(S);
+	if (s === last) return;
+	last = s;
+	try {
+		localStorage.setItem(KEY, s);
+		localStorage.setItem(REV, applying ?? Date.now());
 	} catch {
 		/* storage full or blocked */
 	}
+	if (applying === null) onChange?.();
+	applying = null;
+}
+
+// Take the server copy without echoing it straight back.
+export function replace(data, r) {
+	applying = r;
+	Object.assign(S, blank(), data, { pass: S.pass });
+}
+export function reset() {
+	Object.assign(S, seeded(), { pass: S.pass });
 }
 
 export function addXP(n) {

@@ -19,6 +19,7 @@
 	let res = $state(null);
 	let right = $state(0);
 	let xp = $state(null);
+	let verdict = $state('');
 	let input = $state();
 	const q = $derived(queue[i]);
 	const ready = $derived(res || q.kind === 'info' || (q.kind === 'choice' ? picked !== null : val.trim()));
@@ -42,7 +43,11 @@
 		res = null;
 		val = '';
 		picked = null;
-		if (i + 1 >= queue.length) xp = onfinish({ right, total }) ?? 0;
+		if (i + 1 >= queue.length) {
+			const r = onfinish({ right, total }) ?? 0;
+			verdict = r.title || '';
+			xp = r.xp ?? r;
+		}
 		else i++;
 	}
 
@@ -62,7 +67,7 @@
 {#if xp !== null}
 	<section class="fin" in:scale={{ start: 0.9, duration: 350 }}>
 		<div class="ring"><span>{right}</span><small>/ {total}</small></div>
-		<h1>{right === total ? 'Perfeito!' : right / total >= 0.7 ? 'Mandou bem!' : 'Quase lá'}</h1>
+		<h1>{verdict ? verdict : right === total ? 'Perfeito!' : right / total >= 0.7 ? 'Mandou bem!' : 'Quase lá'}</h1>
 		<p class="eyebrow">+{xp} XP</p>
 		<a class="btn primary wide" href={back}>Continuar</a>
 	</section>

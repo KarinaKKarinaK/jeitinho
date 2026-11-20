@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import { conj } from './conj.js';
 import { check, dailyQuiz, markAsked, fromKey, grade, cleanSteps, QUIZ_LEN } from './quiz.js';
 import { isPrivate } from './server/safefetch.js';
+import { decide } from './sync.js';
+import { STAGES, current, milestones, ready, buildTest, passed } from './roadmap.js';
 
 test('conjugation', () => {
 	const cases = [
@@ -62,4 +64,32 @@ test('LLM steps are sanitised', () => {
 test('private addresses are blocked', () => {
 	for (const ip of ['127.0.0.1', '10.1.2.3', '192.168.1.1', '169.254.169.254', '172.20.0.1', '::1', 'fd00::1', '::ffff:127.0.0.1', '::ffff:7f00:1']) assert.equal(isPrivate(ip), true, ip);
 	for (const ip of ['8.8.8.8', '172.32.0.1', '2606:4700::1111']) assert.equal(isPrivate(ip), false, ip);
+});
+
+test('sync decision after sign-in', () => {
+	const me = 'u1';
+	assert.equal(decide({ uid: me, localUid: null, localRev: 5, remote: false, remoteRev: 0 }), 'push', 'first sign-in uploads local progress');
+	assert.equal(decide({ uid: me, localUid: me, localRev: 5, remote: true, remoteRev: 9 }), 'pull', 'newer server copy wins');
+	assert.equal(decide({ uid: me, localUid: me, localRev: 9, remote: true, remoteRev: 5 }), 'push', 'newer local copy wins');
+	assert.equal(decide({ uid: me, localUid: 'other', localRev: 99, remote: true, remoteRev: 5 }), 'pull', "never upload another user's data");
+	assert.equal(decide({ uid: me, localUid: 'other', localRev: 99, remote: false, remoteRev: 0 }), 'fresh');
+	assert.equal(decide({ uid: me, localUid: null, localRev: 0, remote: true, remoteRev: 5 }), 'pull', 'new device takes the account data');
+});
+
+test('roadmap: milestones gate the test, badges move you on', () => {
+	const S = { ...mkS(), done: {}, badges: {}, nquiz: 0 };
+	assert.equal(current(S).id, 'A1.1');
+	assert.equal(ready(S, current(S)), false);
+	Object.assign(S, { done: { 'sons-1': 1, 'base-1': 1 }, nquiz: 1 });
+	assert.equal(ready(S, current(S)), true);
+	const t = buildTest(S, current(S));
+	assert.equal(t.length, 14);
+	assert.ok(t.every((q) => q.answer && !q.key));
+	assert.equal(passed(STAGES[0], 11, 14), false);
+	assert.equal(passed(STAGES[0], 12, 14), true);
+	S.badges['A1.1'] = '2026-01-01';
+	assert.equal(current(S).id, 'A1.2');
+	assert.equal(milestones(S, current(S)).find((m) => m.label.startsWith('Master')).ok, false);
+	assert.deepEqual(STAGES.map((s) => s.id).filter((id) => id.startsWith('B2')), ['B2.1', 'B2.2', 'B2.3']);
+	for (const s of STAGES) for (const id of s.lessons) assert.ok(milestones({ ...S, done: {} }, s), id);
 });
