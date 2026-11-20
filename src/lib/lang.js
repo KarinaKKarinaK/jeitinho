@@ -5,6 +5,7 @@ import { UI } from './langs/kit.js';
 const packs = {
 	pt: () => import('./langs/pt.js'),
 	zh: () => import('./langs/zh.js'),
+	pl: () => import('./langs/pl.js'),
 	ja: () => import('./langs/ja.js')
 };
 export const AVAILABLE = Object.keys(packs).map((code) => ({ code, ...LANGS[code] }));
