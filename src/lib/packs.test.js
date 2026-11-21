@@ -103,3 +103,10 @@ for (const code of codes) {
 		assert.equal(typeof p.ui, 'object');
 	});
 }
+
+test('Mandarin tone drills are marked, so the daily quiz can leave them out', async () => {
+	const pool = (await import('./langs/zh.js')).default.drill.pool();
+	const tone = pool.filter((c) => c.tone);
+	assert.ok(tone.length > 100 && tone.length < pool.length);
+	assert.ok(tone.every((c) => /^d:(tones|pairs):/.test(c.key)));
+});

@@ -466,7 +466,7 @@ const F = (prompt, answer, options, sub, explain) => ({ prompt, answer, options,
 const N = (zh, en, answer, options) => ({ prompt: zh, sub: en, answer, options, speak: zh, audio: true });
 
 const DRILLS = {
-	tones: { name: 'Tones', items: [
+	tones: { name: 'Tones', tone: true, items: [
 		N('你好', 'hello', 'nǐ hǎo', ['ní hào', 'nī hǎo', 'nì hāo']),
 		N('谢谢', 'thank you', 'xièxie', ['xiēxie', 'xiéxiè', 'xiěxie']),
 		N('中国', 'China', 'Zhōngguó', ['Zhòngguǒ', 'Zhǒngguó', 'Zhōngguò']),
@@ -576,6 +576,7 @@ const pairName = (a, b) => `${TONE[a]} + ${TONE[b]}`;
 const EVERY = [1, 2, 3, 4].flatMap((a) => [0, 1, 2, 3, 4].map((b) => [a, b]));
 DRILLS.pairs = {
 	name: 'Tone pairs (listening)',
+	tone: true, // left out of the daily quiz when tone practice is switched off
 	wt: 0.06, // many items: keep them from crowding the other drills out of the daily quiz
 	audio: true, // left out of the daily quiz when listening questions are switched off
 	items: WORDS.filter((w) => [...w.pt].length === 2 && !/[一不]/.test(w.pt) && syllables(w.say).length === 2 && toneOf(syllables(w.say)[0])).map((w, n) => {

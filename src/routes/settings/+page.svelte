@@ -179,6 +179,7 @@
 		</div>
 		<label class="sw"><input type="checkbox" bind:checked={p.quizAudio} /><span>Listening questions (turn off when you cannot play sound)</span></label>
 		<label class="sw"><input type="checkbox" bind:checked={p.quizDrills} /><span>Grammar drills mixed in with your words</span></label>
+		{#if pack.drill.pool().some((c) => c.tone)}<label class="sw"><input type="checkbox" bind:checked={p.quizTones} /><span>Tone questions (turn off to skip tone practice)</span></label>{/if}
 		<p class="dim small">Quiz changes apply from the next quiz that is built.</p>
 	</section>
 

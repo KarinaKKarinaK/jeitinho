@@ -14,6 +14,7 @@ export const DEFAULTS = {
 	quizLen: 11,
 	quizAudio: true, // listening questions in the daily quiz
 	quizDrills: true, // grammar drills in the daily quiz
+	quizTones: true, // tone questions in the daily quiz (Mandarin)
 	goalMin: 15, // minutes of study that fill a day ring
 	notifyAt: '19:00',
 	hidden: [], // languages you chose to hide from the language switcher
@@ -83,7 +84,7 @@ export function applyTheme() {
 
 // Settings that follow you to every device you sign in on. Left out on purpose: your API key (never leaves
 // the device), your picture (synced separately) and anything tied to one browser.
-const SHARED = ['theme', 'voice', 'voiceSet', 'rate', 'autoplay', 'sfx', 'quizLen', 'quizAudio', 'quizDrills', 'goalMin', 'notifyAt', 'hidden', 'model'];
+const SHARED = ['theme', 'voice', 'voiceSet', 'rate', 'autoplay', 'sfx', 'quizLen', 'quizAudio', 'quizDrills', 'quizTones', 'goalMin', 'notifyAt', 'hidden', 'model'];
 export const sharedPrefs = () => Object.fromEntries(SHARED.map((k) => [k, P[k]]));
 let onSave = null;
 export const onPrefs = (fn) => (onSave = fn); // the account layer listens here

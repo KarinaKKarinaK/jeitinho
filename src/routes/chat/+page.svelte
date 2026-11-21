@@ -46,7 +46,7 @@
 		end?.scrollIntoView({ behavior: 'smooth' });
 		try {
 			const r = await ai('chat', { scene, messages: S.chat.slice(-12).map(({ role, content }) => ({ role, content })) }, S.pass);
-			Object.assign(S.chat[S.chat.length - 1], { fix: r.fix, tip: r.tip });
+			Object.assign(S.chat[S.chat.length - 1], { fix: r.fix, kind: r.fix ? r.kind : '', tip: r.tip });
 			S.chat.push({ role: 'assistant', content: r.reply, en: r.en, say: r.say });
 			if (S.chat.length > 60) S.chat.splice(0, S.chat.length - 60);
 			addXP(2);
@@ -84,7 +84,7 @@
 				</div>
 			{:else}
 				<div class="bubble">{m.content}</div>
-				{#if m.fix}<p class="fix"><Icon name="check" size={14} /> {m.fix}</p>{/if}
+				{#if m.fix}<p class="fix">{#if m.kind}<span class="kind">{m.kind}</span>{:else}<Icon name="check" size={14} />{/if} {m.fix}</p>{/if}
 				{#if m.tip}<p class="tip">{m.tip}</p>{/if}
 			{/if}
 		</div>
@@ -112,6 +112,7 @@
 	.user .bubble { border-radius: 22px 22px 6px 22px; background: var(--grad); border: 0; color: var(--hero-ink); }
 	.tools button { background: none; border: 0; color: var(--dim); font: 500 11px var(--mono); cursor: pointer; padding: 4px 6px 0 0; display: flex; }
 	.fix { font-size: 14px; color: var(--ok); display: flex; gap: 6px; align-items: baseline; text-align: right; }
+	.kind { font: 500 10px var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--amber); border: 1px solid var(--line); border-radius: 999px; padding: 3px 8px; white-space: nowrap; }
 	.tip { font-size: 13px; color: var(--dim); text-align: right; }
 	.send { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(env(safe-area-inset-bottom) + 84px); width: min(484px, calc(100% - 36px)); display: flex; gap: 8px; z-index: 5; }
 	.rec { background: var(--bad); color: #17121c; animation: pulse 0.9s ease-in-out infinite; }

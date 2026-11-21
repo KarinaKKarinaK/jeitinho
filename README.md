@@ -49,7 +49,7 @@ No install and no account needed: open the link and start. Sign in only if you w
 - **Drills:** the hard part of each language. Verb tenses (Portuguese, Spanish), tones and measure words (Mandarin), cases and aspect (Polish), particles and verb forms (Japanese).
 - **Fair marking:** popular synonyms count as right, and a typed answer marked wrong gets a second opinion from the AI.
 - **Speaking:** say a sentence and see which words were understood.
-- **Chat:** a partner who replies in the spoken language and corrects each message, by text or voice.
+- **Chat:** a partner who replies in the spoken language and corrects each message, by text or voice. Each correction says what kind of mistake it was: word order, wrong word, grammar or spelling.
 
 **Bring your own material**
 - **Songs:** paste a Spotify link for lyrics with line by line translation, tap words to keep them, then take a quiz built from the song.
@@ -60,7 +60,7 @@ No install and no account needed: open the link and start. Sign in only if you w
 
 **Made for Mandarin**
 - Pinyin above the characters, coloured by tone, with one tap to hide it.
-- A listening drill for tone pairs. Tones can be typed as numbers (`ni3 hao3`).
+- A listening drill for tone pairs. Tones can be typed as numbers (`ni3 hao3`). Not interested in tones? One switch in Settings takes them out of the daily quiz.
 - The HSK 1 to 6 word lists (4,998 words) as ready-made collections.
 - A breakdown of what each character in a word means.
 
