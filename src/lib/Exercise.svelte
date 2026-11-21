@@ -3,11 +3,37 @@
 	import { untrack } from 'svelte';
 	import Icon from './Icon.svelte';
 	import Star from './Star.svelte';
-	import { speak, ding, ai, record, hear } from './fx.js';
+	import { speak, ding, ai, record, hear, second, warm } from './fx.js';
 	import { check, sayScore } from './quiz.js';
 	import { S } from './store.svelte.js';
 	import { pack, meta, t, lang } from './lang.js';
 	import { P } from './prefs.js';
+	import { esc, listen, pinyin, loadPinyin } from './annotate.js';
+
+	// Mandarin: pinyin above every character, switched on and off with the same button as in Reading.
+	const RUBY = 'jeitinho:ruby';
+	let ruby = $state((() => { try { return localStorage.getItem(RUBY) !== '0'; } catch { return true; } })());
+	let zhReady = $state(false);
+	loadPinyin().then((ok) => (zhReady = ok));
+	const setRuby = (on) => { ruby = on; try { localStorage.setItem(RUBY, on ? '1' : '0'); } catch { /* no storage */ } };
+	const py = (html) => (zhReady && ruby ? pinyin(html) : html);
+	// when the choices are themselves pinyin, readings above the question would give the answer away
+	const TONED = /[āáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜ]/;
+	const gives = (q) => [q.answer, ...(q.opts || [])].some((x) => TONED.test(x || '') && !/\p{Script=Han}/u.test(x));
+	const show = (text, q) => (q && gives(q) ? esc(text) : py(esc(text)));
+	// Says plainly what a question wants, so one met out of context (the level test) is still clear.
+	function hint(q) {
+		const gap = /_{2,}/.test(q.prompt || '');
+		const verb = /\(([^()]+)\)\s*$/.exec(q.prompt || '')?.[1];
+		if (q.kind === 'type' && gap && verb) return `Fill the gap with the right form of "${verb.split(',')[0].trim()}"`;
+		if (q.kind === 'type' && gap) return 'Type the word that fits the gap';
+		if (q.kind === 'choice' && gap) return 'Choose the word that fits the gap';
+		if (q.kind === 'choice' && /\bmeans\s*$/i.test(q.prompt || '')) return 'Choose the meaning';
+		if (q.kind === 'choice' && /\bis\s*$/i.test(q.prompt || '')) return 'Choose the right one';
+		return '';
+	}
+	// tap an example phrase to hear it
+	const tap = (e) => { const el = e.target.closest?.('[data-say]'); if (el) speak(el.dataset.say); };
 
 	let { steps, retry = false, back = '/', onanswer = () => {}, onfinish = () => 0 } = $props();
 
@@ -47,7 +73,14 @@
 			const sc = sayScore(q.answer, h.words);
 			return { ok: sc.score >= 0.7, marks: sc.marks, note: h.text ? `Heard: ${h.text}` : 'Heard nothing. Hold the phone closer.' };
 		}
-		return check(val, q);
+		const r = check(val, q);
+		// marked wrong, but it may be another right way to say it: ask for a second opinion (typed answers only;
+		// a listening question wants the exact words)
+		if (!r.ok && q.kind === 'type' && val.trim().length > 1) {
+			const s2 = await second($state.snapshot(q), val.trim(), S.pass);
+			if (s2?.ok) return { ok: true, note: `Also correct${s2.why ? ': ' + s2.why : '.'} We had: ${q.answer}` };
+		}
+		return r;
 	}
 
 	// a task that cannot be graded (offline, no microphone, model busy) is dropped from the score
@@ -81,6 +114,7 @@
 		busy = false;
 		stop = null;
 		res = r;
+		input?.blur(); // puts the phone keyboard away so the feedback and the Continue button are in view
 		ding(r.ok);
 		if (!q.again) {
 			if (r.ok) right++;
@@ -112,6 +146,10 @@
 
 	$effect(() => {
 		if (xp === null && !res && (q.kind === 'listen' || q.autoplay)) speak(q.speak);
+		// have the audio ready before it is needed: this question's answer, and the next one if it starts by speaking
+		if (xp === null && q.speak && (P.autoplay || q.kind === 'listen' || q.audio)) warm(q.speak);
+		const nx = queue[i + 1];
+		if (nx?.speak && (nx.kind === 'listen' || nx.autoplay)) warm(nx.speak);
 		input?.focus();
 	});
 </script>
@@ -129,6 +167,7 @@
 	<header class="top">
 		<a class="icon-btn sm" href={back} aria-label="Close"><Icon name="x" size={18} /></a>
 		<div class="bar"><i style:width="{(i / queue.length) * 100}%"></i></div>
+		{#if zhReady}<button class="chip" class:on={ruby} onclick={() => setRuby(!ruby)}>Pinyin</button>{/if}
 		<span class="dim small">{i + 1}/{queue.length}</span>
 	</header>
 
@@ -137,23 +176,24 @@
 			{#if q.kind === 'info'}
 				<p class="eyebrow">{t.learn}</p>
 				<h1>{q.title}</h1>
-				{#if q.html}<div class="body">{@html q.body}</div>{:else}<div class="body">{q.body}</div>{/if}
+				<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
+				<div class="body" onclick={tap}>{@html py(listen(q.html ? q.body : esc(q.body)))}</div>
 				{#if q.say}<button class="btn sm" onclick={() => speak(q.say)}><Icon name="sound" size={18} /> {t.hear}</button>{/if}
 			{:else}
-				<p class="eyebrow">{q.again ? t.again : q.label || (q.kind === 'choice' ? 'Choose' : q.kind === 'listen' ? 'Listen and type' : q.kind === 'say' ? 'Say it out loud' : q.kind === 'write' ? 'Write in Portuguese' : t.typeLabel)}</p>
+				<p class="eyebrow">{q.again ? t.again : q.label || hint(q) || (q.kind === 'choice' ? 'Choose' : q.kind === 'listen' ? 'Listen and type' : q.kind === 'say' ? 'Say it out loud' : q.kind === 'write' ? 'Write in Portuguese' : t.typeLabel)}</p>
 				{#if q.kind === 'listen'}
 					<button class="play" onclick={() => speak(q.speak)} aria-label="Play audio"><Icon name="sound" size={38} /></button>
 					<p class="dim">{q.prompt} <button class="chip" onclick={() => speak(q.speak, 0.6)}>slow</button></p>
 				{:else}
-					<h1 class="prompt">{q.prompt}</h1>
-					{#if q.sub}<p class="dim">{q.sub}</p>{/if}
+					<h1 class="prompt">{@html show(q.prompt, q)}</h1>
+					{#if q.sub}<p class="dim">{@html show(q.sub, q)}</p>{/if}
 					{#if q.audio}<button class="btn sm" onclick={() => speak(q.speak)}><Icon name="sound" size={18} /> {t.hear}</button>{/if}
 				{/if}
 
 				{#if q.kind === 'choice'}
 					<div class="opts">
 						{#each q.opts as o}
-							<button class="opt" class:on={picked === o} class:good={res && o === q.answer} class:bad={res && picked === o && o !== q.answer} disabled={!!res} onclick={() => (picked = o)}>{o}</button>
+							<button class="opt" class:on={picked === o} class:good={res && o === q.answer} class:bad={res && picked === o && o !== q.answer} disabled={!!res} onclick={() => (picked = o)}>{@html show(o, res ? null : q)}</button>
 						{/each}
 					</div>
 				{:else if q.kind === 'say'}
@@ -163,12 +203,12 @@
 				{:else if q.kind === 'write'}
 					<textarea bind:this={input} bind:value={val} lang={meta.locale} rows="5" placeholder={t.write} readonly={!!res || busy} autocapitalize="sentences" spellcheck="false"></textarea>
 					<div class="keys">
-						{#each pack.keys || '' as ch}<button onclick={() => type(ch)} disabled={!!res} tabindex="-1">{ch}</button>{/each}
+						{#each pack.keys || '' as ch}<button onpointerdown={(e) => e.preventDefault()} onclick={() => type(ch)} disabled={!!res} tabindex="-1">{ch}</button>{/each}
 					</div>
 				{:else}
 					<input bind:this={input} bind:value={val} type="text" lang={meta.locale} placeholder={t.placeholder} readonly={!!res} autocapitalize="off" autocomplete="off" autocorrect="off" spellcheck="false" enterkeyhint="done" />
 					<div class="keys">
-						{#each pack.keys || '' as ch}<button onclick={() => type(ch)} disabled={!!res} tabindex="-1">{ch}</button>{/each}
+						{#each pack.keys || '' as ch}<button onpointerdown={(e) => e.preventDefault()} onclick={() => type(ch)} disabled={!!res} tabindex="-1">{ch}</button>{/each}
 					</div>
 				{/if}
 			{/if}
@@ -183,13 +223,13 @@
 					{#if q.wid}{@const bw = S.words.find((w) => w.id === q.wid)}{#if bw}<Star word={bw} />{/if}{/if}
 					{#if !res.skipped && (q.speak || q.kind !== 'choice')}<button class="icon-btn sm" onclick={() => speak(q.speak || q.answer)} aria-label="Hear it"><Icon name="sound" size={18} /></button>{/if}
 				</div>
-				{#if !res.ok || (q.kind === 'write' && !res.skipped)}<p class="ans">{q.answer}</p>{/if}
+				{#if !res.ok || (q.kind === 'write' && !res.skipped)}<p class="ans">{@html py(esc(q.answer))}</p>{/if}
 				{#if res.note}<p class="small">{res.note}</p>{/if}
 				{#if !res.skipped}<button class="flag" disabled={reported} onclick={report}>{reported ? 'Reported, thank you' : 'Something wrong with this question? Report it'}</button>{/if}
-				{#if q.explain}{#if q.html}<p class="ex">{@html q.explain}</p>{:else}<p class="ex">{q.explain}</p>{/if}{/if}
+				{#if q.explain}<p class="ex">{@html py(q.html ? q.explain : esc(q.explain))}</p>{/if}
 			</div>
 		{/if}
-		<button class="btn primary wide" disabled={!ready} onclick={submit}>{#if busy}<span class="spin"></span>{:else if res || q.kind === 'info'}{t.next}{:else if q.kind === 'say'}<Icon name="mic" size={18} /> {stop ? t.stop : t.rec}{:else}{t.check}{/if}</button>
+		<button class="btn primary wide" disabled={!ready} onpointerdown={(e) => e.preventDefault()} onclick={submit}>{#if busy}<span class="spin"></span>{:else if res || q.kind === 'info'}{t.next}{:else if q.kind === 'say'}<Icon name="mic" size={18} /> {stop ? t.stop : t.rec}{:else}{t.check}{/if}</button>
 	</footer>
 {/if}
 
@@ -201,6 +241,15 @@
 	.prompt { font-size: clamp(26px, 7vw, 34px); }
 	.body { font-size: 18px; line-height: 1.65; color: var(--dim); white-space: pre-line; }
 	.body :global(b) { color: var(--ink); font-weight: 500; }
+	/* example phrases you can tap to hear */
+	.body :global(.tap) { cursor: pointer; border-bottom: 1px dashed var(--line2, var(--faint)); padding-bottom: 1px; transition: background 0.15s; border-radius: 4px; }
+	.body :global(.tap:hover), .body :global(.tap:active) { background: var(--glass2); }
+	.body :global(.tap)::after { content: ''; display: inline-block; width: 0.8em; height: 0.8em; margin-left: 0.3em; vertical-align: -0.05em; background: currentColor; opacity: 0.55; -webkit-mask: var(--spk) center / contain no-repeat; mask: var(--spk) center / contain no-repeat; }
+	main :global(rt) { font: 400 0.48em var(--mono); letter-spacing: 0; user-select: none; padding: 0 1px; }
+	main :global(ruby), footer :global(ruby) { ruby-align: center; }
+	.body:has(:global(ruby)) { line-height: 2.05; }
+	.prompt:has(:global(ruby)) { line-height: 1.7; }
+	footer :global(rt) { font: 400 0.5em var(--mono); }
 	input { font-size: 22px; padding: 18px 20px; margin-top: 6px; }
 	.keys { display: flex; gap: 6px; flex-wrap: wrap; }
 	.keys button { width: 36px; height: 38px; border-radius: 12px; border: 1px solid var(--line); background: var(--glass); color: var(--ink); font: 400 17px var(--font); cursor: pointer; }
@@ -213,7 +262,9 @@
 	.opt.bad { border-color: var(--bad); background: rgba(255, 143, 143, 0.12); }
 	.play { width: 108px; height: 108px; border-radius: 50%; border: 0; cursor: pointer; color: var(--hero-ink); background: var(--grad); box-shadow: 0 20px 40px -18px var(--glow); transition: transform 0.12s; }
 	.play:active { transform: scale(0.93); }
-	footer { position: sticky; bottom: calc(env(safe-area-inset-bottom) + 12px); display: grid; gap: 12px; margin-top: 24px; }
+	/* --kb is the height of the phone keyboard (set in the layout): the button rides just above it instead of hiding behind it */
+	footer { position: sticky; bottom: calc(env(safe-area-inset-bottom) + 12px); display: grid; gap: 12px; margin-top: 24px; transform: translateY(calc(var(--kb, 0px) * -1)); transition: transform 0.12s; z-index: 5; }
+	:global(html.kb) footer { bottom: 8px; }
 	.fb { padding: 16px 18px; border-radius: 24px; border: 1px solid rgba(255, 143, 143, 0.5); background: var(--bad-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); display: grid; gap: 6px; }
 	.fb.ok { border-color: rgba(166, 232, 143, 0.5); background: var(--ok-bg); }
 	.fb b { font-weight: 500; color: var(--bad); }

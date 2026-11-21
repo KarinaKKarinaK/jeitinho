@@ -7,6 +7,7 @@ import { withMore } from './kit.js';
 import { MORE, SEED_POS } from './words/zh.js';
 import { UNITS5 } from './zh-hsk5.js';
 import { UNITS6 } from './zh-hsk6.js';
+import { SYN } from './words/syn-zh.js';
 
 // typed answer: characters, or pinyin (tone marks optional, flagged when missing)
 const Z = (prompt, zh, py, explain) => T(prompt, zh, `${zh} = ${py}${explain ? '. ' + explain : ''}`, [py]);
@@ -590,6 +591,7 @@ DRILLS.pairs = {
 
 export default {
 	code: 'zh',
+	syn: SYN,
 	units: [...UNITS, ...UNITS5, ...UNITS6],
 	seed: withMore(SEED, MORE, SEED_POS),
 	placement: PLACEMENT,

@@ -9,7 +9,7 @@
 	import { hsk } from '../../lib/zhdata.js';
 	import { lang } from '../../lib/lang.js';
 	import { S, addXP, addWords, newCollection, dropCollection, toggleIn, removeWord, forget } from '../../lib/store.svelte.js';
-	import { grade, norm, longEnough, parseWordList, wordKey } from '../../lib/quiz.js';
+	import { grade, norm, longEnough, parseWordList, wordKey, synOf } from '../../lib/quiz.js';
 	import { speak, today, ai } from '../../lib/fx.js';
 	import { POS } from '../../lib/langs/meta.js';
 	import { t, meta } from '../../lib/lang.js';
@@ -148,6 +148,7 @@
 						<div class="back" in:fly={{ y: 10, duration: 200 }}>
 							<div class="row"><h1 class="grow" lang={meta.locale}>{card.pt}</h1><Star word={card} size={24} /></div>
 							{#if card.say}<p class="say"><Tones text={card.say} /></p>{/if}
+							{#if synOf(card).length}<p class="small dim">Similar: {#each synOf(card) as x, i}{i ? ', ' : ''}<span class="syn" lang={meta.locale}>{x.pt}</span>{#if x.say} <Tones text={x.say} />{/if}{/each}</p>{/if}
 							{#if card.ex}<p>{card.ex}</p><p class="dim small">{card.exEn}</p>{/if}
 							{#if card.note}<p class="small" style="color:var(--amber)">{card.note}</p>{/if}
 						</div>
@@ -259,6 +260,7 @@
 					<div class="stack" style="gap:10px;margin-top:12px" in:fly={{ y: -6, duration: 160 }}>
 						{#if w.say && !meta.chars}<p class="say">{w.say}</p>{/if}
 						<Built word={w.pt} />
+						{#if synOf(w).length}<p class="small dim">Similar: {#each synOf(w) as x, i}{i ? ', ' : ''}<button class="syn" lang={meta.locale} onclick={() => speak(x.pt)}>{x.pt}</button>{#if x.say} <Tones text={x.say} />{/if}{/each}</p>{/if}
 						{#if w.ex}<div><p lang={meta.locale}>{w.ex}</p>{#if w.exSay}<p class="say">{w.exSay}</p>{/if}<p class="dim small">{w.exEn}</p></div>{/if}
 						<div class="chips">
 							<button class="btn sm" onclick={() => speak(w.ex || w.pt)}><Icon name="sound" size={16} /> {t.hear}</button>
@@ -332,6 +334,7 @@
 	.head { flex-wrap: wrap; gap: 12px; }
 	.flash { width: 100%; min-height: 300px; text-align: left; color: var(--ink); font: inherit; cursor: pointer; display: flex; flex-direction: column; gap: 14px; }
 	.back { display: grid; gap: 8px; margin-top: auto; padding-top: 18px; border-top: 1px solid var(--line); }
+	.syn { background: none; border: 0; padding: 0; font: inherit; color: var(--ink); cursor: pointer; }
 	.hsk { color: var(--rose); border-color: color-mix(in srgb, var(--rose) 40%, transparent); }
 	.bar { height: 6px; border-radius: 9px; background: var(--glass2); overflow: hidden; }
 	.bar i { display: block; height: 100%; border-radius: 9px; background: var(--rose); transition: width 0.4s; }

@@ -306,3 +306,11 @@ test('pinyin: tones typed as numbers, and which tone a syllable has', async () =
 	const split = (s) => syllables(s).join(' ');
 	assert.deepEqual(['péngyou', 'nánguài', 'yīnggāi', 'shuǐguǒ', "nǚ'ér", 'xǐhuan', 'míngbai', 'nǐ hǎo', 'Zhōngguó', 'diànnǎo'].map(split), ['péng you', 'nán guài', 'yīng gāi', 'shuǐ guǒ', 'nǚ ér', 'xǐ huan', 'míng bai', 'nǐ hǎo', 'Zhōng guó', 'diàn nǎo']);
 });
+
+test('a synonym of the word asked for is accepted, and named as such', () => {
+	const q = { answer: 'bonito', syn: ['lindo', 'belo'] };
+	assert.equal(check('lindo', q).ok, true);
+	assert.match(check('Lindo', q).note, /synonym/);
+	assert.equal(check('bonito', q).note, undefined);
+	assert.equal(check('feio', q).ok, false);
+});

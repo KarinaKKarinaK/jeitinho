@@ -14,8 +14,13 @@ const bare = (s) => norm(s).normalize('NFD').replace(/(?<=\p{Script=Latin})\p{M}
 // a leading article does not.
 export const wordKey = (s) => norm(s).replace(pack.articles || /^$/, '');
 
+// Popular synonyms of a word, from the pack: [{ pt, say }]
+export const synOf = (w) => (pack.syn?.[w.pt] || []).map((x) => (Array.isArray(x) ? { pt: x[0], say: x[1] } : { pt: x, say: '' }));
+
 export function check(val, q) {
 	if (lang === 'zh') val = numbered(val); // tones typed as numbers: ni3 hao3
+	// a synonym of the word asked for is right too; say which word we had in mind
+	if ((q.syn || []).some((a) => norm(a) === norm(val) || bare(a) === bare(val))) return { ok: true, note: `Also correct: a synonym. We had: ${q.answer}` };
 	const ok = [q.answer, ...(q.accept || [])].flatMap((a) => a.split('/')).map((a) => a.trim());
 	if (ok.some((a) => norm(a) === norm(val))) return { ok: true };
 	if (ok.some((a) => bare(a) === bare(val))) return { ok: true, note: t.near };
@@ -64,7 +69,9 @@ export function wordQ(w, type) {
 		.join('\n');
 	// Chinese and Japanese words can also be answered by their reading (pinyin, kana or romaji)
 	const accept = meta.chars && w.say ? w.say.split(' · ') : undefined;
-	const base = { key: `${w.id}:${type}`, wid: w.id, answer: w.pt, accept, speak: w.pt, explain };
+	// synonyms count when you are asked for the word from its meaning, not when you must type what you hear or fill a set phrase
+	const syn = type === 'type' ? synOf(w).flatMap((x) => [x.pt, ...(meta.chars && x.say ? [x.say] : [])]) : undefined;
+	const base = { key: `${w.id}:${type}`, wid: w.id, answer: w.pt, accept, syn, speak: w.pt, explain };
 	if (type === 'cloze')
 		return { ...base, kind: 'type', label: 'Fill the gap', prompt: w.ex.replace(new RegExp(esc(w.pt), 'i'), '_____'), sub: w.exEn || w.en };
 	if (type === 'listen') return { ...base, kind: 'listen', label: 'Listen and type', prompt: 'Type what you hear' };

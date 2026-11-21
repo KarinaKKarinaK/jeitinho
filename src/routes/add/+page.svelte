@@ -73,7 +73,7 @@
 <div class="stack rise">
 	<div class="card stack">
 		<p class="eyebrow">{t.linkText}</p>
-		<textarea bind:value={text} placeholder="Paste a Spotify song link, an article, a YouTube video, or any text in {meta.name}"></textarea>
+		<textarea bind:value={text} rows="3" oninput={(e) => { e.target.style.height = 'auto'; e.target.style.height = Math.min(e.target.scrollHeight + 2, window.innerHeight * 0.55) + 'px'; }} placeholder="Paste a Spotify song link, an article, a YouTube video, or any text in {meta.name}"></textarea>
 		<div class="row">
 			<button class="btn primary grow" disabled={!!busy || text.trim().length < 8} onclick={go}>
 				{#if busy}<span class="spin"></span> {busy}{:else}<Icon name={isUrl ? 'link' : 'bolt'} size={18} /> {isUrl ? 'Import link' : 'Find the good words'}{/if}

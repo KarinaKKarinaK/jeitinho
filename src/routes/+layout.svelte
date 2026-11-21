@@ -13,6 +13,25 @@
 	let { children } = $props();
 	$effect(persist);
 	applyTheme();
+	// The phone keyboard covers the bottom of the page without resizing it. Measure it, so anything pinned to the
+	// bottom (the Check button) can sit above it, and undo the sideways or stuck scroll iOS leaves behind when it closes.
+	onMount(() => {
+		const vv = window.visualViewport;
+		if (!vv) return;
+		let was = 0;
+		const fit = () => {
+			const kb = Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop));
+			const open = kb > 80; // smaller changes are browser bars, not a keyboard
+			document.documentElement.style.setProperty('--kb', open ? kb + 'px' : '0px');
+			document.documentElement.classList.toggle('kb', open);
+			if (was && !open) requestAnimationFrame(() => window.scrollTo(window.scrollX, window.scrollY)); // re-syncs taps with what is on screen
+			was = open ? kb : 0;
+		};
+		vv.addEventListener('resize', fit);
+		vv.addEventListener('scroll', fit);
+		return () => { vv.removeEventListener('resize', fit); vv.removeEventListener('scroll', fit); };
+	});
+
 	onMount(() => {
 		document.getElementById('splash')?.remove(); // the instant placeholder from app.html
 		init(); // sign-in and sync start after the first screen is drawn, not before

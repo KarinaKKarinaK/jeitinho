@@ -51,6 +51,13 @@ for (const code of codes) {
 		const exact = p.seed.filter((w) => w.ex.toLowerCase().includes(w.pt.toLowerCase())).length;
 		assert.ok(exact >= p.seed.length / 2, `only ${exact} of ${p.seed.length} seed examples contain their word`);
 
+		// synonyms belong to starter words and never repeat the word itself
+		const words = new Set(p.seed.map((w) => w.pt));
+		for (const [k, list] of Object.entries(p.syn || {})) {
+			assert.ok(words.has(k), `synonym key ${k} is a starter word`);
+			for (const x of list) assert.notEqual(Array.isArray(x) ? x[0] : x, k, `synonym of ${k} differs from it`);
+		}
+
 		// drills: every key the pool offers can be built into a valid question
 		const pool = p.drill.pool();
 		assert.ok(pool.length >= 60, `${pool.length} drill questions, need at least 60`);

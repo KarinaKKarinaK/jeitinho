@@ -218,3 +218,9 @@ select {
 .rise > :nth-child(4) { animation-delay: 0.09s; }
 .rise > :nth-child(n + 5) { animation-delay: 0.12s; }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+
+/* Mandarin readings, coloured by tone, wherever they are injected as HTML */
+rt.t1 { color: var(--t1); } rt.t2 { color: var(--t2); } rt.t3 { color: var(--t3); } rt.t4 { color: var(--t4); } rt.t0 { color: var(--dim); }
+:root { --spk: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M3 9v6h4l5 4V5L7 9H3zm12.5 3a4 4 0 0 0-2.5-3.7v7.4a4 4 0 0 0 2.5-3.7zM13 3.2v2.1a7 7 0 0 1 0 13.4v2.1a9 9 0 0 0 0-17.6z'/%3E%3C/svg%3E"); }
+/* long pasted text wraps and the box grows with it, instead of scrolling inside a small window */
+textarea { overflow-wrap: anywhere; field-sizing: content; max-height: 55vh; }

@@ -44,10 +44,11 @@ No install and no account needed: open the link and start. Sign in only if you w
 | **Grammar** | Every explanation from the course as a searchable reference, and a conjugation table for any verb (usage patterns for Mandarin). |
 | **Made for Mandarin** | Pinyin above every word in reading texts, coloured by tone, with one tap to hide it. Tones can be typed as numbers (`ni3 hao3`). A listening drill for tone pairs, the HSK word lists as ready-made collections, and a breakdown of what each character in a word means. |
 | **Five languages** | Each has its own course of 20 or more lessons, drills, placement test and roadmap. Switch on the home screen; progress is kept separately per language under one account. |
+| **Fair marking** | A typed answer marked wrong gets a second opinion from the AI: another correct way to say it is accepted. |
 | **Placement test** | New learners take a short test that climbs a level at a time and stops when it gets too hard. |
 | **Drills** | The hard part of each language: verb tenses (Portuguese, Spanish), tones and measure words (Mandarin), cases and aspect (Polish), particles and verb forms (Japanese). |
 | **Real speech** | Regional and spoken language, not only the textbook: mineirês from Belo Horizonte, the Beijing r, Kansai-ben, vosotros and vos. |
-| **Word bank** | 175 to 215 starter words per language, tagged by part of speech. Stars, your own notes, collections, AI example sentences, spaced repetition and export to Anki. |
+| **Word bank** | 175 to 215 starter words per language, tagged by part of speech, with popular synonyms that also count as right answers. Stars, your own notes, collections, AI example sentences, spaced repetition and export to Anki. |
 | **Songs** | Paste a Spotify link: lyrics with line by line translation, tap any word to see what it means and keep it, then a quiz built from the song. |
 | **Import** | An article, a YouTube link, pasted text or a photo of your notes becomes flashcards. |
 | **Speaking** | Say a sentence, see which words were understood. Voice mode in the chat. |
