@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 440" role="img" aria-label="jeitinho in numbers: 5 languages, 123 lessons, 2,235 lesson steps, 5,980 words, costs nothing to run. Lessons per language: Mandarin 31, Polish 24, Spanish 24, Portuguese 22, Japanese 22." font-family="ui-rounded, 'SF Pro Rounded', system-ui, -apple-system, 'Segoe UI', sans-serif">
+<rect width="1200" height="440" rx="28" fill="#0a0b12"/>
+<rect x="40" y="36" width="208" height="124" rx="20" fill="#151724" stroke="#262a3d"/>
+<text x="62" y="98" font-size="44" font-weight="600" fill="#f6f0f4">5</text>
+<text x="62" y="132" font-size="17" fill="#a9a6b8">languages</text>
+<rect x="268" y="36" width="208" height="124" rx="20" fill="#151724" stroke="#262a3d"/>
+<text x="290" y="98" font-size="44" font-weight="600" fill="#f6f0f4">123</text>
+<text x="290" y="132" font-size="17" fill="#a9a6b8">lessons</text>
+<rect x="496" y="36" width="208" height="124" rx="20" fill="#151724" stroke="#262a3d"/>
+<text x="518" y="98" font-size="44" font-weight="600" fill="#f6f0f4">2,235</text>
+<text x="518" y="132" font-size="17" fill="#a9a6b8">lesson steps</text>
+<rect x="724" y="36" width="208" height="124" rx="20" fill="#151724" stroke="#262a3d"/>
+<text x="746" y="98" font-size="44" font-weight="600" fill="#f6f0f4">5,980</text>
+<text x="746" y="132" font-size="17" fill="#a9a6b8">words ready to study</text>
+<rect x="952" y="36" width="208" height="124" rx="20" fill="#151724" stroke="#262a3d"/>
+<text x="974" y="98" font-size="44" font-weight="600" fill="#f6f0f4">$0</text>
+<text x="974" y="132" font-size="17" fill="#a9a6b8">to run, by design</text>
+<text x="40" y="212" font-size="13" letter-spacing="2" fill="#e4f060" font-family="ui-monospace, Menlo, monospace">LESSONS PER LANGUAGE</text>
+<text x="40" y="255" font-size="17" fill="#a9a6b8">Mandarin</text>
+<path d="M170 240h926a4 4 0 0 1 4 4v12a4 4 0 0 1-4 4h-926z" fill="#a3b4ff"/>
+<text x="1112" y="255" font-size="17" font-weight="600" fill="#f6f0f4">31</text>
+<text x="40" y="291" font-size="17" fill="#a9a6b8">Polish</text>
+<path d="M170 276h716a4 4 0 0 1 4 4v12a4 4 0 0 1-4 4h-716z" fill="#a3b4ff"/>
+<text x="902" y="291" font-size="17" font-weight="600" fill="#f6f0f4">24</text>
+<text x="40" y="327" font-size="17" fill="#a9a6b8">Spanish</text>
+<path d="M170 312h716a4 4 0 0 1 4 4v12a4 4 0 0 1-4 4h-716z" fill="#a3b4ff"/>
+<text x="902" y="327" font-size="17" font-weight="600" fill="#f6f0f4">24</text>
+<text x="40" y="363" font-size="17" fill="#a9a6b8">Portuguese</text>
+<path d="M170 348h656a4 4 0 0 1 4 4v12a4 4 0 0 1-4 4h-656z" fill="#a3b4ff"/>
+<text x="842" y="363" font-size="17" font-weight="600" fill="#f6f0f4">22</text>
+<text x="40" y="399" font-size="17" fill="#a9a6b8">Japanese</text>
+<path d="M170 384h656a4 4 0 0 1 4 4v12a4 4 0 0 1-4 4h-656z" fill="#a3b4ff"/>
+<text x="842" y="399" font-size="17" font-weight="600" fill="#f6f0f4">22</text>
+<line x1="170" y1="232" x2="170" y2="412" stroke="#262a3d"/>
+</svg>

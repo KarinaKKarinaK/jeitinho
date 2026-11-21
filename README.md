@@ -17,12 +17,15 @@
 <a href="#features">Features</a> ·
 <a href="#quick-start">Quick start</a> ·
 <a href="#deploy">Deploy</a> ·
+<a href="#how-it-works">How it works</a> ·
 <a href="#cost">Cost</a> ·
 <a href="#security-and-privacy">Security</a> ·
 <a href="#contributing">Contributing</a>
 </p>
 
 No install and no account needed: open the link and start. Sign in only if you want your progress on more than one device.
+
+<p align="center"><img src="docs/numbers.svg" width="760" alt="jeitinho in numbers: 5 languages, 123 lessons, 2,235 lesson steps, 5,980 words, costs nothing to run"></p>
 
 <p align="center">
 <img src="docs/home.png" width="230" alt="Home screen">
@@ -32,33 +35,41 @@ No install and no account needed: open the link and start. Sign in only if you w
 
 <p align="center"><img src="docs/desktop.png" width="720" alt="Desktop layout"></p>
 
-<p align="center"><img src="docs/reading-zh.png" width="720" alt="Reading a Mandarin text with pinyin coloured by tone"></p>
-
 ## Features
 
-| | |
-| --- | --- |
-| **Daily quiz** | 11 hard questions from your word bank and drills. A time decay keeps recent questions out. |
-| **Lessons that explain** | Every lesson opens with the big picture and ends with common mistakes, a real-life dialogue and a recap. Tap any example to hear it. |
-| **Chapters** | Lessons are grouped into chapters. Finish a chapter, pass its quiz, and the next one opens. |
-| **Reading** | Eight graded texts per language plus your own. Point at any word for its meaning and part of speech, click to save it. Meanings for the built-in texts are prepared ahead (`npm run gloss`), so reading them uses no AI. |
-| **Grammar** | Every explanation from the course as a searchable reference, and a conjugation table for any verb (usage patterns for Mandarin). |
-| **Made for Mandarin** | Pinyin above every word in reading texts, coloured by tone, with one tap to hide it. Tones can be typed as numbers (`ni3 hao3`). A listening drill for tone pairs, the HSK word lists as ready-made collections, and a breakdown of what each character in a word means. |
-| **Five languages** | Each has its own course of 20 or more lessons, drills, placement test and roadmap. Switch on the home screen; progress is kept separately per language under one account. |
-| **Fair marking** | A typed answer marked wrong gets a second opinion from the AI: another correct way to say it is accepted. |
-| **Placement test** | New learners take a short test that climbs a level at a time and stops when it gets too hard. |
-| **Drills** | The hard part of each language: verb tenses (Portuguese, Spanish), tones and measure words (Mandarin), cases and aspect (Polish), particles and verb forms (Japanese). |
-| **Real speech** | Regional and spoken language, not only the textbook: mineirês from Belo Horizonte, the Beijing r, Kansai-ben, vosotros and vos. |
-| **Word bank** | 175 to 215 starter words per language, tagged by part of speech, with popular synonyms that also count as right answers. Stars, your own notes, collections, AI example sentences, spaced repetition and export to Anki. |
-| **Songs** | Paste a Spotify link: lyrics with line by line translation, tap any word to see what it means and keep it, then a quiz built from the song. |
-| **Import** | An article, a YouTube link, pasted text or a photo of your notes becomes flashcards. |
-| **Speaking** | Say a sentence, see which words were understood. Voice mode in the chat. |
-| **Chat** | Bia, a mineira from BH, replies in spoken Portuguese and corrects each message. |
-| **Roadmap** | 14 checkpoints from A1.1 to C2.2. Milestones, then a test, then a badge. B and C tests add listening, speaking and graded writing. |
-| **Accounts** | Google, GitHub or email. Progress syncs across devices. Profile with name and picture. Works signed out too. |
-| **Offline** | Lessons, quiz, drill and word bank work with no connection. |
-| **Settings** | Light and dark themes, seven voices, quiz length and content, daily goal, daily push reminders, and your own OpenRouter key for a stronger model. |
-| **Progress** | Your level, a forecast date for the next one, and a map of minutes studied per day. |
+**Learn**
+- **Course:** 22 to 31 lessons per language, grouped into chapters. Pass a chapter quiz to open the next one.
+- **Lessons that explain:** each one opens with the big picture and ends with common mistakes, a real-life dialogue and a recap. Tap any example to hear it.
+- **Placement test:** climbs a level at a time and stops when it gets too hard.
+- **Roadmap:** 14 checkpoints from A1.1 to C2.2, each with milestones, a test and a badge. B and C tests add listening, speaking and graded writing.
+- **Real speech:** mineirês from Belo Horizonte, the Beijing r, Kansai-ben, vosotros and vos.
+
+**Practise**
+- **Daily quiz:** 11 questions from your word bank and drills, spaced so recent ones stay out.
+- **Drills:** the hard part of each language. Verb tenses (Portuguese, Spanish), tones and measure words (Mandarin), cases and aspect (Polish), particles and verb forms (Japanese).
+- **Fair marking:** popular synonyms count as right, and a typed answer marked wrong gets a second opinion from the AI.
+- **Speaking:** say a sentence and see which words were understood.
+- **Chat:** a partner who replies in the spoken language and corrects each message, by text or voice.
+
+**Bring your own material**
+- **Songs:** paste a Spotify link for lyrics with line by line translation, tap words to keep them, then take a quiz built from the song.
+- **Import:** an article, a YouTube link, pasted text or a photo of your notes becomes flashcards.
+- **Reading:** eight graded texts per language plus your own. Tap any word for its meaning and save it.
+- **Word bank:** 176 to 215 starter words per language, with stars, notes, collections, example sentences and export to Anki.
+- **Grammar:** every explanation from the course as a searchable reference, plus a conjugation table for any verb.
+
+**Made for Mandarin**
+- Pinyin above the characters, coloured by tone, with one tap to hide it.
+- A listening drill for tone pairs. Tones can be typed as numbers (`ni3 hao3`).
+- The HSK 1 to 6 word lists (4,998 words) as ready-made collections.
+- A breakdown of what each character in a word means.
+
+<p align="center"><img src="docs/reading-zh.png" width="720" alt="Reading a Mandarin text with pinyin coloured by tone"></p>
+
+**Everywhere**
+- Works offline for lessons, quiz, drills and word bank. Installs to the home screen.
+- Accounts with Google or email. Progress syncs across devices and is kept per language.
+- Light and dark themes, seven voices, a daily goal, push reminders, and a map of minutes studied per day.
 
 ## Quick start
 
@@ -117,7 +128,7 @@ Found a problem? Please [open an issue](https://github.com/KarinaKKarinaK/jeitin
 | Language | Follows | Type answers in |
 | --- | --- | --- |
 | Brazilian Portuguese | CEFR, Celpe-Bras | Portuguese |
-| Mandarin Chinese | HSK levels 1 to 6, 32 lessons | characters or pinyin |
+| Mandarin Chinese | HSK levels 1 to 6, 31 lessons | characters or pinyin |
 | Polish | State certificate exams, A1 to C2 | Polish |
 | Japanese | JLPT N5 to N1 | Japanese, kana or romaji |
 | Spanish | Instituto Cervantes curriculum, DELE | Spanish |
@@ -126,19 +137,30 @@ A language is one file in `src/lib/langs/`. `src/lib/packs.test.js` is the contr
 
 ## How it works
 
-- **SvelteKit**, prerendered, with a service worker. About 60 kB of JavaScript.
-- **Local first.** State is one object per language in local storage, mirrored to one Postgres row per user and language when signed in. When two devices both changed, the copies are merged: progress only goes up, word banks are joined, deletions stay deleted.
+```mermaid
+flowchart LR
+  subgraph Device
+    UI[SvelteKit app<br>prerendered, offline] <--> LS[(Local storage<br>one state per language)]
+  end
+  LS <-- "merge sync, signed in only" --> DB[(Supabase Postgres<br>row level security)]
+  UI --> API[Server routes<br>rate limited, keys stay here]
+  API --> OR[OpenRouter<br>free models only]
+  API --> EL[ElevenLabs<br>voice]
+  API --> DG[Deepgram<br>speech to text]
+```
+
+- **Local first.** The app runs from the browser's own storage. With an account, each language is mirrored to one database row.
+- **Merge, never overwrite.** When two devices both changed, progress only goes up, word banks are joined, and deletions stay deleted.
 - **Learning design** follows Dunlosky et al. (2013): recall over rereading, spaced review, mixed topics, instant feedback, and a second try on every miss.
+- **Checks:** 28 unit tests and a build run on every push.
 
 ```
 src/lib/langs/            one pack per language: course, words, drills, placement, roadmap
-src/lib/lang.js           loads the active language
 src/lib/quiz.js           answer checking, spaced repetition, daily quiz
 src/lib/roadmap.js        stages, milestones, checkpoint tests
-src/lib/cloud.svelte.js   sign-in, sync, photos
 src/lib/sync.js           when to push, pull or merge two copies
 src/lib/Exercise.svelte   question runner
-src/routes/api            ai, tts, stt, config, reminder
+src/routes/api            ai, tts, stt, push, reminder, report
 src/service-worker.js     offline cache
 ```
 
