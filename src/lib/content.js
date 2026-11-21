@@ -8,7 +8,13 @@ const at = (l) => stageOf[l.id] ?? 99;
 // A unit whose lessons are spread far along the roadmap (say one at B1 and one at C1) is cut into parts,
 // each placed where its lessons belong. Otherwise an early lesson would sit behind a chapter quiz that
 // needs a much later one, and the roadmap could ask for a lesson the chapters have not opened yet.
-const parts = pack.units.flatMap((u, i) => {
+// Each lesson can have extra material around its own steps (pack.more): the big picture first, then common
+// mistakes, a real-life text and a recap at the end.
+const full = (l) => {
+	const m = pack.more?.[l.id];
+	return m ? { ...l, steps: [...(m.start || []), ...l.steps, ...(m.end || [])] } : l;
+};
+const parts = pack.units.map((u) => ({ ...u, lessons: u.lessons.map(full) })).flatMap((u, i) => {
 	const groups = [];
 	for (const l of [...u.lessons].sort((a, b) => at(a) - at(b))) {
 		const g = groups.at(-1);

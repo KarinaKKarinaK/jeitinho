@@ -5,6 +5,7 @@ import { I, C, T, L, tableDrill } from './kit.js';
 import { withMore } from './kit.js';
 import { MORE, SEED_POS } from './words/pl.js';
 import { SYN } from './words/syn-pl.js';
+import { MORE_STEPS as MORE_PL } from './more/pl.js';
 
 // The answer check strips accents but cannot turn ł into l, so every answer with ł
 // also accepts a copy with plain l. Typed with no Polish letters at all it still passes, with a warning.
@@ -726,6 +727,7 @@ const ALL = Object.keys(DRILLS);
 export default {
 	code: 'pl',
 	syn: SYN,
+	more: { ...MORE_PL },
 	units: UNITS,
 	seed: withMore(SEED, MORE, SEED_POS),
 	placement: PLACEMENT,

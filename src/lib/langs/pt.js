@@ -4,6 +4,7 @@ import { withMore } from './kit.js';
 import { MORE, SEED_POS } from './words/pt.js';
 import { conj, table, PRON, TENSES, VERBS } from '../conj.js';
 import { SYN } from './words/syn-pt.js';
+import { MORE_STEPS as MORE_PT } from './more/pt.js';
 
 const UNITS = [
 	{
@@ -535,6 +536,7 @@ const ALL = ['pres', 'perf', 'imp', 'cond', 'sp', 'si', 'sf'];
 export default {
 	code: 'pt',
 	syn: SYN,
+	more: { ...MORE_PT },
 	units: UNITS,
 	seed: withMore(SEED, MORE, SEED_POS),
 	placement: PLACEMENT,

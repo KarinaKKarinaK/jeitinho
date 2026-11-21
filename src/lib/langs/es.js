@@ -5,6 +5,7 @@ import { I, C, T, L } from './kit.js';
 import { withMore } from './kit.js';
 import { MORE, SEED_POS } from './words/es.js';
 import { SYN } from './words/syn-es.js';
+import { MORE_STEPS as MORE_ES } from './more/es.js';
 
 const UNITS = [
 	{
@@ -684,6 +685,7 @@ const ALL = Object.keys(TENSES);
 export default {
 	code: 'es',
 	syn: SYN,
+	more: { ...MORE_ES },
 	units: UNITS,
 	seed: withMore(SEED, MORE, SEED_POS),
 	placement: PLACEMENT,

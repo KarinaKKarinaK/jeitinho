@@ -5,6 +5,7 @@ import { I, C, T, L, tableDrill } from './kit.js';
 import { withMore } from './kit.js';
 import { MORE, SEED_POS } from './words/ja.js';
 import { SYN } from './words/syn-ja.js';
+import { MORE_STEPS } from './more/ja.js';
 
 // accepted spellings: the reading in kana, romaji, plus common variants (私 typed as わたし, the particle を typed as wo)
 const alt = (ja, kana, romaji, more = []) => {
@@ -698,6 +699,7 @@ const ALL = Object.keys(DRILLS);
 export default {
 	code: 'ja',
 	syn: SYN,
+	more: MORE_STEPS,
 	units: UNITS,
 	seed: withMore(SEED, MORE, SEED_POS),
 	placement: PLACEMENT,

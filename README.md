@@ -39,6 +39,7 @@ No install and no account needed: open the link and start. Sign in only if you w
 | | |
 | --- | --- |
 | **Daily quiz** | 11 hard questions from your word bank and drills. A time decay keeps recent questions out. |
+| **Lessons that explain** | Every lesson opens with the big picture and ends with common mistakes, a real-life dialogue and a recap. Tap any example to hear it. |
 | **Chapters** | Lessons are grouped into chapters. Finish a chapter, pass its quiz, and the next one opens. |
 | **Reading** | Eight graded texts per language plus your own. Point at any word for its meaning and part of speech, click to save it. Meanings for the built-in texts are prepared ahead (`npm run gloss`), so reading them uses no AI. |
 | **Grammar** | Every explanation from the course as a searchable reference, and a conjugation table for any verb (usage patterns for Mandarin). |
