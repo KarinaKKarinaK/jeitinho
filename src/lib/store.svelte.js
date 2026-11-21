@@ -17,7 +17,7 @@ export const newWord = (w, src = 'seed') => ({
 	src, added: Date.now(), due: 0, ivl: 0, ease: 2.5, reps: 0
 });
 
-const blank = () => ({ xp: 0, streak: 0, last: null, days: {}, done: {}, words: [], asked: {}, quiz: {}, materials: [], custom: {}, chat: [], pass: '', rate: 0.9, drill: pack.drill.start, uid: null, badges: {}, nquiz: 0, onboarded: false, placed: null, placeSeen: [], placedAt: 0, mins: {}, cols: [], seedN: 0, chapters: null, texts: [], gloss: {}, read: {}, gone: {} });
+const blank = () => ({ xp: 0, streak: 0, last: null, days: {}, done: {}, words: [], asked: {}, quiz: {}, materials: [], custom: {}, chat: [], pass: '', rate: 0.9, drill: pack.drill.start, uid: null, badges: {}, nquiz: 0, onboarded: false, placed: null, placeSeen: [], placedAt: 0, mins: {}, cols: [], seedN: 0, chapters: null, texts: [], gloss: {}, read: {}, gone: {}, fixes: [] });
 const seeded = () => ({ ...blank(), words: SEED.map((w) => newWord(w)), seedN: SEED.length, chapters: {} });
 
 // Anything read from storage, the account or a backup file goes through here: only known fields, only
@@ -35,7 +35,7 @@ export function clean(data) {
 	out.words = out.words
 		.filter((w) => w && typeof w === 'object' && typeof w.pt === 'string' && w.pt && typeof w.en === 'string')
 		.map((w) => ({ ...newWord({ pt: w.pt, en: w.en }), ...w, cols: Array.isArray(w.cols) ? w.cols : [], reps: +w.reps || 0, due: +w.due || 0, ivl: +w.ivl || 0, ease: +w.ease || 2.5 }));
-	for (const k of ['materials', 'texts', 'cols', 'chat']) out[k] = out[k].filter((x) => x && typeof x === 'object');
+	for (const k of ['materials', 'texts', 'cols', 'chat', 'fixes']) out[k] = out[k].filter((x) => x && typeof x === 'object');
 	return out;
 }
 
@@ -144,6 +144,16 @@ export function forget(idOrKey) {
 	S.gone[idOrKey] = Date.now();
 	const keys = Object.keys(S.gone);
 	if (keys.length > 800) for (const k of keys.sort((x, y) => S.gone[x] - S.gone[y]).slice(0, keys.length - 800)) delete S.gone[k]; // keep the newest 800
+}
+// Mistakes the chat corrected, kept so they can be practised and come back in the daily quiz.
+export function addFix({ bad, fix, kind = '', tip = '' }) {
+	if (!bad || !fix || bad === fix || S.fixes.some((f) => f.bad === bad)) return;
+	S.fixes.push({ id: 'f' + Math.random().toString(36).slice(2, 9), bad, fix, kind, tip, at: Date.now() });
+	if (S.fixes.length > 100) S.fixes.splice(0, S.fixes.length - 100); // ponytail: newest 100, no archive
+}
+export function removeFix(f) {
+	forget(f.id);
+	S.fixes.splice(S.fixes.indexOf(f), 1);
 }
 export function removeWord(w) {
 	forget(wordKey(w.pt));

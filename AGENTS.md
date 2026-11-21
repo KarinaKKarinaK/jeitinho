@@ -25,3 +25,4 @@ Mobile-first web app for learning Brazilian Portuguese (with Belo Horizonte dial
   - Use relative imports, not `$lib`.
   - Paid services are off limits: every key is a free plan with no card, and each feature must fall back or switch off when its key is missing.
 - Env (all optional, see `.env.example`): `OPENROUTER_API_KEY`, `ELEVENLABS_API_KEY`, `DEEPGRAM_API_KEY`, `SUPABASE_URL` + `SUPABASE_ANON_KEY`, `APP_PASSCODE`. Real keys go in `.env`, which is git-ignored.
+- Chat corrections are saved in `S.fixes` (newest 100, synced by id). `/mistakes` lists and practises them; the daily quiz takes up to two (`fix:<id>` keys in `quiz.js`).

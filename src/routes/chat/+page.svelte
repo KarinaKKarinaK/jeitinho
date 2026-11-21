@@ -2,7 +2,7 @@
 	import { tick } from 'svelte';
 	import { fly } from 'svelte/transition';
 	import Icon from '../../lib/Icon.svelte';
-	import { S, addXP } from '../../lib/store.svelte.js';
+	import { S, addXP, addFix } from '../../lib/store.svelte.js';
 	import { ai, speak, record, hear } from '../../lib/fx.js';
 	import { cloud } from '../../lib/cloud.svelte.js';
 	import { pack, t, meta } from '../../lib/lang.js';
@@ -15,6 +15,8 @@
 	let showEn = $state({});
 	let end = $state();
 	let stop = $state(null);
+	let unsure = []; // words the recogniser was not sure it heard, from the last voice message
+	const CLEAR = 0.6; // below this confidence a spoken word is shown as unclear; raise it to flag more
 
 	// voice mode: tap the mic, speak, tap again. What was heard is sent as your message.
 	async function talk() {
@@ -24,7 +26,9 @@
 			const done = stop;
 			stop = null;
 			busy = true;
-			msg = (await hear(await done(), S.pass)).text;
+			const h = await hear(await done(), S.pass);
+			msg = h.text;
+			unsure = [...new Set((h.words || []).filter((w) => w.c < CLEAR).map((w) => w.w))].slice(0, 8);
 			busy = false;
 			if (msg.trim()) await send();
 			else err = 'Heard nothing. Try again a bit closer to the phone.';
@@ -41,12 +45,14 @@
 		msg = '';
 		err = '';
 		busy = true;
-		S.chat.push({ role: 'user', content });
+		S.chat.push({ role: 'user', content, ...(unsure.length && { unsure }) });
+		unsure = [];
 		await tick();
 		end?.scrollIntoView({ behavior: 'smooth' });
 		try {
 			const r = await ai('chat', { scene, messages: S.chat.slice(-12).map(({ role, content }) => ({ role, content })) }, S.pass);
 			Object.assign(S.chat[S.chat.length - 1], { fix: r.fix, kind: r.fix ? r.kind : '', tip: r.tip });
+			if (r.fix) addFix({ bad: content, fix: r.fix, kind: r.kind, tip: r.tip });
 			S.chat.push({ role: 'assistant', content: r.reply, en: r.en, say: r.say });
 			if (S.chat.length > 60) S.chat.splice(0, S.chat.length - 60);
 			addXP(2);
@@ -62,6 +68,8 @@
 
 <header class="head">
 	<div><h1>{t.chat}</h1><p class="dim small">{pack.chat.who}</p></div>
+	<span class="grow"></span>
+	{#if S.fixes.length}<a class="chip" href="/mistakes">Mistakes {S.fixes.length}</a>{/if}
 	{#if S.chat.length}<button class="icon-btn sm" aria-label="Clear chat" onclick={() => (S.chat = [])}><Icon name="trash" size={16} /></button>{/if}
 </header>
 
@@ -86,6 +94,7 @@
 				<div class="bubble">{m.content}</div>
 				{#if m.fix}<p class="fix">{#if m.kind}<span class="kind">{m.kind}</span>{:else}<Icon name="check" size={14} />{/if} {m.fix}</p>{/if}
 				{#if m.tip}<p class="tip">{m.tip}</p>{/if}
+				{#if m.unsure?.length}<p class="tip">Not clearly heard, tap to listen: {#each m.unsure as w}<button class="heard" onclick={() => speak(w)}>{w}</button>{/each}</p>{/if}
 			{/if}
 		</div>
 	{:else}
@@ -113,6 +122,7 @@
 	.tools button { background: none; border: 0; color: var(--dim); font: 500 11px var(--mono); cursor: pointer; padding: 4px 6px 0 0; display: flex; }
 	.fix { font-size: 14px; color: var(--ok); display: flex; gap: 6px; align-items: baseline; text-align: right; }
 	.kind { font: 500 10px var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--amber); border: 1px solid var(--line); border-radius: 999px; padding: 3px 8px; white-space: nowrap; }
+	.heard { background: none; border: 0; border-bottom: 1px dashed var(--amber); color: var(--ink); font: inherit; cursor: pointer; padding: 0; margin-left: 8px; }
 	.tip { font-size: 13px; color: var(--dim); text-align: right; }
 	.send { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(env(safe-area-inset-bottom) + 84px); width: min(484px, calc(100% - 36px)); display: flex; gap: 8px; z-index: 5; }
 	.rec { background: var(--bad); color: #17121c; animation: pulse 0.9s ease-in-out infinite; }

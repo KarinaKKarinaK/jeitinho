@@ -50,6 +50,8 @@ No install and no account needed: open the link and start. Sign in only if you w
 - **Fair marking:** popular synonyms count as right, and a typed answer marked wrong gets a second opinion from the AI.
 - **Speaking:** say a sentence and see which words were understood.
 - **Chat:** a partner who replies in the spoken language and corrects each message, by text or voice. Each correction says what kind of mistake it was: word order, wrong word, grammar or spelling.
+- **Mistake log:** every sentence the chat corrects is saved. See which kind of mistake you make most, practise the right versions by typing and saying them, and meet them again in the daily quiz.
+- **Unclear words:** in voice chat, words the speech recogniser was not sure it heard are marked, with one tap to hear them said properly.
 
 **Bring your own material**
 - **Songs:** paste a Spotify link for lyrics with line by line translation, tap words to keep them, then take a quiz built from the song.

@@ -64,6 +64,7 @@ export function merge(local, remote, key = (w) => w.pt, ids = []) {
 		custom: drop({ ...(remote.custom || {}), ...(local.custom || {}) }),
 		gloss: { ...(remote.gloss || {}), ...(local.gloss || {}) },
 		chat: newer.chat || [],
+		fixes: join(local.fixes, remote.fixes).slice(-100),
 		gone: Object.fromEntries(Object.entries(gone).sort((a, b) => b[1] - a[1]).slice(0, 800))
 	};
 }

@@ -314,3 +314,15 @@ test('a synonym of the word asked for is accepted, and named as such', () => {
 	assert.equal(check('bonito', q).note, undefined);
 	assert.equal(check('feio', q).ok, false);
 });
+
+test('corrected chat sentences come back in the daily quiz and survive a merge', async () => {
+	const { merge } = await import('./sync.js');
+	const S = mkS();
+	S.fixes = [{ id: 'fa', bad: 'eu vai', fix: 'eu vou', kind: 'grammar', tip: '' }, { id: 'fb', bad: 'x', fix: 'y' }, { id: 'fc', bad: 'p', fix: 'q' }];
+	const keys = dailyQuiz(S, 's1');
+	assert.equal(keys.length, 11);
+	assert.equal(keys.filter((k) => k.startsWith('fix:')).length, 2);
+	assert.equal(fromKey(S, 'fix:fa').answer, 'eu vou');
+	const m = merge({ fixes: [S.fixes[0]], gone: { fb: 1 } }, { fixes: [S.fixes[1], S.fixes[2]] });
+	assert.deepEqual(m.fixes.map((f) => f.id), ['fa', 'fc']);
+});

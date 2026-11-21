@@ -78,7 +78,14 @@ export function wordQ(w, type) {
 	return { ...base, kind: 'type', label: t.sayLabel, prompt: w.en };
 }
 
+// a sentence of yours the chat corrected: type it again, the right way
+export const fixQ = (f) => ({ key: 'fix:' + f.id, kind: 'type', label: 'Fix your sentence', prompt: f.bad, sub: f.kind ? `Your mistake: ${f.kind}` : 'From your chat', answer: f.fix, speak: f.fix, explain: f.tip });
+
 export function fromKey(S, key) {
+	if (key.startsWith('fix:')) {
+		const f = (S.fixes || []).find((x) => 'fix:' + x.id === key);
+		return f ? fixQ(f) : null;
+	}
 	const d = pack.drill.make(key);
 	if (d) return d;
 	const [a, b] = key.split(':');
@@ -130,9 +137,11 @@ export function dailyQuiz(S, seed, now = Date.now(), opts = {}) {
 			words.push({ key, group: w.id, wt: need * decay(key) * decay('w:' + w.id) });
 		}
 	}
-	const a = pick(words, drills ? Math.round((len * 8) / 11) : len, rnd);
-	const b = pick(pack.drill.pool().filter((c) => (!c.audio || opts.quizAudio !== false) && (!c.tone || opts.quizTones !== false)).map((c) => ({ ...c, wt: c.wt * decay(c.key) })), drills ? len - a.length : 0, rnd);
-	const all = [...a, ...b];
+	// up to two of your own corrected sentences from the chat
+	const f = pick((S.fixes || []).map((x) => ({ key: 'fix:' + x.id, group: 'fix:' + x.id, wt: decay('fix:' + x.id) })), Math.min(2, (S.fixes || []).length), rnd);
+	const a = pick(words, (drills ? Math.round((len * 8) / 11) : len) - f.length, rnd);
+	const b = pick(pack.drill.pool().filter((c) => (!c.audio || opts.quizAudio !== false) && (!c.tone || opts.quizTones !== false)).map((c) => ({ ...c, wt: c.wt * decay(c.key) })), drills ? len - a.length - f.length : 0, rnd);
+	const all = [...f, ...a, ...b];
 	for (let i = all.length - 1; i > 0; i--) {
 		const j = Math.floor(rnd() * (i + 1));
 		[all[i], all[j]] = [all[j], all[i]];
